@@ -60,36 +60,34 @@ Node::get_field_at_version (field_name_t field_name, size_t v) {
   return std::get < 2 > (mods[max_version_i]);
 }
 
-size_t
-Node::data_at (size_t v) {
+size_t Node::data_at (size_t v) {
   return (size_t) (get_field_at_version (DATA, v));
 }
 
 Node *
 Node::next_at (size_t v) {
-  return static_cast < Node * >(get_field_at_version (NEXT, v));
+  return reinterpret_cast < Node * >(get_field_at_version (NEXT, v));
 }
 
 Node *
 Node::prev_at (size_t v) {
-  return static_cast < Node * >(get_field_at_version (PREV, v));
+  return reinterpret_cast < Node * >(get_field_at_version (PREV, v));
 }
 
-size_t
-Node::live_data () {
+size_t Node::live_data () {
   return (size_t) (get_field_at_version
                    (DATA, (numeric_limits < size_t >::max ())));
 }
 
 Node *
 Node::live_next () {
-  return static_cast < Node * >(get_field_at_version
+  return reinterpret_cast < Node * >(get_field_at_version
                                 (NEXT, (numeric_limits < size_t >::max ())));
 }
 
 Node *
 Node::live_prev () {
-  return static_cast < Node * >(get_field_at_version
+  return reinterpret_cast < Node * >(get_field_at_version
                                 (PREV, (numeric_limits < size_t >::max ())));
 }
 

@@ -8,16 +8,25 @@ int
 main (int argc, char **argv) {
 
   DoublyLinkedList list;
-  Node a, b, c;
-  a.data = 3;
-  b.data = 2;
-  c.data = 1;
-  list.insert (a);
-  list.insert (b);
-  list.insert (c);
+  Node d, c, b, a;
 
-  list.set_field (b, DATA, (void *) (20ul));
-  list.set_field (b, DATA, (void *) (200ul));
+  d.data = 4;
+  c.data = 3;
+  b.data = 2;
+  a.data = 1;
+
+  list.insert (c);              // v1
+  list.insert (b);              // v2
+  list.insert (a);              // v3
+
+  list.set_field (*(list.get_heads ().back ().second->live_next ()), DATA, (void *) (20ul));    // v4
+  list.set_field (*(list.get_heads ().back ().second->live_next ()), DATA, (void *) (200ul));   // v5
+
+  list.insert (d);              // v6
+
+  list.set_field (*(list.get_heads ().back ().second->live_next ()), DATA, (void *) (10ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second->live_next ()->live_next ()), DATA, (void *) (2000ul));    // v8
+  list.set_field (*(list.get_heads ().back ().second->live_next ()->live_next ()->live_next ()), DATA, (void *) (30ul));        // v9
 
   for (vector < pair < size_t, Node * >>::size_type i = 0;
        i < list.get_heads ().size (); ++i) {

@@ -41,10 +41,11 @@ public:
   const std::vector < std::pair < std::size_t, Node * >>&get_heads ();
 
   void print_at_version (std::size_t v);
+  void print_dot_graph (std::size_t v);
 private:
     std::pair < std::size_t, Node * >modify_field (Node &, field_name_t,
                                                    void *);
-  void copy_live_node (Node & node, Node & copy);
+    Node & copy_live_node (Node & node);
 
     std::vector < std::pair < std::size_t, Node * >>heads;
 };

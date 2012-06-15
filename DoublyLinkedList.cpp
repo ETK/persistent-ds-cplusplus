@@ -50,21 +50,20 @@ pair < size_t,
   if (node.n_mods < MAX_MODS) {
     node.mods[node.n_mods++] = make_tuple (version, field_name, value);
   } else {
-    Node n_prime;
+    Node & n_prime = copy_live_node (node);
     switch (field_name) {
     case DATA:
       n_prime.data = (size_t) value;
       break;
     case NEXT:
-      n_prime.next = static_cast < Node * >(value);
+      n_prime.next = reinterpret_cast < Node * >(value);
       n_prime.next->next_back = &n_prime;
       break;
     case PREV:
-      n_prime.prev = static_cast < Node * >(value);
+      n_prime.prev = reinterpret_cast < Node * >(value);
       n_prime.prev->prev_back = &n_prime;
       break;
     }
-    copy_live_node (node, n_prime);
   }
   return make_pair (version, heads.back ().second);
 }
@@ -72,25 +71,21 @@ pair < size_t,
 pair < size_t, Node * >DoublyLinkedList::set_field (Node & node,
                                                     field_name_t field_name,
                                                     void *value) {
-
   ++version;
   heads.push_back (modify_field (node, field_name, value));
 }
 
-void
-  DoublyLinkedList::copy_live_node (Node& node, Node & copy) {
+Node & DoublyLinkedList::copy_live_node (Node & node) {
   // copy latest version of each field (data and forward pointers) to the static field section.
+  Node & copy = *(new Node ());
   copy.data = node.live_data ();
   copy.prev = node.live_prev ();
   copy.next = node.live_next ();
 
   // also copy back pointers to n'
-  if (copy.prev) {
-    copy.prev->prev_back = &copy;
-  }
-  if (copy.next) {
-    copy.next->next_back = &copy;
-  }
+  copy.prev_back = node.prev_back;
+  copy.next_back = node.next_back;
+
   // for every node x such that n points to x, redirect its back pointers to n' (using our pointers to get to them) (at most d of them)
   if (node.live_next ()) {
     node.live_next ()->next_back = &copy;
@@ -105,6 +100,8 @@ void
   if (node.prev_back) {
     modify_field (*node.prev_back, PREV, &copy);
   }
+
+  return copy;
 }
 
 const
@@ -135,5 +132,12 @@ void
   }
   cout << endl;
 }
+
+void
+  DoublyLinkedList::print_dot_graph (std::size_t v) {
+//   TODO
+}
+
+
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
