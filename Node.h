@@ -21,7 +21,7 @@
 #ifndef NODE_H
 #define NODE_H
 
-#define MAX_MODS 4
+#define MAX_MODS 2
 
 #include <tuple>
 
@@ -34,16 +34,12 @@ enum field_name_t {
 class Node {
 
 public:
-  std::size_t version;
-
   std::size_t data;
   Node *prev;
   Node *next;
 
   Node *prev_back;
   Node *next_back;
-
-  Node *copy_pointer;
 
     std::size_t n_mods;
 

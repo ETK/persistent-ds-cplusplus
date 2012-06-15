@@ -23,6 +23,11 @@
 using namespace std;
 
 Node::Node () {
+  n_mods = 0UL;
+  next = 0;
+  prev = 0;
+  next_back = 0;
+  prev_back = 0;
 }
 
 Node::~Node () {
@@ -30,14 +35,19 @@ Node::~Node () {
 
 void *
 Node::get_field_at_version (field_name_t field_name, size_t v) {
-  unsigned int max_version = 0;
-  for (unsigned int i = 0; i < n_mods; ++i) {
-    if (std::get < 1 > (mods[1]) == field_name
-        && std::get < 0 > (mods[i]) <= v) {
-      max_version = std::get < 0 > (mods[i]);
+  size_t max_version_i = 0;
+  bool in_mods = false;
+  for (size_t i = 0; i < n_mods; ++i) {
+    if (std::get < 1 > (mods[i]) == field_name) {
+      if (std::get < 0 > (mods[i]) <= v) {
+        max_version_i = i;
+        in_mods = true;
+      } else {
+        break;
+      }
     }
   }
-  if (max_version == 0) {
+  if (!in_mods) {
     switch (field_name) {
     case DATA:
       return (void *) data;
@@ -47,10 +57,11 @@ Node::get_field_at_version (field_name_t field_name, size_t v) {
       return prev;
     }
   }
-  return std::get < 2 > (mods[max_version]);
+  return std::get < 2 > (mods[max_version_i]);
 }
 
-size_t Node::data_at (size_t v) {
+size_t
+Node::data_at (size_t v) {
   return (size_t) (get_field_at_version (DATA, v));
 }
 
@@ -64,7 +75,8 @@ Node::prev_at (size_t v) {
   return static_cast < Node * >(get_field_at_version (PREV, v));
 }
 
-size_t Node::live_data () {
+size_t
+Node::live_data () {
   return (size_t) (get_field_at_version
                    (DATA, (numeric_limits < size_t >::max ())));
 }
