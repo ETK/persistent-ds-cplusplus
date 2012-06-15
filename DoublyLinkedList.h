@@ -39,6 +39,7 @@ public:
                                               field_name, void *value);
 
   const std::vector < std::pair < std::size_t, Node * >>&get_heads ();
+  const Node* head();
 
   void print_at_version (std::size_t v);
   void print_dot_graph (std::size_t v);

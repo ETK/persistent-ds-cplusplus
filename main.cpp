@@ -19,14 +19,35 @@ main (int argc, char **argv) {
   list.insert (b);              // v2
   list.insert (a);              // v3
 
-  list.set_field (*(list.get_heads ().back ().second->live_next ()), DATA, (void *) (20ul));    // v4
-  list.set_field (*(list.get_heads ().back ().second->live_next ()), DATA, (void *) (200ul));   // v5
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (20ul));    // v4
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (21ul));    // v4
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (22ul));    // v4
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (23ul));    // v4
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (24ul));    // v4
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (200ul));   // v5
 
   list.insert (d);              // v6
 
-  list.set_field (*(list.get_heads ().back ().second->live_next ()), DATA, (void *) (10ul));    // v7
-  list.set_field (*(list.get_heads ().back ().second->live_next ()->live_next ()), DATA, (void *) (2000ul));    // v8
-  list.set_field (*(list.get_heads ().back ().second->live_next ()->live_next ()->live_next ()), DATA, (void *) (30ul));        // v9
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (10ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (11ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (12ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (13ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second->next ()), DATA, (void *) (14ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second), DATA, (void *) (40ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second), DATA, (void *) (41ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second), DATA, (void *) (42ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second), DATA, (void *) (43ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second), DATA, (void *) (44ul));    // v7
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()), DATA, (void *) (2000ul));    // v8
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()), DATA, (void *) (2001ul));    // v8
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()), DATA, (void *) (2002ul));    // v8
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()), DATA, (void *) (2003ul));    // v8
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()), DATA, (void *) (2004ul));    // v8
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()->next ()), DATA, (void *) (30ul));        // v9
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()->next ()), DATA, (void *) (31ul));        // v9
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()->next ()), DATA, (void *) (32ul));        // v9
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()->next ()), DATA, (void *) (33ul));        // v9
+  list.set_field (*(list.get_heads ().back ().second->next ()->next ()->next ()), DATA, (void *) (34ul));        // v9
 
   for (vector < pair < size_t, Node * >>::size_type i = 0;
        i < list.get_heads ().size (); ++i) {
@@ -34,8 +55,6 @@ main (int argc, char **argv) {
     list.print_at_version (list.get_heads ()[i].first);
   }
 
-  std::string s = "Hello, world!";
-  std::cout << s << std::endl;
   return 0;
 }
 

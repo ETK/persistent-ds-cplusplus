@@ -34,10 +34,10 @@ DoublyLinkedList::~DoublyLinkedList () {
 pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node) {
   ++version;
   if (heads.size () > 0 && heads.back ().second) {
-    new_node.next = heads.back ().second;
-    new_node.next->next_back = &new_node;
+    new_node.next_ptr = heads.back ().second;
+    new_node.next_ptr->next_back_ptr = &new_node;
     modify_field (*heads.back ().second, PREV, &new_node);
-    new_node.prev_back = heads.back ().second;
+    new_node.prev_back_ptr = heads.back ().second;
   }
   heads.push_back (make_pair (version, &new_node));
   return make_pair (version, heads.back ().second);
@@ -47,6 +47,8 @@ pair < size_t,
   Node * >DoublyLinkedList::modify_field (Node & node,
                                           field_name_t field_name,
                                           void *value) {
+  Node *
+    new_head = heads.back ().second;
   if (node.n_mods < MAX_MODS) {
     node.mods[node.n_mods++] = make_tuple (version, field_name, value);
   } else {
@@ -56,16 +58,19 @@ pair < size_t,
       n_prime.data = (size_t) value;
       break;
     case NEXT:
-      n_prime.next = reinterpret_cast < Node * >(value);
-      n_prime.next->next_back = &n_prime;
+      n_prime.next_ptr = reinterpret_cast < Node * >(value);
+      n_prime.next_ptr->next_back_ptr = &n_prime;
       break;
     case PREV:
-      n_prime.prev = reinterpret_cast < Node * >(value);
-      n_prime.prev->prev_back = &n_prime;
+      n_prime.prev_ptr = reinterpret_cast < Node * >(value);
+      n_prime.prev_ptr->prev_back_ptr = &n_prime;
       break;
     }
+    if (heads.back ().second == &node) {
+      new_head = &n_prime;
+    }
   }
-  return make_pair (version, heads.back ().second);
+  return make_pair (version, new_head);
 }
 
 pair < size_t, Node * >DoublyLinkedList::set_field (Node & node,
@@ -79,26 +84,26 @@ Node & DoublyLinkedList::copy_live_node (Node & node) {
   // copy latest version of each field (data and forward pointers) to the static field section.
   Node & copy = *(new Node ());
   copy.data = node.live_data ();
-  copy.prev = node.live_prev ();
-  copy.next = node.live_next ();
+  copy.prev_ptr = node.prev ();
+  copy.next_ptr = node.next ();
 
   // also copy back pointers to n'
-  copy.prev_back = node.prev_back;
-  copy.next_back = node.next_back;
+  copy.prev_back_ptr = node.prev_back_ptr;
+  copy.next_back_ptr = node.next_back_ptr;
 
   // for every node x such that n points to x, redirect its back pointers to n' (using our pointers to get to them) (at most d of them)
-  if (node.live_next ()) {
-    node.live_next ()->next_back = &copy;
+  if (node.next ()) {
+    node.next ()->next_back_ptr = &copy;
   }
-  if (node.live_prev ()) {
-    node.live_prev ()->prev_back = &copy;
+  if (node.prev ()) {
+    node.prev ()->prev_back_ptr = &copy;
   }
   // for every node x such that x points to n, call write(x.p, n') recursively (at most p recursive calls)
-  if (node.next_back) {
-    modify_field (*node.next_back, NEXT, &copy);
+  if (node.next_back_ptr) {
+    modify_field (*node.next_back_ptr, NEXT, &copy);
   }
-  if (node.prev_back) {
-    modify_field (*node.prev_back, PREV, &copy);
+  if (node.prev_back_ptr) {
+    modify_field (*node.prev_back_ptr, PREV, &copy);
   }
 
   return copy;
@@ -138,6 +143,11 @@ void
 //   TODO
 }
 
+
+const Node *
+DoublyLinkedList::head () {
+  return heads.back ().second;
+}
 
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;

@@ -24,10 +24,10 @@ using namespace std;
 
 Node::Node () {
   n_mods = 0UL;
-  next = 0;
-  prev = 0;
-  next_back = 0;
-  prev_back = 0;
+  next_ptr = 0;
+  prev_ptr = 0;
+  next_back_ptr = 0;
+  prev_back_ptr = 0;
 }
 
 Node::~Node () {
@@ -52,9 +52,9 @@ Node::get_field_at_version (field_name_t field_name, size_t v) {
     case DATA:
       return (void *) data;
     case NEXT:
-      return next;
+      return next_ptr;
     case PREV:
-      return prev;
+      return prev_ptr;
     }
   }
   return std::get < 2 > (mods[max_version_i]);
@@ -80,13 +80,13 @@ size_t Node::live_data () {
 }
 
 Node *
-Node::live_next () {
+Node::next () {
   return reinterpret_cast < Node * >(get_field_at_version
                                 (NEXT, (numeric_limits < size_t >::max ())));
 }
 
 Node *
-Node::live_prev () {
+Node::prev () {
   return reinterpret_cast < Node * >(get_field_at_version
                                 (PREV, (numeric_limits < size_t >::max ())));
 }

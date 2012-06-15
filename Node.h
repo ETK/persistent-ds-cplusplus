@@ -21,7 +21,7 @@
 #ifndef NODE_H
 #define NODE_H
 
-#define MAX_MODS 2
+#define MAX_MODS 4
 
 #include <tuple>
 
@@ -35,11 +35,11 @@ class Node {
 
 public:
   std::size_t data;
-  Node *prev;
-  Node *next;
+  Node *prev_ptr;
+  Node *next_ptr;
 
-  Node *prev_back;
-  Node *next_back;
+  Node *prev_back_ptr;
+  Node *next_back_ptr;
 
     std::size_t n_mods;
 
@@ -54,8 +54,8 @@ public:
   Node *next_at (std::size_t v);
     std::size_t data_at (std::size_t v);
 
-  Node *live_prev ();
-  Node *live_next ();
+  Node *prev ();
+  Node *next ();
     std::size_t live_data ();
 };
 
