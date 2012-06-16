@@ -47,8 +47,7 @@ pair < size_t,
   Node * >DoublyLinkedList::modify_field (Node & node,
                                           field_name_t field_name,
                                           void *value) {
-  Node *
-    new_head = heads.back ().second;
+  Node *new_head = heads.back ().second;
   if (node.n_mods < MAX_MODS) {
     node.mods[node.n_mods++] = make_tuple (version, field_name, value);
   } else {
@@ -109,18 +108,12 @@ Node & DoublyLinkedList::copy_live_node (Node & node) {
   return copy;
 }
 
-const
-  vector <
-  std::pair <
-size_t, Node * >>&
-DoublyLinkedList::get_heads () {
+const vector < std::pair < size_t, Node * >>& DoublyLinkedList::get_heads () {
   return heads;
 }
 
-void
-  DoublyLinkedList::print_at_version (size_t v) {
-  Node *
-    head = heads.front ().second;
+void DoublyLinkedList::print_at_version (size_t v) {
+  Node *head = heads.front ().second;
   for (vector < pair < size_t, Node * >>::size_type i = 0; i < heads.size ();
        ++i) {
     if (heads[i].first <= v) {
@@ -129,8 +122,7 @@ void
       break;
     }
   }
-  Node *
-    n = head;
+  Node *n = head;
   while (n) {
     cout << n->data_at (v) << " ";
     n = n->next_at (v);
@@ -138,16 +130,28 @@ void
   cout << endl;
 }
 
-void
-  DoublyLinkedList::print_dot_graph (std::size_t v) {
+void DoublyLinkedList::print_dot_graph (std::size_t v) {
 //   TODO
 }
 
 
-const Node *
-DoublyLinkedList::head () {
+Node *DoublyLinkedList::head () const {
   return heads.back ().second;
 }
+
+Node *DoublyLinkedList::head_at (std::size_t v) const {
+  Node *head = heads.front ().second;
+  for (vector < pair < size_t, Node * >>::size_type i = 0; i < heads.size ();
+       ++i) {
+    if (heads[i].first <= v) {
+      head = heads[i].second;
+    } else {
+      break;
+    }
+  }
+  return head;
+}
+
 
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;

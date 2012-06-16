@@ -33,8 +33,7 @@ Node::Node () {
 Node::~Node () {
 }
 
-void *
-Node::get_field_at_version (field_name_t field_name, size_t v) {
+void *Node::get_field_at_version (field_name_t field_name, size_t v) {
   size_t max_version_i = 0;
   bool in_mods = false;
   for (size_t i = 0; i < n_mods; ++i) {
@@ -64,13 +63,11 @@ size_t Node::data_at (size_t v) {
   return (size_t) (get_field_at_version (DATA, v));
 }
 
-Node *
-Node::next_at (size_t v) {
+Node *Node::next_at (size_t v) {
   return reinterpret_cast < Node * >(get_field_at_version (NEXT, v));
 }
 
-Node *
-Node::prev_at (size_t v) {
+Node *Node::prev_at (size_t v) {
   return reinterpret_cast < Node * >(get_field_at_version (PREV, v));
 }
 
@@ -79,16 +76,16 @@ size_t Node::live_data () {
                    (DATA, (numeric_limits < size_t >::max ())));
 }
 
-Node *
-Node::next () {
+Node *Node::next () {
   return reinterpret_cast < Node * >(get_field_at_version
-                                (NEXT, (numeric_limits < size_t >::max ())));
+                                     (NEXT,
+                                      (numeric_limits < size_t >::max ())));
 }
 
-Node *
-Node::prev () {
+Node *Node::prev () {
   return reinterpret_cast < Node * >(get_field_at_version
-                                (PREV, (numeric_limits < size_t >::max ())));
+                                     (PREV,
+                                      (numeric_limits < size_t >::max ())));
 }
 
 
