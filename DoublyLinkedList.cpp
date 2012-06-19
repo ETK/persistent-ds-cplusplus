@@ -138,7 +138,11 @@ Node & DoublyLinkedList::modify_field (Node & node,
                                        field_name_t field_name, void *value) {
   Node *new_head = head ();
   if (node.n_mods < MAX_MODS) {
-    node.mods[node.n_mods++] = make_tuple (version, field_name, value);
+    Node::mod_t mod;
+    mod.version = version;
+    mod.field_name = field_name;
+    mod.value = value;
+    node.mods[node.n_mods++] = mod;
   } else {
     Node & n_prime = copy_live_node (node);
     switch (field_name) {

@@ -23,7 +23,7 @@
 
 #define MAX_MODS 4
 
-#include <tuple>
+#include <cstddef>
 
 enum field_name_t {
   DATA,
@@ -34,7 +34,13 @@ enum field_name_t {
 class Node {
 
 public:
-  std::size_t data;
+  struct mod_t {
+    std::size_t version;
+    field_name_t field_name;
+    void *value;
+  };
+
+    std::size_t data;
   Node *prev_ptr;
   Node *next_ptr;
 
@@ -42,8 +48,7 @@ public:
   Node *next_back_ptr;
 
     std::size_t n_mods;
-
-    std::tuple < std::size_t, field_name_t, void *>mods[MAX_MODS];
+  mod_t mods[MAX_MODS];
 
     Node ();
     virtual ~ Node ();

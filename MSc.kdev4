@@ -1,4 +1,4 @@
 [Project]
-Name=MSc
 Manager=KDevCMakeManager
+Name=persistent-ds-cplusplus
 VersionControl=kdevgit

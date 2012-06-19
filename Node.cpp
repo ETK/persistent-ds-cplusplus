@@ -37,8 +37,8 @@ void *Node::get_field_at_version (field_name_t field_name, size_t v) {
   size_t max_version_i = 0;
   bool in_mods = false;
   for (size_t i = 0; i < n_mods; ++i) {
-    if (std::get < 1 > (mods[i]) == field_name) {
-      if (std::get < 0 > (mods[i]) <= v) {
+    if (mods[i].field_name == field_name) {
+      if (mods[i].version <= v) {
         max_version_i = i;
         in_mods = true;
       } else {
@@ -56,7 +56,7 @@ void *Node::get_field_at_version (field_name_t field_name, size_t v) {
       return prev_ptr;
     }
   }
-  return std::get < 2 > (mods[max_version_i]);
+  return mods[max_version_i].value;
 }
 
 size_t Node::data_at (size_t v) {
