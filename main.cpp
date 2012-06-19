@@ -54,9 +54,9 @@ int main (int argc, char **argv) {
   list.remove (*list.head ());  // v34
 
   for (vector < pair < size_t, Node * >>::size_type i = 0;
-       i < list.get_heads ().size (); ++i) {
-    cout << "List at version " << list.get_heads ()[i].first << ": ";
-    list.print_at_version (list.get_heads ()[i].first);
+       i < list.get_versions ().size (); ++i) {
+    cout << "List at version " << list.get_versions ()[i].version << ": ";
+    list.print_at_version (list.get_versions ()[i].version);
   }
 
   return 0;

@@ -28,34 +28,41 @@
 class DoublyLinkedList {
 
 public:
-  std::size_t version;
+  struct version_info_t {
+    size_t version;
+    Node *head;
+    size_t size;
+  };
 
-  DoublyLinkedList ();
-  virtual ~ DoublyLinkedList ();
+    std::size_t version;
 
-  std::pair < std::size_t, Node * >insert (Node & new_node);
-  std::pair < std::size_t, Node * >insert (Node & new_node,
-                                           std::size_t index);
+    DoublyLinkedList ();
+    virtual ~ DoublyLinkedList ();
+
+    std::pair < std::size_t, Node * >insert (Node & new_node);
+    std::pair < std::size_t, Node * >insert (Node & new_node,
+                                             std::size_t index);
 
   /// removes the specified node from the next version
-  std::pair < std::size_t, Node * >remove (Node & to_remove);
+  version_info_t remove (Node & to_remove);
 
-  std::pair < std::size_t, Node * >set_field (Node & node,
-                                              field_name_t
-                                              field_name, void *value);
+    std::pair < std::size_t, Node * >set_field (Node & node,
+                                                field_name_t
+                                                field_name, void *value);
 
-  const std::vector < std::pair < std::size_t, Node * >>&get_heads ();
+  const std::vector < version_info_t > &get_versions ();
 
   Node *head () const;
   Node *head_at (std::size_t v) const;
 
   void print_at_version (std::size_t v);
   void print_dot_graph (std::size_t v);
+
 private:
     Node & modify_field (Node & node, field_name_t field_name, void *value);
     Node & copy_live_node (Node & node);
 
-    std::vector < std::pair < std::size_t, Node * >>heads;
+    std::vector < version_info_t > versions;
 };
 
 #endif // DOUBLYLINKEDLIST_H

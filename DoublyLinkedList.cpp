@@ -22,7 +22,7 @@
 using namespace std;
 
 DoublyLinkedList::DoublyLinkedList () {
-  heads = vector < pair < size_t, Node * >>();
+  versions = vector < version_info_t > ();
   version = 0UL;
 }
 
@@ -32,24 +32,35 @@ DoublyLinkedList::~DoublyLinkedList () {
 
 
 pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node) {
-  ++version;
-  if (heads.size () > 0 && head ()) {
+  version_info_t new_version;
+  new_version.version = ++version;
+  if (versions.size () > 0) {
+    version_info_t current_version = versions.back ();
+    new_version.size = 1 + current_version.size;
+  } else {
+    new_version.size = 1;
+  }
+
+  if (versions.size () > 0 && head ()) {
     new_node.next_ptr = head ();
     new_node.next_ptr->next_back_ptr = &new_node;
-    Node& modified_head = modify_field (*head (), PREV, &new_node);
-    if (&modified_head != head()) {
-      heads.push_back(make_pair(version, &modified_head));
+    Node & modified_head = modify_field (*head (), PREV, &new_node);
+    if (&modified_head != head ()) {
+      versions.back ().head = &modified_head;
     }
     new_node.prev_back_ptr = &modified_head;
   }
-  heads.push_back (make_pair (version, &new_node));
+  new_version.head = &new_node;
+  versions.push_back (new_version);
   return make_pair (version, head ());
 }
 
 pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
                                                  size_t index) {
-  ++version;
-  if (heads.size () > 0 && head ()) {
+  version_info_t new_version;
+  new_version.version = ++version;
+
+  if (versions.size () > 0 && head ()) {
     // skip through list until correct position is found, or insert at end if index + 1 > size
     Node *insert_before = head ();
     for (size_t i = 0; i < index; ++i) {
@@ -74,22 +85,27 @@ pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
       insert_after = &modify_field (*insert_after, NEXT, &new_node);
       new_node.next_back_ptr = insert_after;
     }
+    new_version.size = 1 + versions.back ().size;
     // if effective insertion index was zero, push new head on back of heads vector
     if (insert_before == head ()) {
-      heads.push_back (make_pair (version, &new_node));
+      new_version.head = &new_node;
     } else {
-      heads.push_back (make_pair (version, head ()));
+      new_version.head = head ();
     }
   } else {
     // just set the new head
-    heads.push_back (make_pair (version, &new_node));
+    new_version.head = &new_node;
+    new_version.size = 1;
   }
+  versions.push_back (new_version);
 
   return make_pair (version, head ());
 }
 
-std::pair < std::size_t, Node * >DoublyLinkedList::remove (Node & to_remove) {
-  ++version;
+DoublyLinkedList::version_info_t DoublyLinkedList::remove (Node & to_remove) {
+  version_info_t new_version;
+  new_version.size = versions.back ().size - 1;
+  new_version.version = ++version;
 
   Node *before = to_remove.prev ();
   Node *after = to_remove.next ();
@@ -108,10 +124,13 @@ std::pair < std::size_t, Node * >DoublyLinkedList::remove (Node & to_remove) {
   }
 
   if (!to_remove.prev ()) {
-    heads.push_back (make_pair (version, after));
+    new_version.head = after;
   } else {
-    heads.push_back (make_pair (version, head ()));
+    new_version.head = head ();
   }
+  versions.push_back (new_version);
+
+  return new_version;
 }
 
 
@@ -147,13 +166,17 @@ Node & DoublyLinkedList::modify_field (Node & node,
 pair < size_t, Node * >DoublyLinkedList::set_field (Node & node,
                                                     field_name_t field_name,
                                                     void *value) {
-  ++version;
+  version_info_t new_version;
+  new_version.version = ++version;
+  new_version.size = versions.back ().size;
+
   Node & modified_node = modify_field (node, field_name, value);
   if (!modified_node.prev ()) {
-    heads.push_back (make_pair (version, &modified_node));
+    new_version.head = &modified_node;
   } else {
-    heads.push_back (make_pair (version, head ()));
+    new_version.head = head ();
   }
+  versions.push_back (new_version);
 }
 
 Node & DoublyLinkedList::copy_live_node (Node & node) {
@@ -185,16 +208,17 @@ Node & DoublyLinkedList::copy_live_node (Node & node) {
   return copy;
 }
 
-const vector < std::pair < size_t, Node * >>&DoublyLinkedList::get_heads () {
-  return heads;
+const vector < DoublyLinkedList::version_info_t >
+  &DoublyLinkedList::get_versions () {
+  return versions;
 }
 
 void DoublyLinkedList::print_at_version (size_t v) {
-  Node *head = heads.front ().second;
-  for (vector < pair < size_t, Node * >>::size_type i = 0; i < heads.size ();
-       ++i) {
-    if (heads[i].first <= v) {
-      head = heads[i].second;
+  Node *head = versions.front ().head;
+  for (vector < pair < size_t, Node * >>::size_type i = 0;
+       i < versions.size (); ++i) {
+    if (versions[i].version <= v) {
+      head = versions[i].head;
     } else {
       break;
     }
@@ -213,15 +237,15 @@ void DoublyLinkedList::print_dot_graph (std::size_t v) {
 
 
 Node *DoublyLinkedList::head () const {
-  return heads.back ().second;
+  return versions.back ().head;
 }
 
 Node *DoublyLinkedList::head_at (std::size_t v) const {
-  Node *head = heads.front ().second;
-  for (vector < pair < size_t, Node * >>::size_type i = 0; i < heads.size ();
-       ++i) {
-    if (heads[i].first <= v) {
-      head = heads[i].second;
+  Node *head = versions.front ().head;
+  for (vector < pair < size_t, Node * >>::size_type i = 0;
+       i < versions.size (); ++i) {
+    if (versions[i].version <= v) {
+      head = versions[i].head;
     } else {
       break;
     }
