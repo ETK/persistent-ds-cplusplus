@@ -23,7 +23,7 @@ using namespace std;
 
 DoublyLinkedList::DoublyLinkedList () {
   heads = vector < pair < size_t, Node * >>();
-  version = numeric_limits < size_t >::min ();
+  version = 0UL;
 }
 
 
@@ -41,6 +41,48 @@ pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node) {
   }
   heads.push_back (make_pair (version, &new_node));
   return make_pair (version, heads.back ().second);
+}
+
+pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
+                                                 size_t index) {
+  ++version;
+  if (heads.size () > 0 && head ()) {
+    // skip through list until correct position is found, or insert at end if index + 1 > size
+    Node *insert_before = heads.back ().second;
+    for (size_t i = 0; i < index; ++i) {
+      if (insert_before->next () != nullptr) {
+        insert_before = insert_before->next ();
+      } else {
+        break;
+      }
+    }
+    Node *insert_after = insert_before->prev ();
+
+    // set pointers between new_node and to-be next
+    new_node.next_ptr = insert_before;
+    new_node.next_ptr->next_back_ptr = &new_node;
+    modify_field (*insert_before, PREV, &new_node);
+    new_node.prev_back_ptr = insert_before;
+
+    if (insert_after != nullptr) {
+      // set pointers between new_node and to-be prev
+      new_node.prev_ptr = insert_after;
+      new_node.prev_ptr->prev_back_ptr = &new_node;
+      modify_field (*insert_after, NEXT, &new_node);
+      new_node.next_back_ptr = insert_after;
+    }
+    // if effective insertion index was zero, push new head on back of heads vector
+    if (insert_before == head ()) {
+      heads.push_back (make_pair (version, &new_node));
+    } else {
+      heads.push_back (make_pair (version, head()));
+    }
+  } else {
+    // just set the new head
+    heads.push_back (make_pair (version, &new_node));
+  }
+
+  return make_pair (version, head ());
 }
 
 pair < size_t,
@@ -108,7 +150,7 @@ Node & DoublyLinkedList::copy_live_node (Node & node) {
   return copy;
 }
 
-const vector < std::pair < size_t, Node * >>& DoublyLinkedList::get_heads () {
+const vector < std::pair < size_t, Node * >>&DoublyLinkedList::get_heads () {
   return heads;
 }
 

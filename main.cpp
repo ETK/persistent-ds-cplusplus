@@ -19,34 +19,34 @@ int main (int argc, char **argv) {
   list.insert (a);              // v3
 
   list.set_field (*(list.head ()->next ()), DATA, (void *) (20ul));     // v4
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (21ul));     // v4
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (22ul));     // v4
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (23ul));     // v4
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (24ul));     // v4
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (200ul));    // v5
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (21ul));     // v5
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (22ul));     // v6
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (23ul));     // v7
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (24ul));     // v8
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (200ul));    // v9
 
-  list.insert (d);              // v6
+  list.insert (d, 1);           // v10
 
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (10ul));     // v7
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (11ul));     // v7
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (12ul));     // v7
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (13ul));     // v7
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (14ul));     // v7
-  list.set_field (*(list.head ()), DATA, (void *) (40ul));      // v7
-  list.set_field (*(list.head ()), DATA, (void *) (41ul));      // v7
-  list.set_field (*(list.head ()), DATA, (void *) (42ul));      // v7
-  list.set_field (*(list.head ()), DATA, (void *) (43ul));      // v7
-  list.set_field (*(list.head ()), DATA, (void *) (44ul));      // v7
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2000ul));  // v8
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2001ul));  // v8
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2002ul));  // v8
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2003ul));  // v8
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2004ul));  // v8
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (30ul));   // v9
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (31ul));   // v9
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (32ul));   // v9
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (33ul));   // v9
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (34ul));   // v9
+  list.set_field (*(list.head ()), DATA, (void *) (10ul));      // v11
+  list.set_field (*(list.head ()), DATA, (void *) (11ul));      // v12
+  list.set_field (*(list.head ()), DATA, (void *) (12ul));      // v13
+  list.set_field (*(list.head ()), DATA, (void *) (13ul));      // v14
+  list.set_field (*(list.head ()), DATA, (void *) (14ul));      // v15
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (40ul));     // v16
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (41ul));     // v17
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (42ul));     // v18
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (43ul));     // v19
+  list.set_field (*(list.head ()->next ()), DATA, (void *) (44ul));     // v20
+  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2000ul));  // v21
+  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2001ul));  // v22
+  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2002ul));  // v23
+  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2003ul));  // v24
+  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2004ul));  // v25
+  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (30ul));   // v26
+  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (31ul));   // v27
+  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (32ul));   // v28
+  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (33ul));   // v29
+  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (34ul));   // v30
 
   for (vector < pair < size_t, Node * >>::size_type i = 0;
        i < list.get_heads ().size (); ++i) {

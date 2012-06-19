@@ -34,11 +34,13 @@ public:
   virtual ~ DoublyLinkedList ();
 
   std::pair < std::size_t, Node * >insert (Node & new_node);
+  std::pair < std::size_t, Node * >insert (Node & new_node, std::size_t index);
   std::pair < std::size_t, Node * >set_field (Node & node,
                                               field_name_t
                                               field_name, void *value);
 
   const std::vector < std::pair < std::size_t, Node * >>&get_heads ();
+  
   Node *head () const;
   Node *head_at (std::size_t v) const;
 
