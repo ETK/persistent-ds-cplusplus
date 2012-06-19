@@ -34,21 +34,25 @@ public:
   virtual ~ DoublyLinkedList ();
 
   std::pair < std::size_t, Node * >insert (Node & new_node);
-  std::pair < std::size_t, Node * >insert (Node & new_node, std::size_t index);
+  std::pair < std::size_t, Node * >insert (Node & new_node,
+                                           std::size_t index);
+
+  /// removes the specified node from the next version
+  std::pair < std::size_t, Node * >remove (Node & to_remove);
+
   std::pair < std::size_t, Node * >set_field (Node & node,
                                               field_name_t
                                               field_name, void *value);
 
   const std::vector < std::pair < std::size_t, Node * >>&get_heads ();
-  
+
   Node *head () const;
   Node *head_at (std::size_t v) const;
 
   void print_at_version (std::size_t v);
   void print_dot_graph (std::size_t v);
 private:
-    std::pair < std::size_t, Node * >modify_field (Node &, field_name_t,
-                                                   void *);
+    Node & modify_field (Node & node, field_name_t field_name, void *value);
     Node & copy_live_node (Node & node);
 
     std::vector < std::pair < std::size_t, Node * >>heads;

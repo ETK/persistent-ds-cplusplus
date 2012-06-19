@@ -48,6 +48,11 @@ int main (int argc, char **argv) {
   list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (33ul));   // v29
   list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (34ul));   // v30
 
+  list.remove (*list.head ());  // v31
+  list.remove (*list.head ());  // v32
+  list.remove (*list.head ());  // v33
+  list.remove (*list.head ());  // v34
+
   for (vector < pair < size_t, Node * >>::size_type i = 0;
        i < list.get_heads ().size (); ++i) {
     cout << "List at version " << list.get_heads ()[i].first << ": ";

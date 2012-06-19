@@ -33,14 +33,14 @@ DoublyLinkedList::~DoublyLinkedList () {
 
 pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node) {
   ++version;
-  if (heads.size () > 0 && heads.back ().second) {
-    new_node.next_ptr = heads.back ().second;
+  if (heads.size () > 0 && head ()) {
+    new_node.next_ptr = head ();
     new_node.next_ptr->next_back_ptr = &new_node;
-    modify_field (*heads.back ().second, PREV, &new_node);
-    new_node.prev_back_ptr = heads.back ().second;
+    modify_field (*head (), PREV, &new_node);
+    new_node.prev_back_ptr = head ();
   }
   heads.push_back (make_pair (version, &new_node));
-  return make_pair (version, heads.back ().second);
+  return make_pair (version, head ());
 }
 
 pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
@@ -48,7 +48,7 @@ pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
   ++version;
   if (heads.size () > 0 && head ()) {
     // skip through list until correct position is found, or insert at end if index + 1 > size
-    Node *insert_before = heads.back ().second;
+    Node *insert_before = head ();
     for (size_t i = 0; i < index; ++i) {
       if (insert_before->next () != nullptr) {
         insert_before = insert_before->next ();
@@ -61,21 +61,21 @@ pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
     // set pointers between new_node and to-be next
     new_node.next_ptr = insert_before;
     new_node.next_ptr->next_back_ptr = &new_node;
-    modify_field (*insert_before, PREV, &new_node);
+    insert_before = &modify_field (*insert_before, PREV, &new_node);
     new_node.prev_back_ptr = insert_before;
 
     if (insert_after != nullptr) {
       // set pointers between new_node and to-be prev
       new_node.prev_ptr = insert_after;
       new_node.prev_ptr->prev_back_ptr = &new_node;
-      modify_field (*insert_after, NEXT, &new_node);
+      insert_after = &modify_field (*insert_after, NEXT, &new_node);
       new_node.next_back_ptr = insert_after;
     }
     // if effective insertion index was zero, push new head on back of heads vector
     if (insert_before == head ()) {
       heads.push_back (make_pair (version, &new_node));
     } else {
-      heads.push_back (make_pair (version, head()));
+      heads.push_back (make_pair (version, head ()));
     }
   } else {
     // just set the new head
@@ -85,11 +85,36 @@ pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
   return make_pair (version, head ());
 }
 
-pair < size_t,
-  Node * >DoublyLinkedList::modify_field (Node & node,
-                                          field_name_t field_name,
-                                          void *value) {
-  Node *new_head = heads.back ().second;
+std::pair < std::size_t, Node * >DoublyLinkedList::remove (Node & to_remove) {
+  ++version;
+
+  Node *before = to_remove.prev ();
+  Node *after = to_remove.next ();
+
+  if (before) {
+    before = &modify_field (*before, NEXT, after);
+    if (after) {
+      after->next_back_ptr = before;
+    }
+  }
+  if (after) {
+    after = &modify_field (*after, PREV, before);
+    if (before) {
+      before->prev_back_ptr = after;
+    }
+  }
+
+  if (!to_remove.prev ()) {
+    heads.push_back (make_pair (version, after));
+  } else {
+    heads.push_back (make_pair (version, head ()));
+  }
+}
+
+
+Node & DoublyLinkedList::modify_field (Node & node,
+                                       field_name_t field_name, void *value) {
+  Node *new_head = head ();
   if (node.n_mods < MAX_MODS) {
     node.mods[node.n_mods++] = make_tuple (version, field_name, value);
   } else {
@@ -100,25 +125,32 @@ pair < size_t,
       break;
     case NEXT:
       n_prime.next_ptr = reinterpret_cast < Node * >(value);
-      n_prime.next_ptr->next_back_ptr = &n_prime;
+      if (n_prime.next_ptr) {
+        n_prime.next_ptr->next_back_ptr = &n_prime;
+      }
       break;
     case PREV:
       n_prime.prev_ptr = reinterpret_cast < Node * >(value);
-      n_prime.prev_ptr->prev_back_ptr = &n_prime;
+      if (n_prime.prev_ptr) {
+        n_prime.prev_ptr->prev_back_ptr = &n_prime;
+      }
       break;
     }
-    if (heads.back ().second == &node) {
-      new_head = &n_prime;
-    }
+    return n_prime;
   }
-  return make_pair (version, new_head);
+  return node;
 }
 
 pair < size_t, Node * >DoublyLinkedList::set_field (Node & node,
                                                     field_name_t field_name,
                                                     void *value) {
   ++version;
-  heads.push_back (modify_field (node, field_name, value));
+  Node & modified_node = modify_field (node, field_name, value);
+  if (!modified_node.prev ()) {
+    heads.push_back (make_pair (version, &modified_node));
+  } else {
+    heads.push_back (make_pair (version, head ()));
+  }
 }
 
 Node & DoublyLinkedList::copy_live_node (Node & node) {
