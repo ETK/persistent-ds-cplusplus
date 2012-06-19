@@ -36,8 +36,11 @@ pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node) {
   if (heads.size () > 0 && head ()) {
     new_node.next_ptr = head ();
     new_node.next_ptr->next_back_ptr = &new_node;
-    modify_field (*head (), PREV, &new_node);
-    new_node.prev_back_ptr = head ();
+    Node& modified_head = modify_field (*head (), PREV, &new_node);
+    if (&modified_head != head()) {
+      heads.push_back(make_pair(version, &modified_head));
+    }
+    new_node.prev_back_ptr = &modified_head;
   }
   heads.push_back (make_pair (version, &new_node));
   return make_pair (version, head ());
