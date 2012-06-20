@@ -55,7 +55,7 @@ int main (int argc, char **argv) {
 
   for (vector < pair < size_t, Node * >>::size_type i = 0;
        i < list.get_versions ().size (); ++i) {
-    cout << "List at version " << list.get_versions ()[i].version << ": ";
+    cout << "List at version " << list.get_versions ()[i].version << " (size " << list.get_versions()[i].size << "): ";
     list.print_at_version (list.get_versions ()[i].version);
   }
 
