@@ -3,14 +3,15 @@
 #include <ctime>
 #include <cstdlib>
 
-#include "DoublyLinkedList.h"
+#include "ephemeral/DoublyLinkedList.h"
+#include "partiallypersistent/DoublyLinkedList.h"
 
-#define PROFILE_TIME 1
+#define PROFILE_TIME
 
 using namespace std;
 
-void test_abcd (DoublyLinkedList & list) {
-  Node d, c, b, a;
+void test_abcd (partiallypersistent::DoublyLinkedList & list) {
+  partiallypersistent::Node d, c, b, a;
 
   d.data_val = 4;
   c.data_val = 3;
@@ -57,64 +58,101 @@ void test_abcd (DoublyLinkedList & list) {
   list.remove (*list.head ());  // v34
 }
 
-void print_all_versions (DoublyLinkedList & list) {
-  for (vector < pair < size_t, Node * > >::size_type i = 0;
-       i < list.get_versions ().size (); ++i) {
-    cout << "List at version " << list.get_versions ()[i].version
-      << " (size " << list.get_versions ()[i].size << "): ";
+void print_all_versions (partiallypersistent::DoublyLinkedList & list) {
+  for (vector < pair < size_t, partiallypersistent::Node * > >::size_type i =
+       0; i < list.get_versions ().size (); ++i) {
+    cout << "List at version " << list.
+      get_versions ()[i].version << " (size " << list.get_versions ()[i].
+      size << "): ";
     list.print_at_version (list.get_versions ()[i].version);
   }
 }
 
-void test_insert_modify_remove (size_t count) {
-#if PROFILE_TIME
+void test_insert_modify_remove_partiallypersistent (size_t count) {
+#ifdef PROFILE_TIME
   clock_t begin = clock ();
 #endif
 
-  DoublyLinkedList list;
+  partiallypersistent::DoublyLinkedList list;
 
   for (size_t i = 0; i < count; ++i) {
-    Node n;
-    list.insert (n, list.get_versions().size() > 0 ? rand() * list.get_versions().back().size / RAND_MAX : 0);
+    partiallypersistent::Node n;
+    list.insert (n,
+                 list.get_versions ().size () >
+                 0 ? rand () * list.get_versions ().back ().size /
+                 RAND_MAX : 0);
   }
   for (size_t i = 0; i < count; ++i) {
-    size_t index = rand() * list.get_versions().back().size / RAND_MAX;
-    Node* node = list.head();
+    size_t index = rand () * list.get_versions ().back ().size / RAND_MAX;
+    partiallypersistent::Node * node = list.head ();
     for (size_t j = 0; j < index; ++j) {
-      node = node->next();
+      node = node->next ();
     }
-    list.set_field (*node, DATA, (void*) i);
+    list.set_field (*node, DATA, (void *) i);
   }
   for (size_t i = 0; i < count; ++i) {
-    size_t index = rand() * list.get_versions().back().size / RAND_MAX;
-    Node* node = list.head();
+    size_t index = rand () * list.get_versions ().back ().size / RAND_MAX;
+    partiallypersistent::Node * node = list.head ();
     for (size_t j = 0; j < index; ++j) {
-      node = node->next();
+      node = node->next ();
     }
     list.remove (*node);
   }
 
-#if PROFILE_TIME
+#ifdef PROFILE_TIME
   clock_t end = clock ();
 
-  cout << "Time elapsed for " << count << " insertions and deletions: " <<
+  cout << "Partially persistent: " << count << " insertions and deletions: " <<
     ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
 #endif
 }
 
-int main (int argc, char **argv) {
-//   test_insert_remove (1);
-//   test_insert_remove (10);
-//   test_insert_remove (100);
-//   test_insert_remove (1000);
-  if (argc == 2) {
-    test_insert_modify_remove (atoi(argv[1]));
-  } else {
-    test_insert_modify_remove (10000);
+void test_insert_modify_remove_ephemeral (size_t count) {
+#ifdef PROFILE_TIME
+  clock_t begin = clock ();
+#endif
+
+  ephemeral::DoublyLinkedList list;
+
+  for (size_t i = 0; i < count; ++i) {
+    ephemeral::Node n;
+    list.insert (n, list.size > 0 ? rand () * list.size / RAND_MAX : 0);
   }
-//   test_insert_remove (100000);
-//   test_insert_remove (1000000);
-//   test_insert_remove (4000000);
+  for (size_t i = 0; i < count; ++i) {
+    size_t index = rand () * list.size / RAND_MAX;
+    ephemeral::Node * node = list.head;
+    for (size_t j = 0; j < index; ++j) {
+      node = node->next;
+    }
+    node->data = i;
+  }
+  for (size_t i = 0; i < count; ++i) {
+    size_t index = rand () * list.size / RAND_MAX;
+    ephemeral::Node * node = list.head;
+    for (size_t j = 0; j < index; ++j) {
+      node = node->next;
+    }
+    list.remove (*node);
+  }
+
+#ifdef PROFILE_TIME
+  clock_t end = clock ();
+
+  cout << "Ephemeral: " << count << " insertions and deletions: " <<
+    ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
+#endif
+
+}
+
+int main (int argc, char **argv) {
+
+  int count = 100000;
+  if (argc == 2) {
+    count = atoi (argv[1]);
+  }
+
+  test_insert_modify_remove_partiallypersistent (count);
+  test_insert_modify_remove_ephemeral (count);
 
   return 0;
 }

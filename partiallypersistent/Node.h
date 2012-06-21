@@ -35,40 +35,43 @@ enum field_name_t {
 
 static std::size_t max = std::numeric_limits < std::size_t >::max ();
 
-#pragma pack(push, 1)
-class Node {
+namespace partiallypersistent {
 
-public:
-  struct mod_t {
-    std::size_t version;
-    field_name_t field_name;
-    void *value;
-  };
+#pragma pack(push, 1)
+  class Node {
+
+  public:
+    struct mod_t {
+      std::size_t version;
+      field_name_t field_name;
+      void *value;
+    };
 
     std::size_t data_val;
-  Node *prev_ptr;
-  Node *next_ptr;
+    Node *prev_ptr;
+    Node *next_ptr;
 
-  Node *prev_back_ptr;
-  Node *next_back_ptr;
+    Node *prev_back_ptr;
+    Node *next_back_ptr;
 
     unsigned char n_mods;
-  mod_t mods[MAX_MODS];
+    mod_t mods[MAX_MODS];
 
     Node ();
-   ~Node ();
+    ~Node ();
 
-  void *get_field_at_version (field_name_t field_name, std::size_t v);
+    void *get_field_at_version (field_name_t field_name, std::size_t v);
 
-  Node *prev_at (std::size_t v);
-  Node *next_at (std::size_t v);
+    Node *prev_at (std::size_t v);
+    Node *next_at (std::size_t v);
     std::size_t data_at (std::size_t v);
 
-  Node *prev ();
-  Node *next ();
+    Node *prev ();
+    Node *next ();
     std::size_t data ();
-};
+  };
 #pragma pack(pop)
 
-#endif // NODE_H
+}
+#endif                          // NODE_H
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
