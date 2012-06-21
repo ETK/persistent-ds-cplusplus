@@ -23,14 +23,19 @@
 
 #define MAX_MODS 4
 
-#include <cstddef>
+#include <limits>
 
+#pragma pack(push, 1)
 enum field_name_t {
   DATA,
   PREV,
   NEXT
 };
+#pragma pack(pop)
 
+static std::size_t max = std::numeric_limits < std::size_t >::max ();
+
+#pragma pack(push, 1)
 class Node {
 
 public:
@@ -40,18 +45,18 @@ public:
     void *value;
   };
 
-    std::size_t data;
+    std::size_t data_val;
   Node *prev_ptr;
   Node *next_ptr;
 
   Node *prev_back_ptr;
   Node *next_back_ptr;
 
-    std::size_t n_mods;
+    unsigned char n_mods;
   mod_t mods[MAX_MODS];
 
     Node ();
-    virtual ~ Node ();
+   ~Node ();
 
   void *get_field_at_version (field_name_t field_name, std::size_t v);
 
@@ -61,8 +66,9 @@ public:
 
   Node *prev ();
   Node *next ();
-    std::size_t live_data ();
+    std::size_t data ();
 };
+#pragma pack(pop)
 
 #endif // NODE_H
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;

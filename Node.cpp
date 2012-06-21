@@ -16,7 +16,6 @@
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <limits>
 
 #include "Node.h"
 
@@ -34,9 +33,9 @@ Node::~Node () {
 }
 
 void *Node::get_field_at_version (field_name_t field_name, size_t v) {
-  size_t max_version_i = 0;
+  unsigned char max_version_i = 0;
   bool in_mods = false;
-  for (size_t i = 0; i < n_mods; ++i) {
+  for (unsigned char i = 0; i < n_mods; ++i) {
     if (mods[i].field_name == field_name) {
       if (mods[i].version <= v) {
         max_version_i = i;
@@ -49,7 +48,7 @@ void *Node::get_field_at_version (field_name_t field_name, size_t v) {
   if (!in_mods) {
     switch (field_name) {
     case DATA:
-      return (void *) data;
+      return (void *) data_val;
     case NEXT:
       return next_ptr;
     case PREV:
@@ -71,21 +70,16 @@ Node *Node::prev_at (size_t v) {
   return reinterpret_cast < Node * >(get_field_at_version (PREV, v));
 }
 
-size_t Node::live_data () {
-  return (size_t) (get_field_at_version
-                   (DATA, (numeric_limits < size_t >::max ())));
+size_t Node::data () {
+  return (size_t) (get_field_at_version (DATA, max));
 }
 
 Node *Node::next () {
-  return reinterpret_cast < Node * >(get_field_at_version
-                                     (NEXT,
-                                      (numeric_limits < size_t >::max ())));
+  return reinterpret_cast < Node * >(get_field_at_version (NEXT, max));
 }
 
 Node *Node::prev () {
-  return reinterpret_cast < Node * >(get_field_at_version
-                                     (PREV,
-                                      (numeric_limits < size_t >::max ())));
+  return reinterpret_cast < Node * >(get_field_at_version (PREV, max));
 }
 
 

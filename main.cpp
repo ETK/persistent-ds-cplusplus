@@ -1,18 +1,21 @@
 #include <iostream>
 #include <vector>
+#include <ctime>
+#include <cstdlib>
+
 #include "DoublyLinkedList.h"
+
+#define PROFILE_TIME 1
 
 using namespace std;
 
-int main (int argc, char **argv) {
-
-  DoublyLinkedList list;
+void test_abcd (DoublyLinkedList & list) {
   Node d, c, b, a;
 
-  d.data = 4;
-  c.data = 3;
-  b.data = 2;
-  a.data = 1;
+  d.data_val = 4;
+  c.data_val = 3;
+  b.data_val = 2;
+  a.data_val = 1;
 
   list.insert (c);              // v1
   list.insert (b);              // v2
@@ -52,12 +55,66 @@ int main (int argc, char **argv) {
   list.remove (*list.head ());  // v32
   list.remove (*list.head ());  // v33
   list.remove (*list.head ());  // v34
+}
 
-  for (vector < pair < size_t, Node * >>::size_type i = 0;
+void print_all_versions (DoublyLinkedList & list) {
+  for (vector < pair < size_t, Node * > >::size_type i = 0;
        i < list.get_versions ().size (); ++i) {
-    cout << "List at version " << list.get_versions ()[i].version << " (size " << list.get_versions()[i].size << "): ";
+    cout << "List at version " << list.get_versions ()[i].version
+      << " (size " << list.get_versions ()[i].size << "): ";
     list.print_at_version (list.get_versions ()[i].version);
   }
+}
+
+void test_insert_modify_remove (size_t count) {
+#if PROFILE_TIME
+  clock_t begin = clock ();
+#endif
+
+  DoublyLinkedList list;
+
+  for (size_t i = 0; i < count; ++i) {
+    Node n;
+    list.insert (n, list.get_versions().size() > 0 ? rand() * list.get_versions().back().size / RAND_MAX : 0);
+  }
+  for (size_t i = 0; i < count; ++i) {
+    size_t index = rand() * list.get_versions().back().size / RAND_MAX;
+    Node* node = list.head();
+    for (size_t j = 0; j < index; ++j) {
+      node = node->next();
+    }
+    list.set_field (*node, DATA, (void*) i);
+  }
+  for (size_t i = 0; i < count; ++i) {
+    size_t index = rand() * list.get_versions().back().size / RAND_MAX;
+    Node* node = list.head();
+    for (size_t j = 0; j < index; ++j) {
+      node = node->next();
+    }
+    list.remove (*node);
+  }
+
+#if PROFILE_TIME
+  clock_t end = clock ();
+
+  cout << "Time elapsed for " << count << " insertions and deletions: " <<
+    ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
+#endif
+}
+
+int main (int argc, char **argv) {
+//   test_insert_remove (1);
+//   test_insert_remove (10);
+//   test_insert_remove (100);
+//   test_insert_remove (1000);
+  if (argc == 2) {
+    test_insert_modify_remove (atoi(argv[1]));
+  } else {
+    test_insert_modify_remove (10000);
+  }
+//   test_insert_remove (100000);
+//   test_insert_remove (1000000);
+//   test_insert_remove (4000000);
 
   return 0;
 }

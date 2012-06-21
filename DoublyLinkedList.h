@@ -37,7 +37,7 @@ public:
     std::size_t version;
 
     DoublyLinkedList ();
-    virtual ~ DoublyLinkedList ();
+    ~DoublyLinkedList ();
 
     std::pair < std::size_t, Node * >insert (Node & new_node);
     std::pair < std::size_t, Node * >insert (Node & new_node,
@@ -67,3 +67,4 @@ private:
 
 #endif // DOUBLYLINKEDLIST_H
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+

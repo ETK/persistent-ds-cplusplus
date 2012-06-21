@@ -64,7 +64,7 @@ pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
     // skip through list until correct position is found, or insert at end if index + 1 > size
     Node *insert_before = head ();
     for (size_t i = 0; i < index; ++i) {
-      if (insert_before->next () != nullptr) {
+      if (insert_before->next ()) {
         insert_before = insert_before->next ();
       } else {
         break;
@@ -78,7 +78,7 @@ pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
     insert_before = &modify_field (*insert_before, PREV, &new_node);
     new_node.prev_back_ptr = insert_before;
 
-    if (insert_after != nullptr) {
+    if (insert_after) {
       // set pointers between new_node and to-be prev
       new_node.prev_ptr = insert_after;
       new_node.prev_ptr->prev_back_ptr = &new_node;
@@ -89,15 +89,16 @@ pair < size_t, Node * >DoublyLinkedList::insert (Node & new_node,
     // if effective insertion index was zero, push new head on back of heads vector
     if (insert_before == head ()) {
       new_version.head = &new_node;
-    } else {
-      new_version.head = head ();
+      versions.push_back (new_version);
+//     } else {
+//       new_version.head = head ();
     }
   } else {
     // just set the new head
     new_version.head = &new_node;
     new_version.size = 1;
+    versions.push_back (new_version);
   }
-  versions.push_back (new_version);
 
   return make_pair (version, head ());
 }
@@ -124,11 +125,12 @@ DoublyLinkedList::version_info_t DoublyLinkedList::remove (Node & to_remove) {
   }
 
   if (!to_remove.prev ()) {
+    // to_remove has no previous node, so it must be head
     new_version.head = after;
-  } else {
-    new_version.head = head ();
+    versions.push_back (new_version);
+//   } else {
+//     new_version.head = head ();
   }
-  versions.push_back (new_version);
 
   return new_version;
 }
@@ -136,7 +138,6 @@ DoublyLinkedList::version_info_t DoublyLinkedList::remove (Node & to_remove) {
 
 Node & DoublyLinkedList::modify_field (Node & node,
                                        field_name_t field_name, void *value) {
-  Node *new_head = head ();
   if (node.n_mods < MAX_MODS) {
     Node::mod_t mod;
     mod.version = version;
@@ -147,7 +148,7 @@ Node & DoublyLinkedList::modify_field (Node & node,
     Node & n_prime = copy_live_node (node);
     switch (field_name) {
     case DATA:
-      n_prime.data = (size_t) value;
+      n_prime.data_val = (size_t) value;
       break;
     case NEXT:
       n_prime.next_ptr = reinterpret_cast < Node * >(value);
@@ -177,16 +178,16 @@ pair < size_t, Node * >DoublyLinkedList::set_field (Node & node,
   Node & modified_node = modify_field (node, field_name, value);
   if (!modified_node.prev ()) {
     new_version.head = &modified_node;
-  } else {
-    new_version.head = head ();
+    versions.push_back (new_version);
+//   } else {
+//     new_version.head = head ();
   }
-  versions.push_back (new_version);
 }
 
 Node & DoublyLinkedList::copy_live_node (Node & node) {
   // copy latest version of each field (data and forward pointers) to the static field section.
   Node & copy = *(new Node ());
-  copy.data = node.live_data ();
+  copy.data_val = node.data ();
   copy.prev_ptr = node.prev ();
   copy.next_ptr = node.next ();
 
@@ -219,7 +220,7 @@ const vector < DoublyLinkedList::version_info_t >
 
 void DoublyLinkedList::print_at_version (size_t v) {
   Node *head = versions.front ().head;
-  for (vector < pair < size_t, Node * >>::size_type i = 0;
+  for (vector < pair < size_t, Node * > >::size_type i = 0;
        i < versions.size (); ++i) {
     if (versions[i].version <= v) {
       head = versions[i].head;
@@ -246,7 +247,7 @@ Node *DoublyLinkedList::head () const {
 
 Node *DoublyLinkedList::head_at (std::size_t v) const {
   Node *head = versions.front ().head;
-  for (vector < pair < size_t, Node * >>::size_type i = 0;
+  for (vector < pair < size_t, Node * > >::size_type i = 0;
        i < versions.size (); ++i) {
     if (versions[i].version <= v) {
       head = versions[i].head;
@@ -260,3 +261,4 @@ Node *DoublyLinkedList::head_at (std::size_t v) const {
 
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+
