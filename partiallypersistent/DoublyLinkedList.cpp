@@ -18,6 +18,7 @@
 
 #include "DoublyLinkedList.h"
 #include <limits>
+#include <iostream>
 
 using namespace std;
 
@@ -231,11 +232,6 @@ namespace partiallypersistent {
     }
     cout << endl;
   }
-
-  void DoublyLinkedList::print_dot_graph (std::size_t v) {
-//   TODO
-  }
-
 
   Node *DoublyLinkedList::head () const {
     return versions.back ().head;

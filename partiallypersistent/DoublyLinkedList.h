@@ -21,9 +21,10 @@
 #define PARTIALLYPERSISTENT_DOUBLYLINKEDLIST_H
 #include "Node.h"
 
-#include <iostream>
 #include <utility>
 #include <vector>
+#include <cstdlib>
+
 namespace partiallypersistent {
 
   class DoublyLinkedList {
@@ -56,7 +57,6 @@ namespace partiallypersistent {
     Node *head_at (std::size_t v) const;
 
     void print_at_version (std::size_t v);
-    void print_dot_graph (std::size_t v);
 
   private:
       Node & modify_field (Node & node, field_name_t field_name, void *value);
