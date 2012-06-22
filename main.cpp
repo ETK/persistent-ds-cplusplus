@@ -3,6 +3,11 @@
 #include <ctime>
 #include <cstdlib>
 
+#include <unistd.h>
+#include <ios>
+#include <fstream>
+#include <string>
+
 #include "ephemeral/DoublyLinkedList.h"
 #include "partiallypersistent/DoublyLinkedList.h"
 
@@ -10,52 +15,37 @@
 
 using namespace std;
 
-void test_abcd (partiallypersistent::DoublyLinkedList & list) {
-  partiallypersistent::Node d, c, b, a;
+void process_mem_usage (double &vm_usage, double &resident_set) {
+  using std::ios_base;
+  using std::ifstream;
+  using std::string;
 
-  d.data_val = 4;
-  c.data_val = 3;
-  b.data_val = 2;
-  a.data_val = 1;
+  vm_usage = 0.0;
+  resident_set = 0.0;
 
-  list.insert (c);              // v1
-  list.insert (b);              // v2
-  list.insert (a);              // v3
+  // 'file' stat seems to give the most reliable results
+  //
+  ifstream stat_stream ("/proc/self/stat", ios_base::in);
 
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (20ul));     // v4
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (21ul));     // v5
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (22ul));     // v6
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (23ul));     // v7
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (24ul));     // v8
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (200ul));    // v9
+  // dummy vars for leading entries in stat that we don't care about
+  //
+  string pid, comm, state, ppid, pgrp, session, tty_nr;
+  string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+  string utime, stime, cutime, cstime, priority, nice;
+  string O, itrealvalue, starttime;
 
-  list.insert (d, 1);           // v10
+  // the two fields we want
+  //
+  unsigned long vsize;
+  long rss;
 
-  list.set_field (*(list.head ()), DATA, (void *) (10ul));      // v11
-  list.set_field (*(list.head ()), DATA, (void *) (11ul));      // v12
-  list.set_field (*(list.head ()), DATA, (void *) (12ul));      // v13
-  list.set_field (*(list.head ()), DATA, (void *) (13ul));      // v14
-  list.set_field (*(list.head ()), DATA, (void *) (14ul));      // v15
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (40ul));     // v16
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (41ul));     // v17
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (42ul));     // v18
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (43ul));     // v19
-  list.set_field (*(list.head ()->next ()), DATA, (void *) (44ul));     // v20
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2000ul));  // v21
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2001ul));  // v22
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2002ul));  // v23
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2003ul));  // v24
-  list.set_field (*(list.head ()->next ()->next ()), DATA, (void *) (2004ul));  // v25
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (30ul));   // v26
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (31ul));   // v27
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (32ul));   // v28
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (33ul));   // v29
-  list.set_field (*(list.head ()->next ()->next ()->next ()), DATA, (void *) (34ul));   // v30
+  stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt >> utime >> stime >> cutime >> cstime >> priority >> nice >> O >> itrealvalue >> starttime >> vsize >> rss;      // don't care about the rest
 
-  list.remove (*list.head ());  // v31
-  list.remove (*list.head ());  // v32
-  list.remove (*list.head ());  // v33
-  list.remove (*list.head ());  // v34
+  stat_stream.close ();
+
+  long page_size_kb = sysconf (_SC_PAGE_SIZE) / 1024;   // in case x86-64 is configured to use 2MB pages
+  vm_usage = vsize / 1024.0;
+  resident_set = rss * page_size_kb;
 }
 
 void print_all_versions (partiallypersistent::DoublyLinkedList & list) {
@@ -102,8 +92,11 @@ void test_insert_modify_remove_partiallypersistent (size_t count) {
 #ifdef PROFILE_TIME
   clock_t end = clock ();
 
-  cout << "Partially persistent: " << count << " insertions and deletions: " <<
-    ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
+  cout << "Partially persistent: " << count << " insertions and deletions: "
+    << ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
+  double vm, rss;
+  process_mem_usage (vm, rss);
+  cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
 #endif
 }
 
@@ -140,13 +133,16 @@ void test_insert_modify_remove_ephemeral (size_t count) {
 
   cout << "Ephemeral: " << count << " insertions and deletions: " <<
     ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
+  double vm, rss;
+  process_mem_usage (vm, rss);
+  cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
 #endif
 
 }
 
 int main (int argc, char **argv) {
 
-  int count = 100000;
+  int count = 10000;
   if (argc == 2) {
     count = atoi (argv[1]);
   }
