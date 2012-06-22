@@ -15,15 +15,22 @@ ProjectRootRelative=./
 Launch Configurations=Launch Configuration 1,Launch Configuration 0
 
 [Launch][Launch Configuration 0]
-Configured Launch Modes=execute,debug
-Configured Launchers=nativeAppLauncher,gdb
-Name=msc
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=test_rollback_naive
 Type=Native Application
 
 [Launch][Launch Configuration 0][Data]
-Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x02\x00\x00\x00.\x00p\x00e\x00r\x00s\x00i\x00s\x00t\x00e\x00n\x00t\x00-\x00d\x00s\x00-\x00c\x00p\x00l\x00u\x00s\x00p\x00l\x00u\x00s\x00\x00\x00\x06\x00m\x00s\x00c)
+Arguments=
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x02\x00\x00\x00.\x00p\x00e\x00r\x00s\x00i\x00s\x00t\x00e\x00n\x00t\x00-\x00d\x00s\x00-\x00c\x00p\x00l\x00u\x00s\x00p\x00l\x00u\x00s\x00\x00\x00&\x00t\x00e\x00s\x00t\x00_\x00r\x00o\x00l\x00l\x00b\x00a\x00c\x00k\x00_\x00n\x00a\x00i\x00v\x00e)
 Dependency Action=Build
-Project Target=persistent-ds-cplusplus,msc
+EnvironmentGroup=default
+Executable=
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+Project Target=persistent-ds-cplusplus,test_rollback_naive
+Use External Terminal=false
+Working Directory=
+isExecutable=false
 
 [Launch][Launch Configuration 1]
 Configured Launch Modes=execute
