@@ -15,23 +15,23 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
+#include <iostream>
 
 #include "DoublyLinkedList.h"
+
+using namespace std;
 
 namespace ephemeral {
   DoublyLinkedList::DoublyLinkedList () {
     head = 0;
     size = 0;
-  }
-  
-  void DoublyLinkedList::insert (Node & new_node) {
-    if (!head) {
-      head = &new_node;
-    } else {
+  } void DoublyLinkedList::insert (Node & new_node) {
+    if (head) {
       head->prev = &new_node;
       new_node.next = head;
     }
+    head = &new_node;
+
     ++size;
   }
 
@@ -60,12 +60,28 @@ namespace ephemeral {
   void DoublyLinkedList::remove (Node & to_remove) {
     if (to_remove.prev) {
       to_remove.prev->next = to_remove.next;
+    } else {
+      head = to_remove.next;
     }
     if (to_remove.next) {
       to_remove.next->prev = to_remove.prev;
     }
     --size;
   }
+
+  void DoublyLinkedList::print () {
+    Node *node = head;
+    while (node) {
+      cout << node->data << " ";
+      if (node->next != node) {
+        node = node->next;
+      } else {
+        break;
+      }
+    }
+    cout << endl;
+  }
+
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;

@@ -33,6 +33,7 @@ namespace ephemeral {
     void insert (Node & new_node);
     void insert (Node & new_node, std::size_t index);
     void remove (Node & to_remove);
+    void print ();
 
     Node *head;
     std::size_t size;
