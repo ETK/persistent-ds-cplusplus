@@ -265,6 +265,7 @@ int main (int argc, char **argv) {
   }
 
   test_insert_modify_remove_partiallypersistent (count);
+  test_insert_modify_remove_rollback_naive (count);
   test_insert_modify_remove_ephemeral (count);
 
   return 0;
