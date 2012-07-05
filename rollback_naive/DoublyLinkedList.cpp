@@ -29,7 +29,12 @@ namespace rollback_naive {
     records = vector < record_t > ();
   };
 
-  void DoublyLinkedList::insert (size_t node_data) {
+  size_t DoublyLinkedList::num_records () {
+    return records.size ();
+  }
+
+
+  void DoublyLinkedList::insert (size_t node_data, std::size_t index) {
     if (records.size () > 0) {
       while (next_record_index < records.size () - 1) {
         rollforward ();
@@ -38,17 +43,13 @@ namespace rollback_naive {
 
     record_t record;
     record.operation = INSERT;
-    record.index = 0;
-    record.data = node_data;
-    records.push_back (record);
-    rollforward ();
-  }
-
-  void DoublyLinkedList::insert (size_t node_data, std::size_t index) {
-    record_t record;
-    record.operation = INSERT;
     record.index = index;
     record.data = node_data;
+    if (records.size () > 0) {
+      record.size = 1 + records.back ().size;
+    } else {
+      record.size = 1;
+    }
     records.push_back (record);
     rollforward ();
   }
@@ -62,11 +63,19 @@ namespace rollback_naive {
         throw "Index too large!";
       }
     }
+
+    if (records.size () > 0) {
+      while (next_record_index < records.size () - 1) {
+        rollforward ();
+      }
+    }
+
     record_t record;
     record.operation = MODIFY;
     record.old_data = node->data;
     record.data = value;
     record.index = index;
+    record.size = records.back ().size;
     records.push_back (record);
     rollforward ();
   }
@@ -81,9 +90,16 @@ namespace rollback_naive {
       }
     }
 
+    if (records.size () > 0) {
+      while (next_record_index < records.size () - 1) {
+        rollforward ();
+      }
+    }
+
     record_t record;
     record.operation = REMOVE;
     record.index = index;
+    record.size = records.back ().size - 1;
     records.push_back (record);
     rollforward ();
   }
@@ -146,7 +162,7 @@ namespace rollback_naive {
     next_record_index++;
   }
 
-  void DoublyLinkedList::print_at_version (std::size_t v) {
+  size_t DoublyLinkedList::print_at_version (size_t v) {
     while (v > next_record_index) {
       rollforward ();
     }
@@ -156,7 +172,49 @@ namespace rollback_naive {
     }
 
     ephemeral_current.print ();
+    return ephemeral_current.size;
   }
+
+  size_t DoublyLinkedList::size () {
+    while (num_records () > next_record_index) {
+      rollforward ();
+    }
+
+    return ephemeral_current.size;
+  }
+
+  ephemeral::Node * DoublyLinkedList::head () {
+    while (num_records () > next_record_index) {
+      rollforward ();
+    }
+
+    return ephemeral_current.head;
+  }
+
+  size_t DoublyLinkedList::size_at (size_t v) {
+    while (v > next_record_index) {
+      rollforward ();
+    }
+
+    while (v < next_record_index) {
+      rollback ();
+    }
+
+    return ephemeral_current.size;
+  }
+
+  ephemeral::Node * DoublyLinkedList::head_at (size_t v) {
+    while (v > next_record_index) {
+      rollforward ();
+    }
+
+    while (v < next_record_index) {
+      rollback ();
+    }
+
+    return ephemeral_current.head;
+  }
+
 
 }
 

@@ -40,9 +40,10 @@ namespace rollback_naive {
 
   struct record_t {
     operation_t operation;
-    std::size_t index;
-    std::size_t old_data;
-    std::size_t data;
+      std::size_t index;
+      std::size_t old_data;
+      std::size_t data;
+      std::size_t size;
   };
 
   class DoublyLinkedList {
@@ -50,7 +51,6 @@ namespace rollback_naive {
   public:
     DoublyLinkedList ();
 
-    void insert (size_t data);
     void insert (size_t node_data, std::size_t index);
 
     /// removes the specified node from the next version
@@ -58,10 +58,13 @@ namespace rollback_naive {
 
     void modify_data (std::size_t index, std::size_t value);
 
-//     Node *head () const;
-//     Node *head_at (std::size_t v) const;
+      std::size_t print_at_version (std::size_t v);
 
-    void print_at_version (std::size_t v);
+      std::size_t num_records ();
+      ephemeral::Node * head ();
+      ephemeral::Node * head_at (std::size_t v);
+      std::size_t size ();
+      std::size_t size_at (std::size_t v);
 
   private:
       ephemeral::DoublyLinkedList ephemeral_current;
@@ -71,7 +74,7 @@ namespace rollback_naive {
     void rollback ();
     void rollforward ();
 
-    std::size_t next_record_index;
+      std::size_t next_record_index;
   };
 }
 #endif                          // ROLLBACK_NAIVE_DOUBLYLINKEDLIST_H

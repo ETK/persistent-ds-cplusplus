@@ -10,6 +10,7 @@
 
 #include "ephemeral/DoublyLinkedList.h"
 #include "partiallypersistent/DoublyLinkedList.h"
+#include "rollback_naive/DoublyLinkedList.h"
 
 #undef PROFILE_TIME
 // #undef RANDOMIZE
@@ -19,9 +20,9 @@ using namespace std;
 
 void dump_list_dot_graph (partiallypersistent::DoublyLinkedList & list) {
   ofstream file;
-  file.open("graph", ios::out);
-  list.print_dot_graph(list.version, file);
-  file.close();
+  file.open ("graph", ios_base::out);
+  list.print_dot_graph (list.version, file);
+  file.close ();
 }
 
 void process_mem_usage (double &vm_usage, double &resident_set) {
@@ -60,15 +61,81 @@ void process_mem_usage (double &vm_usage, double &resident_set) {
 void print_all_versions (partiallypersistent::DoublyLinkedList & list) {
   for (vector < pair < size_t, partiallypersistent::Node * > >::size_type i =
        0; i < list.get_versions ().size (); ++i) {
-    cout << "List at version " << list.
-      get_versions ()[i].version << " (size " << list.get_versions ()[i].
-      size << "): ";
+    cout << "List at version " << list.get_versions()[i].version << " (size " << list.get_versions()[i].size << "): ";
     size_t printed_size =
-      list.print_at_version (list.get_versions ()[i].version);
+      list.print_at_version (list.get_versions()[i].version);
     cout << "printed size: " << printed_size << endl;
   }
 }
 
+void print_all_versions (rollback_naive::DoublyLinkedList & list) {
+  for (vector < pair < size_t, partiallypersistent::Node * > >::size_type i =
+       0; i < list.num_records (); ++i) {
+    cout << "List at version " << i << " (size " << list.
+      size_at (i) << "): ";
+    size_t printed_size = list.print_at_version (i);
+    cout << "printed size: " << printed_size << endl;
+  }
+}
+
+void test_insert_modify_remove_rollback_naive (size_t count) {
+#ifdef PROFILE_TIME
+  clock_t begin = clock ();
+#endif
+
+  rollback_naive::DoublyLinkedList list;
+
+  cout << "inserting " << count << " nodes..." << endl;
+  for (size_t i = 0; i < count; ++i) {
+#ifdef RANDOMIZE
+    list.insert (i, list.size() > 0 ? rand () * list.size() / RAND_MAX : 0);
+#else
+    list.insert (i, 0);
+#endif
+  }
+
+  if (count <= 100) {
+    print_all_versions (list);
+  }
+
+  for (size_t i = 0; i < 10; ++i) {
+    cout << "modifying data for " << count << " nodes, iteration " << i +
+      1 << "..." << endl;
+    for (size_t j = 0; j < count; ++j) {
+      ephemeral::Node * node = list.head();
+#ifdef RANDOMIZE
+      size_t index = rand () * list.size () / RAND_MAX;
+#else
+      size_t index = count / 10;
+#endif
+
+      list.modify_data (index, j);
+    }
+  }
+
+  cout << "removing " << count << " nodes..." << endl;
+  for (size_t i = 0; i < count; ++i) {
+    ephemeral::Node * node = list.head ();
+    if (node) {
+#ifdef RANDOMIZE
+      size_t index = rand () * list.size() / RAND_MAX;
+#endif
+      list.remove (index);
+    } else {
+      cout << "List empty at version " << list.num_records() << endl;
+    }
+  }
+
+#ifdef PROFILE_TIME
+  clock_t end = clock ();
+
+  cout << "Partially persistent: " << count << " insertions and deletions: "
+    << ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
+  double vm, rss;
+  process_mem_usage (vm, rss);
+  cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
+#endif
+}
 void test_insert_modify_remove_partiallypersistent (size_t count) {
 #ifdef PROFILE_TIME
   clock_t begin = clock ();
@@ -203,4 +270,4 @@ int main (int argc, char **argv) {
   return 0;
 }
 
-// kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+// kate: indent-mode cstyle; indent-width 1; replace-tabs on; ;

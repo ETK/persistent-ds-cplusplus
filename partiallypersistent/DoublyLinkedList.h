@@ -54,6 +54,9 @@ namespace partiallypersistent {
     Node *head () const;
     Node *head_at (std::size_t v) const;
 
+    std::size_t size() const;
+    std::size_t size_at(std::size_t v) const;
+
       std::size_t print_at_version (std::size_t v);
     void print_dot_graph (std::size_t v, std::ofstream& out);
 

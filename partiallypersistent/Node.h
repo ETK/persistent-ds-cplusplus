@@ -33,8 +33,6 @@ enum field_name_t {
 };
 #pragma pack(pop)
 
-static std::size_t max = std::numeric_limits < std::size_t >::max ();
-
 namespace partiallypersistent {
 
 #pragma pack(push, 1)
@@ -61,6 +59,7 @@ namespace partiallypersistent {
     ~Node ();
 
     Node *get_field_at_version (field_name_t field_name, std::size_t v) const;
+    Node *get_field (field_name_t field_name) const;
 
     Node *prev_at (std::size_t v) const;
     Node *next_at (std::size_t v) const;

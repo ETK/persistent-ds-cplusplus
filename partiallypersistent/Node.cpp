@@ -85,17 +85,35 @@ namespace partiallypersistent {
     return reinterpret_cast < Node * >(get_field_at_version (PREV, v));
   };
 
+  Node *Node::get_field (field_name_t field_name) const {
+    if (n_mods > 0) {
+      for (unsigned char i = n_mods; i > 0; --i) {
+        if (mods[i - 1].field_name == field_name) {
+          return mods[i - 1].value;
+        }
+      }
+    }
+      switch (field_name) {
+      case DATA:
+        return (Node *) data_val;
+      case NEXT:
+        return next_ptr;
+      case PREV:
+        return prev_ptr;
+      }
+  }
+
   size_t Node::data () const {
-    return (size_t) (get_field_at_version (DATA, max));
+    return (size_t) (get_field (DATA));
   };
 
   Node *Node::next () const {
-    return reinterpret_cast < Node * >(get_field_at_version (NEXT, max));
+    return reinterpret_cast < Node * >(get_field (NEXT));
   };
 
   Node *Node::prev () const {
-    return reinterpret_cast < Node * >(get_field_at_version (PREV, max));
+    return reinterpret_cast < Node * >(get_field (PREV));
   };
 }
 
-// kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+// kate: indent-mode cstyle; indent-width 1; replace-tabs on; ;

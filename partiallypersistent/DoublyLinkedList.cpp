@@ -365,7 +365,15 @@ namespace partiallypersistent {
     }
     return head;
   }
-
+  
+  size_t DoublyLinkedList::size_at (size_t v) const {
+    return versions[v].size;
+  }
+  
+  size_t DoublyLinkedList::size () const {
+    return versions.back ().size;
+  }
+  
   void print_dot_graph_helper (Node * n, size_t v,
                                set < Node * >&printed,
                                const set < Node * >&live_set,
@@ -476,6 +484,9 @@ namespace partiallypersistent {
       }
     }
     out << endl;
+
+    print_dot_graph_helper(next, v, printed, live_set, out);
+    print_dot_graph_helper(prev, v, printed, live_set, out);
 
     for (size_t i = 0; i < to_print.size (); ++i) {
       print_dot_graph_helper (to_print[i], v, printed, live_set, out);
