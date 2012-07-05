@@ -21,7 +21,7 @@
 #ifndef NODE_H
 #define NODE_H
 
-#define MAX_MODS 4
+#define MAX_MODS 2
 
 #include <limits>
 
@@ -44,7 +44,7 @@ namespace partiallypersistent {
     struct mod_t {
       std::size_t version;
       field_name_t field_name;
-      void *value;
+      Node *value;
     };
 
     std::size_t data_val;
@@ -60,18 +60,19 @@ namespace partiallypersistent {
     Node ();
     ~Node ();
 
-    void *get_field_at_version (field_name_t field_name, std::size_t v);
+    Node *get_field_at_version (field_name_t field_name, std::size_t v) const;
 
-    Node *prev_at (std::size_t v);
-    Node *next_at (std::size_t v);
-    std::size_t data_at (std::size_t v);
+    Node *prev_at (std::size_t v) const;
+    Node *next_at (std::size_t v) const;
+    std::size_t data_at (std::size_t v) const;
 
-    Node *prev ();
-    Node *next ();
-    std::size_t data ();
+    Node *prev () const;
+    Node *next () const;
+    std::size_t data () const;
   };
 #pragma pack(pop)
 
 }
 #endif                          // NODE_H
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+

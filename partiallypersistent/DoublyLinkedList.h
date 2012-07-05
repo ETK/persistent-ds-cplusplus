@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 #include <cstdlib>
+#include <ostream>
 
 namespace partiallypersistent {
 
@@ -40,29 +41,32 @@ namespace partiallypersistent {
 
       DoublyLinkedList ();
 
-      std::pair < std::size_t, Node * >insert (Node & new_node);
-      std::pair < std::size_t, Node * >insert (Node & new_node,
+      std::pair < std::size_t, Node * >insert (std::size_t data,
                                                std::size_t index);
 
     /// removes the specified node from the next version
-    version_info_t remove (Node & to_remove);
+    version_info_t remove (Node * to_remove);
 
-      std::pair < std::size_t, Node * >set_field (Node & node,
-                                                  field_name_t
-                                                  field_name, void *value);
+      std::pair < std::size_t, Node * >set_data (Node * node, size_t value);
 
     const std::vector < version_info_t > &get_versions ();
 
     Node *head () const;
     Node *head_at (std::size_t v) const;
 
-    void print_at_version (std::size_t v);
+      std::size_t print_at_version (std::size_t v);
+    void print_dot_graph (std::size_t v, std::ofstream& out);
 
   private:
-      Node & modify_field (Node & node, field_name_t field_name, void *value);
-      Node & copy_live_node (Node & node);
+      Node * modify_field (partiallypersistent::Node * node,
+                           field_name_t field_name,
+                           partiallypersistent::Node * value);
+    void copy_live_node (partiallypersistent::Node * node,
+                         partiallypersistent::Node * copy,
+                         field_name_t field_name, Node * value);
 
       std::vector < version_info_t > versions;
+    size_t modifications;
   };
 }
 #endif                          // PARTIALLYPERSISTENT_DOUBLYLINKEDLIST_H

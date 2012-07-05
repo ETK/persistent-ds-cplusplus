@@ -29,11 +29,25 @@ namespace partiallypersistent {
     prev_ptr = 0;
     next_back_ptr = 0;
     prev_back_ptr = 0;
-  }
-  Node::~Node () {
-  }
+  };
 
-  void *Node::get_field_at_version (field_name_t field_name, size_t v) {
+  Node::~Node () {
+    for (unsigned char i = 0; i < n_mods; ++i) {
+      if (mods[i].field_name != DATA && mods[i].value) {
+        delete mods[i].value;
+      }
+    }
+    if (prev_ptr)
+      delete prev_ptr;
+    if (next_ptr)
+      delete next_ptr;
+    if (prev_back_ptr)
+      delete prev_back_ptr;
+    if (next_back_ptr)
+      delete next_back_ptr;
+  };
+
+  Node *Node::get_field_at_version (field_name_t field_name, size_t v) const {
     unsigned char max_version_i = 0;
     bool in_mods = false;
     for (unsigned char i = 0; i < n_mods; ++i) {
@@ -49,7 +63,7 @@ namespace partiallypersistent {
     if (!in_mods) {
       switch (field_name) {
       case DATA:
-        return (void *) data_val;
+        return (Node *) data_val;
       case NEXT:
         return next_ptr;
       case PREV:
@@ -57,32 +71,31 @@ namespace partiallypersistent {
       }
     }
     return mods[max_version_i].value;
-  }
+  };
 
-  size_t Node::data_at (size_t v) {
+  size_t Node::data_at (size_t v) const {
     return (size_t) (get_field_at_version (DATA, v));
-  }
+  };
 
-  Node *Node::next_at (size_t v) {
+  Node *Node::next_at (size_t v) const {
     return reinterpret_cast < Node * >(get_field_at_version (NEXT, v));
-  }
+  };
 
-  Node *Node::prev_at (size_t v) {
+  Node *Node::prev_at (size_t v) const {
     return reinterpret_cast < Node * >(get_field_at_version (PREV, v));
-  }
+  };
 
-  size_t Node::data () {
+  size_t Node::data () const {
     return (size_t) (get_field_at_version (DATA, max));
-  }
+  };
 
-  Node *Node::next () {
+  Node *Node::next () const {
     return reinterpret_cast < Node * >(get_field_at_version (NEXT, max));
-  }
+  };
 
-  Node *Node::prev () {
+  Node *Node::prev () const {
     return reinterpret_cast < Node * >(get_field_at_version (PREV, max));
-  }
-
+  };
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;

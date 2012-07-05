@@ -11,9 +11,18 @@
 #include "ephemeral/DoublyLinkedList.h"
 #include "partiallypersistent/DoublyLinkedList.h"
 
-#define PROFILE_TIME
+#undef PROFILE_TIME
+// #undef RANDOMIZE
+#define RANDOMIZE
 
 using namespace std;
+
+void dump_list_dot_graph (partiallypersistent::DoublyLinkedList & list) {
+  ofstream file;
+  file.open("graph", ios::out);
+  list.print_dot_graph(list.version, file);
+  file.close();
+}
 
 void process_mem_usage (double &vm_usage, double &resident_set) {
   using std::ios_base;
@@ -54,7 +63,9 @@ void print_all_versions (partiallypersistent::DoublyLinkedList & list) {
     cout << "List at version " << list.
       get_versions ()[i].version << " (size " << list.get_versions ()[i].
       size << "): ";
-    list.print_at_version (list.get_versions ()[i].version);
+    size_t printed_size =
+      list.print_at_version (list.get_versions ()[i].version);
+    cout << "printed size: " << printed_size << endl;
   }
 }
 
@@ -65,28 +76,62 @@ void test_insert_modify_remove_partiallypersistent (size_t count) {
 
   partiallypersistent::DoublyLinkedList list;
 
+  cout << "inserting " << count << " nodes..." << endl;
   for (size_t i = 0; i < count; ++i) {
-    partiallypersistent::Node n;
-    list.insert (n,
+#ifdef RANDOMIZE
+    list.insert (i,
                  list.get_versions ().size () >
                  0 ? rand () * list.get_versions ().back ().size /
                  RAND_MAX : 0);
+#else
+    list.insert (i, 0);
+#endif
   }
-  for (size_t i = 0; i < count; ++i) {
-    size_t index = rand () * list.get_versions ().back ().size / RAND_MAX;
-    partiallypersistent::Node * node = list.head ();
-    for (size_t j = 0; j < index; ++j) {
-      node = node->next ();
-    }
-    list.set_field (*node, DATA, (void *) i);
+
+  if (count <= 100) {
+    print_all_versions (list);
   }
-  for (size_t i = 0; i < count; ++i) {
-    size_t index = rand () * list.get_versions ().back ().size / RAND_MAX;
-    partiallypersistent::Node * node = list.head ();
-    for (size_t j = 0; j < index; ++j) {
-      node = node->next ();
+
+  for (size_t i = 0; i < 10; ++i) {
+    cout << "modifying data for " << count << " nodes, iteration " << i +
+      1 << "..." << endl;
+    for (size_t j = 0; j < count; ++j) {
+      partiallypersistent::Node * node = list.head ();
+#ifdef RANDOMIZE
+      size_t index = rand () * list.get_versions ().back ().size / RAND_MAX;
+#else
+      size_t index = count / 10;
+#endif
+
+      for (size_t k = 0; k < index; ++k) {
+        if (node->next ()) {
+          node = node->next ();
+        } else {
+          break;
+        }
+      }
+      list.set_data (node, j);
     }
-    list.remove (*node);
+  }
+
+  cout << "removing " << count << " nodes..." << endl;
+  for (size_t i = 0; i < count; ++i) {
+    partiallypersistent::Node * node = list.head ();
+    if (node) {
+#ifdef RANDOMIZE
+      size_t index = rand () * list.get_versions ().back ().size / RAND_MAX;
+      for (size_t j = 0; j < index; ++j) {
+        if (node->next ()) {
+          node = node->next ();
+        } else {
+          break;
+        }
+      }
+#endif
+      list.remove (node);
+    } else {
+      cout << "List empty at version " << list.version << endl;
+    }
   }
 
 #ifdef PROFILE_TIME
@@ -109,13 +154,18 @@ void test_insert_modify_remove_ephemeral (size_t count) {
 
   for (size_t i = 0; i < count; ++i) {
     ephemeral::Node n;
+    n.data = i;
     list.insert (n, list.size > 0 ? rand () * list.size / RAND_MAX : 0);
   }
   for (size_t i = 0; i < count; ++i) {
     size_t index = rand () * list.size / RAND_MAX;
     ephemeral::Node * node = list.head;
     for (size_t j = 0; j < index; ++j) {
-      node = node->next;
+      if (node->next) {
+        node = node->next;
+      } else {
+        break;
+      }
     }
     node->data = i;
   }
@@ -142,7 +192,7 @@ void test_insert_modify_remove_ephemeral (size_t count) {
 
 int main (int argc, char **argv) {
 
-  int count = 10000;
+  int count = 100;
   if (argc == 2) {
     count = atoi (argv[1]);
   }
