@@ -18,14 +18,16 @@
 
 using namespace std;
 
-void dump_list_dot_graph (partiallypersistent::DoublyLinkedList & list) {
+void
+dump_list_dot_graph (partiallypersistent::DoublyLinkedList & list) {
   ofstream file;
   file.open ("graph", ios_base::out);
   list.print_dot_graph (list.version, file);
   file.close ();
 }
 
-void process_mem_usage (double &vm_usage, double &resident_set) {
+void
+process_mem_usage (double &vm_usage, double &resident_set) {
   using std::ios_base;
   using std::ifstream;
   using std::string;
@@ -58,27 +60,30 @@ void process_mem_usage (double &vm_usage, double &resident_set) {
   resident_set = rss * page_size_kb;
 }
 
-void print_all_versions (partiallypersistent::DoublyLinkedList & list) {
+void
+print_all_versions (partiallypersistent::DoublyLinkedList & list) {
   for (vector < pair < size_t, partiallypersistent::Node * > >::size_type i =
        0; i < list.get_versions ().size (); ++i) {
-    cout << "List at version " << list.get_versions()[i].version << " (size " << list.get_versions()[i].size << "): ";
+    cout << "List at version " << list.get_versions ()[i].
+      version << " (size " << list.get_versions ()[i].size << "): ";
     size_t printed_size =
-      list.print_at_version (list.get_versions()[i].version);
+      list.print_at_version (list.get_versions ()[i].version);
     cout << "printed size: " << printed_size << endl;
   }
 }
 
-void print_all_versions (rollback_naive::DoublyLinkedList & list) {
+void
+print_all_versions (rollback_naive::DoublyLinkedList & list) {
   for (vector < pair < size_t, partiallypersistent::Node * > >::size_type i =
-       0; i < list.num_records (); ++i) {
-    cout << "List at version " << i << " (size " << list.
-      size_at (i) << "): ";
+       1; i <= list.num_records (); ++i) {
+    cout << "List at version " << i << " (size " << list.size_at (i) << "): ";
     size_t printed_size = list.print_at_version (i);
     cout << "printed size: " << printed_size << endl;
   }
 }
 
-void test_insert_modify_remove_rollback_naive (size_t count) {
+void
+test_insert_modify_remove_rollback_naive (size_t count) {
 #ifdef PROFILE_TIME
   clock_t begin = clock ();
 #endif
@@ -88,7 +93,9 @@ void test_insert_modify_remove_rollback_naive (size_t count) {
   cout << "inserting " << count << " nodes..." << endl;
   for (size_t i = 0; i < count; ++i) {
 #ifdef RANDOMIZE
-    list.insert (i, list.size() > 0 ? rand () * list.size() / RAND_MAX : 0);
+    list.insert (i,
+                 list.size () >
+                 0 ? (double) rand () * list.size () / RAND_MAX : 0);
 #else
     list.insert (i, 0);
 #endif
@@ -102,9 +109,9 @@ void test_insert_modify_remove_rollback_naive (size_t count) {
     cout << "modifying data for " << count << " nodes, iteration " << i +
       1 << "..." << endl;
     for (size_t j = 0; j < count; ++j) {
-      ephemeral::Node * node = list.head();
+      ephemeral::Node * node = list.head ();
 #ifdef RANDOMIZE
-      size_t index = rand () * list.size () / RAND_MAX;
+      size_t index = (double) rand () * list.size () / RAND_MAX;
 #else
       size_t index = count / 10;
 #endif
@@ -118,25 +125,51 @@ void test_insert_modify_remove_rollback_naive (size_t count) {
     ephemeral::Node * node = list.head ();
     if (node) {
 #ifdef RANDOMIZE
-      size_t index = rand () * list.size() / RAND_MAX;
+      size_t index = (double) rand () * list.size () / RAND_MAX;
 #endif
       list.remove (index);
     } else {
-      cout << "List empty at version " << list.num_records() << endl;
+      cout << "List empty at version " << list.num_records () << endl;
     }
   }
+
+  cout << "accessing " << count <<
+    " randomly chosen nodes from randomly chosen versions..." << endl;
+  size_t sum = 0UL;
+  for (size_t i = 0UL; i < count; ++i) {
+    size_t version_index = (double) rand () * list.num_records () / RAND_MAX;
+    size_t v = version_index + 1;
+    ephemeral::Node * n = list.head_at (v);
+    size_t list_size = list.size_at (v);
+    if (list_size == 0) {
+      continue;
+    }
+    size_t list_index = (double) rand () * list_size / RAND_MAX;
+    for (size_t j = 0; j < list_index; ++j) {
+      if (n->next) {
+        n = n->next;
+      } else {
+        break;
+      }
+    }
+    size_t data = n->data;
+    sum += data;
+  }
+  cout << "sum = " << sum << endl;
 
 #ifdef PROFILE_TIME
   clock_t end = clock ();
 
-  cout << "Partially persistent: " << count << " insertions and deletions: "
+  cout << "Rollback naive: " << count << " insertions and deletions: "
     << ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
   double vm, rss;
   process_mem_usage (vm, rss);
   cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
 #endif
 }
-void test_insert_modify_remove_partiallypersistent (size_t count) {
+
+void
+test_insert_modify_remove_partiallypersistent (size_t count) {
 #ifdef PROFILE_TIME
   clock_t begin = clock ();
 #endif
@@ -148,7 +181,7 @@ void test_insert_modify_remove_partiallypersistent (size_t count) {
 #ifdef RANDOMIZE
     list.insert (i,
                  list.get_versions ().size () >
-                 0 ? rand () * list.get_versions ().back ().size /
+                 0 ? (double) rand () * list.get_versions ().back ().size /
                  RAND_MAX : 0);
 #else
     list.insert (i, 0);
@@ -165,7 +198,8 @@ void test_insert_modify_remove_partiallypersistent (size_t count) {
     for (size_t j = 0; j < count; ++j) {
       partiallypersistent::Node * node = list.head ();
 #ifdef RANDOMIZE
-      size_t index = rand () * list.get_versions ().back ().size / RAND_MAX;
+      size_t index =
+        (double) rand () * list.get_versions ().back ().size / RAND_MAX;
 #else
       size_t index = count / 10;
 #endif
@@ -186,7 +220,8 @@ void test_insert_modify_remove_partiallypersistent (size_t count) {
     partiallypersistent::Node * node = list.head ();
     if (node) {
 #ifdef RANDOMIZE
-      size_t index = rand () * list.get_versions ().back ().size / RAND_MAX;
+      size_t index =
+        (double) rand () * list.get_versions ().back ().size / RAND_MAX;
       for (size_t j = 0; j < index; ++j) {
         if (node->next ()) {
           node = node->next ();
@@ -201,6 +236,28 @@ void test_insert_modify_remove_partiallypersistent (size_t count) {
     }
   }
 
+  cout << "accessing " << count <<
+    " randomly chosen nodes from randomly chosen versions..." << endl;
+  size_t sum = 0UL;
+  for (size_t i = 0UL; i < count; ++i) {
+    size_t version_index =
+      (double) rand () * list.get_versions ().size () / RAND_MAX;
+    partiallypersistent::DoublyLinkedList::version_info_t version_info =
+      list.get_versions ()[version_index];
+    partiallypersistent::Node * n = version_info.head;
+    size_t list_index = (double) rand () * version_info.size / RAND_MAX;
+    for (size_t j = 0; j < list_index; ++j) {
+      if (n->next ()) {
+        n = n->next ();
+      } else {
+        break;
+      }
+    }
+    size_t data = n->data_at (version_info.version);
+    sum += data;
+  }
+  cout << "sum = " << sum << endl;
+
 #ifdef PROFILE_TIME
   clock_t end = clock ();
 
@@ -212,7 +269,8 @@ void test_insert_modify_remove_partiallypersistent (size_t count) {
 #endif
 }
 
-void test_insert_modify_remove_ephemeral (size_t count) {
+void
+test_insert_modify_remove_ephemeral (size_t count) {
 #ifdef PROFILE_TIME
   clock_t begin = clock ();
 #endif
@@ -257,9 +315,10 @@ void test_insert_modify_remove_ephemeral (size_t count) {
 
 }
 
-int main (int argc, char **argv) {
+int
+main (int argc, char **argv) {
 
-  int count = 100;
+  int count = 100000;
   if (argc == 2) {
     count = atoi (argv[1]);
   }
@@ -271,4 +330,4 @@ int main (int argc, char **argv) {
   return 0;
 }
 
-// kate: indent-mode cstyle; indent-width 1; replace-tabs on; ;
+// kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;

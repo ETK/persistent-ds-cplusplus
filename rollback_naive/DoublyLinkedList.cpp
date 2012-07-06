@@ -44,6 +44,7 @@ namespace rollback_naive {
     record_t record;
     record.operation = INSERT;
     record.index = index;
+    record.old_data = node_data;
     record.data = node_data;
     if (records.size () > 0) {
       record.size = 1 + records.back ().size;
@@ -105,10 +106,10 @@ namespace rollback_naive {
   }
 
   void DoublyLinkedList::rollback () {
-    record_t record = records[next_record_index - 1];
+    record_t& record = records[next_record_index - 1];
 
     ephemeral::Node * node = ephemeral_current.head;
-    for (size_t i = 0; i < record.index; ++i) {
+    for (size_t i = 1; i < record.index; ++i) {
       if (node->next) {
         node = node->next;
       } else {
@@ -135,7 +136,7 @@ namespace rollback_naive {
   }
 
   void DoublyLinkedList::rollforward () {
-    record_t record = records[next_record_index];
+    record_t& record = records[next_record_index];
 
     ephemeral::Node * node = ephemeral_current.head;
     for (size_t i = 0; i < record.index; ++i) {
@@ -152,6 +153,8 @@ namespace rollback_naive {
         break;
       }
     case REMOVE:
+      record.data = node->data;
+      record.old_data = node->data;
       ephemeral_current.remove (*node);
       delete node;
       break;

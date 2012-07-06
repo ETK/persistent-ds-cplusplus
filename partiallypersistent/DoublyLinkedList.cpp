@@ -72,7 +72,8 @@ namespace partiallypersistent {
 
     if (versions.size () > 0 && head ()) {
       // skip through list until correct position is found, or insert at end if index + 1 > size
-      Node *to_be_next = head ();
+      Node *current_head = head ();
+      Node *to_be_next = current_head;
       Node *to_be_prev;
       for (size_t i = 0; i < index; ++i) {
         if (to_be_next->next ()) {
@@ -87,33 +88,39 @@ namespace partiallypersistent {
         to_be_prev = to_be_next->prev ();
       }
       // if effective insertion index was zero, push new head on back of heads vector
-      if (to_be_next == head ()) {
+      if (to_be_next == current_head) {
         new_version.head = new_node;
       } else {
-        new_version.head = head ();
+        new_version.head = current_head;
       }
 
       if (to_be_next) {
         // set pointers between new_node and to-be next
         to_be_next = modify_field (to_be_next, PREV, new_node);
+        to_be_next->next_back_ptr = new_node;
         new_node->prev_back_ptr = to_be_next;
         new_node->next_ptr = to_be_next;
-        to_be_next->next_back_ptr = new_node;
+//         to_be_next->next_back_ptr = new_node;
       }
 
       if (to_be_prev) {
         // set pointers between new_node and to-be prev
+        bool to_be_prev_is_head = to_be_prev == current_head;
         to_be_prev = modify_field (to_be_prev, NEXT, new_node);
+        to_be_prev->prev_back_ptr = new_node;
         new_node->next_back_ptr = to_be_prev;
         new_node->prev_ptr = to_be_prev;
-        to_be_prev->prev_back_ptr = new_node;
+        if (to_be_prev_is_head) {
+          new_version.head = to_be_prev;
+        }
+//         to_be_prev->prev_back_ptr = new_node;
       }
       new_version.size = 1 + versions.back ().size;
 //       if (new_version.head == new_node) {
       versions.push_back (new_version);
 //       }
 #ifdef EXTRA_ASSERTS
-      assert_actual_size (head (), new_version.size);
+      assert_actual_size (new_version.head, new_version.size);
 #endif
     } else {
       // just set the new head
@@ -128,8 +135,9 @@ namespace partiallypersistent {
     return make_pair (version, head ());
   }
 
-  DoublyLinkedList::version_info_t DoublyLinkedList::
-    remove (partiallypersistent::Node * to_remove) {
+  DoublyLinkedList::
+    version_info_t DoublyLinkedList::remove (partiallypersistent::Node *
+                                             to_remove) {
 #ifdef LOGGING
 
     cout << "v" << version +
@@ -307,7 +315,7 @@ namespace partiallypersistent {
     }
     // for every node x such that x points to n, call write(x.p, n') recursively (at most p recursive calls)
     if (copy->prev_back_ptr) {
-      if (field_name == PREV && copy->prev_back_ptr == value) {
+      if (field_name == NEXT && copy->prev_back_ptr == value) {
         copy->prev_back_ptr->prev_ptr = copy;
       } else {
         copy->prev_back_ptr = modify_field (copy->prev_back_ptr, PREV, copy);
@@ -316,7 +324,7 @@ namespace partiallypersistent {
       copy->prev_back_ptr->next_back_ptr = copy;
     }
     if (copy->next_back_ptr) {
-      if (field_name == NEXT && copy->next_back_ptr == value) {
+      if (field_name == PREV && copy->next_back_ptr == value) {
         copy->next_back_ptr->next_ptr = copy;
       } else {
         copy->next_back_ptr = modify_field (copy->next_back_ptr, NEXT, copy);
@@ -365,19 +373,15 @@ namespace partiallypersistent {
     }
     return head;
   }
-  
+
   size_t DoublyLinkedList::size_at (size_t v) const {
     return versions[v].size;
-  }
-  
-  size_t DoublyLinkedList::size () const {
+  } size_t DoublyLinkedList::size () const {
     return versions.back ().size;
-  }
-  
-  void print_dot_graph_helper (Node * n, size_t v,
-                               set < Node * >&printed,
-                               const set < Node * >&live_set,
-                               ofstream & out) {
+  } void print_dot_graph_helper (Node * n, size_t v,
+                                 set < Node * >&printed,
+                                 const set < Node * >&live_set,
+                                 ofstream & out) {
     if (printed.find (n) != printed.end ()) {
       return;
     }
@@ -406,21 +410,21 @@ namespace partiallypersistent {
           if (n->mods[i].value) {
             out << "|<prev" << i << "> prev (v" << n->mods[i].version << ")";
           } else {
-            out << "|<prev" << i << "> prev := 0x0 (v" << n->mods[i].
-              version << ")";
+            out << "|<prev" << i << "> prev := 0x0 (v" << n->
+              mods[i].version << ")";
           }
           break;
         case NEXT:
           if (n->mods[i].value) {
             out << "|<next" << i << "> next (v" << n->mods[i].version << ")";
           } else {
-            out << "|<prev" << i << "> next := 0x0 (v" << n->mods[i].
-              version << ")";
+            out << "|<prev" << i << "> next := 0x0 (v" << n->
+              mods[i].version << ")";
           }
           break;
         case DATA:
-          out << "|<data" << i << "> data := " << (size_t) n->
-            mods[i].value << " (v" << n->mods[i].version << ")";
+          out << "|<data" << i << "> data := " << (size_t) n->mods[i].
+            value << " (v" << n->mods[i].version << ")";
           break;
         }
       } else {
@@ -448,7 +452,7 @@ namespace partiallypersistent {
       to_print.push_back (n->next_ptr);
       out << "    struct" << n << ":next -> struct" << n->next_ptr <<
         ":id [color=green, ";
-      if (n->next_ptr != next) {
+      if (next != 0x0 && n->next_ptr != next) {
         out << "style=dashed";
       }
       out << "];" << endl;
@@ -464,7 +468,7 @@ namespace partiallypersistent {
           to_print.push_back (n->mods[i].value);
           out << "    struct" << n << ":prev" << i << " -> struct" <<
             n->mods[i].value << ":id [color=blue, ";
-          if (n->mods[i].value != prev) {
+          if (prev != 0x0 && n->mods[i].value != prev) {
             out << "style=dashed";
           }
           out << "];" << endl;
@@ -485,8 +489,12 @@ namespace partiallypersistent {
     }
     out << endl;
 
-    print_dot_graph_helper(next, v, printed, live_set, out);
-    print_dot_graph_helper(prev, v, printed, live_set, out);
+    if (next != 0x0) {
+      print_dot_graph_helper (next, v, printed, live_set, out);
+    }
+    if (prev != 0x0) {
+      print_dot_graph_helper (prev, v, printed, live_set, out);
+    }
 
     for (size_t i = 0; i < to_print.size (); ++i) {
       print_dot_graph_helper (to_print[i], v, printed, live_set, out);
