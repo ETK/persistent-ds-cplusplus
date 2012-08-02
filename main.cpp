@@ -12,7 +12,8 @@
 #include "partiallypersistent/DoublyLinkedList.h"
 #include "rollback_naive/DoublyLinkedList.h"
 
-#undef PROFILE_TIME
+// #undef PROFILE_TIME
+#define PROFILE_TIME
 // #undef RANDOMIZE
 #define RANDOMIZE
 
@@ -86,11 +87,15 @@ void
 test_insert_modify_remove_rollback_naive (size_t count) {
 #ifdef PROFILE_TIME
   clock_t begin = clock ();
+  clock_t begin_operation, end_operation;
 #endif
 
   rollback_naive::DoublyLinkedList list;
 
   cout << "inserting " << count << " nodes..." << endl;
+#ifdef PROFILE_TIME
+  begin_operation = clock ();
+#endif
   for (size_t i = 0; i < count; ++i) {
 #ifdef RANDOMIZE
     list.insert (i,
@@ -100,6 +105,11 @@ test_insert_modify_remove_rollback_naive (size_t count) {
     list.insert (i, 0);
 #endif
   }
+#ifdef PROFILE_TIME
+  end_operation = clock ();
+  cout << "time: " << ((end_operation - begin_operation) * 1000.0 /
+                       CLOCKS_PER_SEC) << "ms" << endl;
+#endif
 
   if (count <= 100) {
     print_all_versions (list);
@@ -108,6 +118,9 @@ test_insert_modify_remove_rollback_naive (size_t count) {
   for (size_t i = 0; i < 10; ++i) {
     cout << "modifying data for " << count << " nodes, iteration " << i +
       1 << "..." << endl;
+#ifdef PROFILE_TIME
+    begin_operation = clock ();
+#endif
     for (size_t j = 0; j < count; ++j) {
       ephemeral::Node * node = list.head ();
 #ifdef RANDOMIZE
@@ -118,9 +131,17 @@ test_insert_modify_remove_rollback_naive (size_t count) {
 
       list.modify_data (index, j);
     }
+#ifdef PROFILE_TIME
+    end_operation = clock ();
+    cout << "time: " << ((end_operation - begin_operation) * 1000.0 /
+                         CLOCKS_PER_SEC) << "ms" << endl;
+#endif
   }
 
   cout << "removing " << count << " nodes..." << endl;
+#ifdef PROFILE_TIME
+  begin_operation = clock ();
+#endif
   for (size_t i = 0; i < count; ++i) {
     ephemeral::Node * node = list.head ();
     if (node) {
@@ -132,10 +153,18 @@ test_insert_modify_remove_rollback_naive (size_t count) {
       cout << "List empty at version " << list.num_records () << endl;
     }
   }
+#ifdef PROFILE_TIME
+  end_operation = clock ();
+  cout << "time: " << ((end_operation - begin_operation) * 1000.0 /
+                       CLOCKS_PER_SEC) << "ms" << endl;
+#endif
 
   cout << "accessing " << count <<
     " randomly chosen nodes from randomly chosen versions..." << endl;
   size_t sum = 0UL;
+#ifdef PROFILE_TIME
+  begin_operation = clock ();
+#endif
   for (size_t i = 0UL; i < count; ++i) {
     size_t version_index = (double) rand () * list.num_records () / RAND_MAX;
     size_t v = version_index + 1;
@@ -155,6 +184,11 @@ test_insert_modify_remove_rollback_naive (size_t count) {
     size_t data = n->data;
     sum += data;
   }
+#ifdef PROFILE_TIME
+  end_operation = clock ();
+  cout << "time: " << ((end_operation - begin_operation) * 1000.0 /
+                       CLOCKS_PER_SEC) << "ms" << endl;
+#endif
   cout << "sum = " << sum << endl;
 
 #ifdef PROFILE_TIME
@@ -162,9 +196,9 @@ test_insert_modify_remove_rollback_naive (size_t count) {
 
   cout << "Rollback naive: " << count << " insertions and deletions: "
     << ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
-  double vm, rss;
-  process_mem_usage (vm, rss);
-  cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
+//   double vm, rss;
+//   process_mem_usage (vm, rss);
+//   cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
 #endif
 }
 
@@ -172,11 +206,15 @@ void
 test_insert_modify_remove_partiallypersistent (size_t count) {
 #ifdef PROFILE_TIME
   clock_t begin = clock ();
+  clock_t begin_operation, end_operation;
 #endif
 
   partiallypersistent::DoublyLinkedList list;
 
   cout << "inserting " << count << " nodes..." << endl;
+#ifdef PROFILE_TIME
+  begin_operation = clock ();
+#endif
   for (size_t i = 0; i < count; ++i) {
 #ifdef RANDOMIZE
     list.insert (i,
@@ -187,6 +225,11 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
     list.insert (i, 0);
 #endif
   }
+#ifdef PROFILE_TIME
+  end_operation = clock ();
+  cout << "time: " << ((end_operation - begin_operation) * 1000.0 /
+                       CLOCKS_PER_SEC) << "ms" << endl;
+#endif
 
   if (count <= 100) {
     print_all_versions (list);
@@ -195,6 +238,9 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
   for (size_t i = 0; i < 10; ++i) {
     cout << "modifying data for " << count << " nodes, iteration " << i +
       1 << "..." << endl;
+#ifdef PROFILE_TIME
+    begin_operation = clock ();
+#endif
     for (size_t j = 0; j < count; ++j) {
       partiallypersistent::Node * node = list.head ();
 #ifdef RANDOMIZE
@@ -213,9 +259,17 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
       }
       list.set_data (node, j);
     }
+#ifdef PROFILE_TIME
+    end_operation = clock ();
+    cout << "time: " << ((end_operation - begin_operation) * 1000.0 /
+                         CLOCKS_PER_SEC) << "ms" << endl;
+#endif
   }
 
   cout << "removing " << count << " nodes..." << endl;
+#ifdef PROFILE_TIME
+  begin_operation = clock ();
+#endif
   for (size_t i = 0; i < count; ++i) {
     partiallypersistent::Node * node = list.head ();
     if (node) {
@@ -235,10 +289,18 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
       cout << "List empty at version " << list.version << endl;
     }
   }
+#ifdef PROFILE_TIME
+  end_operation = clock ();
+  cout << "time: " << ((end_operation - begin_operation) * 1000.0 /
+                       CLOCKS_PER_SEC) << "ms" << endl;
+#endif
 
   cout << "accessing " << count <<
     " randomly chosen nodes from randomly chosen versions..." << endl;
   size_t sum = 0UL;
+#ifdef PROFILE_TIME
+  begin_operation = clock ();
+#endif
   for (size_t i = 0UL; i < count; ++i) {
     size_t version_index =
       (double) rand () * list.get_versions ().size () / RAND_MAX;
@@ -256,6 +318,11 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
     size_t data = n->data_at (version_info.version);
     sum += data;
   }
+#ifdef PROFILE_TIME
+  end_operation = clock ();
+  cout << "time: " << ((end_operation - begin_operation) * 1000.0 /
+                       CLOCKS_PER_SEC) << "ms" << endl;
+#endif
   cout << "sum = " << sum << endl;
 
 #ifdef PROFILE_TIME
@@ -263,9 +330,9 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
 
   cout << "Partially persistent: " << count << " insertions and deletions: "
     << ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
-  double vm, rss;
-  process_mem_usage (vm, rss);
-  cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
+//   double vm, rss;
+//   process_mem_usage (vm, rss);
+//   cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
 #endif
 }
 
@@ -308,9 +375,9 @@ test_insert_modify_remove_ephemeral (size_t count) {
 
   cout << "Ephemeral: " << count << " insertions and deletions: " <<
     ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
-  double vm, rss;
-  process_mem_usage (vm, rss);
-  cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
+//   double vm, rss;
+//   process_mem_usage (vm, rss);
+//   cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
 #endif
 
 }
@@ -323,9 +390,16 @@ main (int argc, char **argv) {
     count = atoi (argv[1]);
   }
 
+  cout << "================================================================================" << endl;
+  cout << "Testing partially persistent implementation: " << endl;
+  cout << "================================================================================" << endl;
   test_insert_modify_remove_partiallypersistent (count);
+  cout << endl;
+  cout << "================================================================================" << endl;
+  cout << "Testing naïve rollback implementation: " << endl;
+  cout << "================================================================================" << endl;
   test_insert_modify_remove_rollback_naive (count);
-  test_insert_modify_remove_ephemeral (count);
+//   test_insert_modify_remove_ephemeral (count);
 
   return 0;
 }
