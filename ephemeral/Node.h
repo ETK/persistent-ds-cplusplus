@@ -26,6 +26,7 @@ namespace ephemeral {
   class Node {
   public:
     Node ();
+    ~Node ();
 
     std::size_t data;
 

@@ -29,6 +29,6 @@ void test_insert_print (size_t count) {
 }
 
 int main (int argc, char **argv) {
-  test_insert_print (20);
+  test_insert_print (10);
 }
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; 

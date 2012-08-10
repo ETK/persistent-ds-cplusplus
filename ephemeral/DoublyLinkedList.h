@@ -24,12 +24,16 @@
 
 #include "Node.h"
 
+// #define VERIFY_STRICT
+#undef VERIFY_STRICT
+
 namespace ephemeral {
 
   class DoublyLinkedList {
 
   public:
     DoublyLinkedList ();
+    DoublyLinkedList (const DoublyLinkedList& other);
     void insert (Node & new_node);
     void insert (Node & new_node, std::size_t index);
     void remove (Node & to_remove);
@@ -37,6 +41,10 @@ namespace ephemeral {
 
     Node *head;
     std::size_t size;
+  private:
+#ifdef VERIFY_STRICT
+    std::size_t real_size();
+#endif
   };
 }
 #endif                          // EPHEMERAL_DOUBLYLINKEDLIST_H

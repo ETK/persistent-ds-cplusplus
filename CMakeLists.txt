@@ -6,6 +6,7 @@ add_executable(test_dot_graph partiallypersistent/DoublyLinkedList.cpp partially
 add_executable(msc rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp partiallypersistent/DoublyLinkedList.cpp partiallypersistent/Node.cpp main.cpp)
 
 add_executable(test_rollback_naive rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_naive.cpp)
+add_executable(test_rollback_snapshots rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_snapshots.cpp)
 
 add_subdirectory(partiallypersistent)
 add_subdirectory(ephemeral)

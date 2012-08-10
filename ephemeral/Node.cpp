@@ -25,4 +25,13 @@ namespace ephemeral {
     prev = 0;
     next = 0;
   }
+
+  Node::~Node () {
+    if (next) {
+      delete next;
+    }
+    if (prev) {
+      delete prev;
+    }
+  }
 }
