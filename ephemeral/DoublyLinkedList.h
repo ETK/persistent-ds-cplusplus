@@ -26,6 +26,9 @@
 
 // #define VERIFY_STRICT
 #undef VERIFY_STRICT
+#ifdef VERIFY_STRICT
+#include <cassert>
+#endif
 
 namespace ephemeral {
 
@@ -34,6 +37,9 @@ namespace ephemeral {
   public:
     DoublyLinkedList ();
     DoublyLinkedList (const DoublyLinkedList& other);
+    DoublyLinkedList& operator=(const DoublyLinkedList& other);
+    DoublyLinkedList (DoublyLinkedList&& other);
+    DoublyLinkedList& operator=(DoublyLinkedList&& other);
     void insert (Node & new_node);
     void insert (Node & new_node, std::size_t index);
     void remove (Node & to_remove);
@@ -49,3 +55,5 @@ namespace ephemeral {
 }
 #endif                          // EPHEMERAL_DOUBLYLINKEDLIST_H
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+
+

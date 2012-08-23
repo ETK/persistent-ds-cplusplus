@@ -27,11 +27,17 @@ namespace ephemeral {
   }
 
   Node::~Node () {
+//     Node* tmp = 0x0;
     if (next) {
       delete next;
+//       tmp = next;
+//       next = 0x0;
+//       delete tmp;
     }
-    if (prev) {
-      delete prev;
-    }
+//     if (prev) {
+//       tmp = prev;
+//       prev = 0x0;
+//       delete tmp;
+//     }
   }
 }

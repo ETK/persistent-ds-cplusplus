@@ -7,6 +7,11 @@
 #include <ios>
 #include <fstream>
 #include <string>
+#include <sstream>
+#include <cstdio>
+#include <iomanip>
+
+#include <sqlite3.h>
 
 #include "ephemeral/DoublyLinkedList.h"
 #include "partiallypersistent/DoublyLinkedList.h"
@@ -16,6 +21,56 @@
 #define RANDOMIZE
 
 using namespace std;
+
+namespace main_ns {
+enum mode_t {
+  rollback_naive,
+  partiallypersistent
+};
+
+uint64_t start_time;
+
+string
+mode_to_string (mode_t mode) {
+  switch (mode) {
+  case rollback_naive:
+    return "rollback_naive";
+  case partiallypersistent:
+    return "partiallypersistent";
+  default:
+    return "unknown";
+  }
+}
+
+std::string exec (string cmd) {
+  FILE *pipe = popen (cmd.c_str (), "r");
+  if (!pipe)
+    return "ERROR";
+  char buffer[128];
+  std::string result = "";
+  while (!feof (pipe)) {
+    if (fgets (buffer, 128, pipe) != NULL)
+      result += buffer;
+  }
+  pclose (pipe);
+  return result;
+}
+
+int
+callback (void *NotUsed, int argc, char **argv, char **azColName) {
+  for (int i = 0; i < argc; ++i) {
+    cout << azColName[i] << " = " << (argv[i] ? argv[i] : "NULL") << endl;
+  }
+  return 0;
+}
+
+double
+nano_time () {
+  timespec ts;
+  clock_gettime (CLOCK_REALTIME, &ts);
+
+  return ts.tv_sec * 1e9 + ts.tv_nsec;
+}
 
 void
 dump_list_dot_graph (partiallypersistent::DoublyLinkedList & list) {
@@ -48,10 +103,48 @@ print_all_versions (rollback_naive::DoublyLinkedList & list) {
 }
 
 void
-test_insert_modify_remove_rollback_naive (size_t count) {
-  clock_t begin_operation, end_operation;
+log_operation_to_db (const mode_t mode, size_t count, const string operation,
+                     size_t max_no_snapshots, size_t max_snapshot_dist,
+                     const double begin_operation,
+                     const double end_operation) {
+  sqlite3 *db;
+  char *zErrMsg;
+  int rc;
+  rc = sqlite3_open ("sqlite.db", &db);
+  if (rc) {
+    stringstream ss;
+    ss << "Can't open database \"sqlite.db\": " << sqlite3_errmsg (db);
+    sqlite3_close (db);
+    throw ss.str ();
+  }
+  string git_hash = exec ("git rev-parse HEAD");
+  stringstream sql;
+  sql.precision (15);
+  sql.setf (ios::fixed);
+  sql <<
+    "insert into results (start_time, implementation, count, max_no_snapshots, max_snapshot_dist, version, begin_time, end_time, operation, duration) values (" << start_time << ", '"
+    << mode_to_string(mode) << "', " << count << ", " << max_no_snapshots << ", " << max_snapshot_dist << ", " << "'" << git_hash << "', " << (long
+                                                                      long)
+    begin_operation << ", " << (long long) end_operation << ", '" << operation
+    << "', " << (long long) (end_operation - begin_operation) << ")";
+//   cout << sql.str () << endl;
+  rc = sqlite3_exec (db, sql.str ().c_str (), callback, 0, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    stringstream ss;
+    ss << "SQL error: " << zErrMsg << endl;
+    sqlite3_free (zErrMsg);
+    throw ss.str ();
+  }
+  sqlite3_close (db);
+}
 
-  rollback_naive::DoublyLinkedList list;
+void
+test_insert_modify_remove_rollback_naive (size_t count,
+                                          size_t max_no_snapshots,
+                                          size_t max_snapshot_dist) {
+  double begin_operation, end_operation;
+
+  rollback_naive::DoublyLinkedList list (max_no_snapshots, max_snapshot_dist);
 
   cout << "rollback;insert;" << count << ";";
 #ifdef RANDOMIZE
@@ -59,7 +152,7 @@ test_insert_modify_remove_rollback_naive (size_t count) {
 #else
   cout << "sequential;";
 #endif
-  begin_operation = clock ();
+  begin_operation = nano_time ();
   for (size_t i = 0; i < count; ++i) {
 #ifdef RANDOMIZE
     list.insert (i,
@@ -69,9 +162,11 @@ test_insert_modify_remove_rollback_naive (size_t count) {
     list.insert (i, 0);
 #endif
   }
-  end_operation = clock ();
-  cout << ((end_operation - begin_operation) * 1000.0 /
-           CLOCKS_PER_SEC) << endl;
+  end_operation = nano_time ();
+  cout << (end_operation - begin_operation) << endl;
+
+  log_operation_to_db (rollback_naive, count, "insert", max_no_snapshots,
+                       max_snapshot_dist, begin_operation, end_operation);
 
   if (count <= 100) {
     print_all_versions (list);
@@ -84,7 +179,7 @@ test_insert_modify_remove_rollback_naive (size_t count) {
 #else
     cout << "sequential;";
 #endif
-    begin_operation = clock ();
+    begin_operation = nano_time ();
     for (size_t j = 0; j < count; ++j) {
       ephemeral::Node * node = list.head ();
 #ifdef RANDOMIZE
@@ -95,9 +190,10 @@ test_insert_modify_remove_rollback_naive (size_t count) {
 
       list.modify_data (index, j);
     }
-    end_operation = clock ();
-    cout << ((end_operation - begin_operation) * 1000.0 /
-             CLOCKS_PER_SEC) << endl;
+    end_operation = nano_time ();
+    cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (rollback_naive, count, "modify", max_no_snapshots,
+                       max_snapshot_dist, begin_operation, end_operation);
   }
 
   cout << "rollback;remove;" << count << ";";
@@ -106,7 +202,7 @@ test_insert_modify_remove_rollback_naive (size_t count) {
 #else
   cout << "sequential;";
 #endif
-  begin_operation = clock ();
+  begin_operation = nano_time ();
   for (size_t i = 0; i < count; ++i) {
     ephemeral::Node * node = list.head ();
     if (node) {
@@ -118,9 +214,10 @@ test_insert_modify_remove_rollback_naive (size_t count) {
       cout << "List empty at version " << list.num_records () << endl;
     }
   }
-  end_operation = clock ();
-  cout << ((end_operation - begin_operation) * 1000.0 /
-           CLOCKS_PER_SEC) << endl;
+  end_operation = nano_time ();
+  cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (rollback_naive, count, "remove", max_no_snapshots,
+                       max_snapshot_dist, begin_operation, end_operation);
 
   cout << "rollback;access;" << count << ";";
 #ifdef RANDOMIZE
@@ -129,7 +226,7 @@ test_insert_modify_remove_rollback_naive (size_t count) {
   cout << "sequential;";
 #endif
   size_t sum = 0UL;
-  begin_operation = clock ();
+  begin_operation = nano_time ();
   for (size_t i = 0UL; i < count; ++i) {
     size_t version_index = (double) rand () * list.num_records () / RAND_MAX;
     size_t v = version_index + 1;
@@ -149,14 +246,15 @@ test_insert_modify_remove_rollback_naive (size_t count) {
     size_t data = n->data;
     sum += data;
   }
-  end_operation = clock ();
-  cout << ((end_operation - begin_operation) * 1000.0 /
-           CLOCKS_PER_SEC) << endl;
+  end_operation = nano_time ();
+  cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (rollback_naive, count, "access", max_no_snapshots,
+                       max_snapshot_dist, begin_operation, end_operation);
 }
 
 void
 test_insert_modify_remove_partiallypersistent (size_t count) {
-  clock_t begin_operation, end_operation;
+  double begin_operation, end_operation;
 
   partiallypersistent::DoublyLinkedList list;
 
@@ -166,7 +264,7 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
 #else
   cout << "sequential;";
 #endif
-  begin_operation = clock ();
+  begin_operation = nano_time ();
   for (size_t i = 0; i < count; ++i) {
 #ifdef RANDOMIZE
     list.insert (i,
@@ -177,9 +275,10 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
     list.insert (i, 0);
 #endif
   }
-  end_operation = clock ();
-  cout << ((end_operation - begin_operation) * 1000.0 /
-           CLOCKS_PER_SEC) << endl;
+  end_operation = nano_time ();
+  cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (partiallypersistent, count, "insert", 0,
+                       0, begin_operation, end_operation);
 
   if (count <= 100) {
     print_all_versions (list);
@@ -192,7 +291,7 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
 #else
     cout << "sequential;";
 #endif
-    begin_operation = clock ();
+    begin_operation = nano_time ();
     for (size_t j = 0; j < count; ++j) {
       partiallypersistent::Node * node = list.head ();
 #ifdef RANDOMIZE
@@ -211,9 +310,10 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
       }
       list.set_data (node, j);
     }
-    end_operation = clock ();
-    cout << ((end_operation - begin_operation) * 1000.0 /
-             CLOCKS_PER_SEC) << endl;
+    end_operation = nano_time ();
+    cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (partiallypersistent, count, "modify", 0,
+                       0, begin_operation, end_operation);
   }
 
   cout << "partiallypersistent;remove;" << count << ";";
@@ -222,7 +322,7 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
 #else
   cout << "sequential;";
 #endif
-  begin_operation = clock ();
+  begin_operation = nano_time ();
   for (size_t i = 0; i < count; ++i) {
     partiallypersistent::Node * node = list.head ();
     if (node) {
@@ -242,9 +342,10 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
       cout << "List empty at version " << list.version << endl;
     }
   }
-  end_operation = clock ();
-  cout << ((end_operation - begin_operation) * 1000.0 /
-           CLOCKS_PER_SEC) << endl;
+  end_operation = nano_time ();
+  cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (partiallypersistent, count, "remove", 0,
+                       0, begin_operation, end_operation);
 
   cout << "partiallypersistent;access;" << count << ";";
 #ifdef RANDOMIZE
@@ -253,7 +354,7 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
   cout << "sequential;";
 #endif
   size_t sum = 0UL;
-  begin_operation = clock ();
+  begin_operation = nano_time ();
   for (size_t i = 0UL; i < count; ++i) {
     size_t version_index =
       (double) rand () * list.get_versions ().size () / RAND_MAX;
@@ -271,76 +372,159 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
     size_t data = n->data_at (version_info.version);
     sum += data;
   }
-  end_operation = clock ();
-  cout << ((end_operation - begin_operation) * 1000.0 /
-           CLOCKS_PER_SEC) << endl;
+  end_operation = nano_time ();
+  cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (partiallypersistent, count, "access", 0,
+                       0, begin_operation, end_operation);
 }
 
-void
-test_insert_modify_remove_ephemeral (size_t count) {
-#ifdef PROFILE_TIME
-  clock_t begin = clock ();
-#endif
-
-  ephemeral::DoublyLinkedList list;
-
-  for (size_t i = 0; i < count; ++i) {
-    ephemeral::Node n;
-    n.data = i;
-    list.insert (n, list.size > 0 ? rand () * list.size / RAND_MAX : 0);
-  }
-  for (size_t i = 0; i < count; ++i) {
-    size_t index = rand () * list.size / RAND_MAX;
-    ephemeral::Node * node = list.head;
-    for (size_t j = 0; j < index; ++j) {
-      if (node->next) {
-        node = node->next;
-      } else {
-        break;
-      }
-    }
-    node->data = i;
-  }
-  for (size_t i = 0; i < count; ++i) {
-    size_t index = rand () * list.size / RAND_MAX;
-    ephemeral::Node * node = list.head;
-    for (size_t j = 0; j < index; ++j) {
-      node = node->next;
-    }
-    list.remove (*node);
-  }
-
-#ifdef PROFILE_TIME
-  clock_t end = clock ();
-
-  cout << "Ephemeral: " << count << " insertions and deletions: " <<
-    ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
-//   double vm, rss;
-//   process_mem_usage (vm, rss);
-//   cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
-#endif
+// void
+// test_insert_modify_remove_ephemeral (size_t count) {
+// #ifdef PROFILE_TIME
+//   timespec begin;
+//   clock_gettime(CLOCK_REALTIME, &begin);
+//   begin.tv_sec * 1e9 + begin.tv_nsec;
+// #endif
+// 
+//   ephemeral::DoublyLinkedList list;
+// 
+//   for (size_t i = 0; i < count; ++i) {
+//     ephemeral::Node n;
+//     n.data = i;
+//     list.insert (n, list.size > 0 ? rand () * list.size / RAND_MAX : 0);
+//   }
+//   for (size_t i = 0; i < count; ++i) {
+//     size_t index = rand () * list.size / RAND_MAX;
+//     ephemeral::Node * node = list.head;
+//     for (size_t j = 0; j < index; ++j) {
+//       if (node->next) {
+//         node = node->next;
+//       } else {
+//         break;
+//       }
+//     }
+//     node->data = i;
+//   }
+//   for (size_t i = 0; i < count; ++i) {
+//     size_t index = rand () * list.size / RAND_MAX;
+//     ephemeral::Node * node = list.head;
+//     for (size_t j = 0; j < index; ++j) {
+//       node = node->next;
+//     }
+//     list.remove (*node);
+//   }
+// 
+// #ifdef PROFILE_TIME
+//   clock_t end = clock ();
+// 
+//   cout << "Ephemeral: " << count << " insertions and deletions: " <<
+//     ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
+// //   double vm, rss;
+// //   process_mem_usage (vm, rss);
+// //   cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
+// #endif
+// 
+// }
 
 }
 
 int
 main (int argc, char **argv) {
+  main_ns::start_time = main_ns::nano_time();
+  
+  using namespace main_ns;
 
-  int count = 10000;
-  if (argc == 2) {
-    count = atoi (argv[1]);
-  }
-//   cout << "================================================================================" << endl;
-//   cout << "Testing partially persistent implementation: " << endl;
-//   cout << "================================================================================" << endl;
-  test_insert_modify_remove_partiallypersistent (count);
-//   cout << endl;
-//   cout << "================================================================================" << endl;
-//   cout << "Testing naïve rollback implementation: " << endl;
-//   cout << "================================================================================" << endl;
-  test_insert_modify_remove_rollback_naive (count);
+  size_t count = 1000UL;
+  size_t max_no_snapshots = 1200UL;
+  size_t max_snapshot_dist = 100UL;
+
+  main_ns::mode_t mode = main_ns::rollback_naive;
+
+  try {
+    for (int i = 1; i < argc; ++i) {
+      string arg = argv[i];
+      if ("-c" == arg || "--count" == arg) {
+        if (++i < argc) {
+          count = atoi (argv[i]);
+        } else {
+          stringstream ss;
+          ss << "No argument given to " << arg;
+          throw ss.str ();
+        }
+      } else if ("-m" == arg || "--max-no-snapshots" == arg) {
+        if (++i < argc) {
+          max_no_snapshots = atoi (argv[i]);
+        } else {
+          stringstream ss;
+          ss << "No argument given to " << arg;
+          throw ss.str ();
+        }
+      } else if ("-d" == arg || "--max-snapshot-dist" == arg) {
+        if (++i < argc) {
+          max_snapshot_dist = atoi (argv[i]);
+        } else {
+          stringstream ss;
+          ss << "No argument given to " << arg;
+          throw ss.str ();
+        }
+      } else if ("-r" == arg || "--rollback-naive" == arg) {
+        mode = main_ns::rollback_naive;
+      } else if ("-p" == arg || "--partially-persistent" == arg) {
+        mode = main_ns::partiallypersistent;
+      }
+    }
+
+    cout.precision (15);
+
+    sqlite3 *db;
+    char *zErrMsg;
+    int rc;
+    rc = sqlite3_open ("sqlite.db", &db);
+    if (rc) {
+      cerr << "Can't open database \"sqlite.db\": " << sqlite3_errmsg (db) <<
+        endl;
+      sqlite3_close (db);
+      return 1;
+    }
+
+//     rc =
+//       sqlite3_exec (db,
+//                     "drop table if exists results", callback, 0, &zErrMsg);
+//     if (rc != SQLITE_OK) {
+//       cerr << "SQL error: " << zErrMsg << endl;
+//       sqlite3_free (zErrMsg);
+//     }
+    rc = sqlite3_exec (db,
+                       "create table if not exists results (id integer primary key autoincrement not null, start_time integer not null, version text not null, implementation text not null, count integer not null, max_no_snapshots integer, max_snapshot_dist integer, begin_time integer not null, end_time integer not null, operation text not null, duration integer not null)",
+                       callback, 0, &zErrMsg);
+    if (rc != SQLITE_OK) {
+      cerr << "SQL error: " << zErrMsg << endl;
+      sqlite3_free (zErrMsg);
+    }
+    rc = sqlite3_exec (db, "select * from results", callback, 0, &zErrMsg);
+    if (rc != SQLITE_OK) {
+      cerr << "SQL error: " << zErrMsg << endl;
+      sqlite3_free (zErrMsg);
+    }
+
+    switch (mode) {
+    case main_ns::rollback_naive:
+      test_insert_modify_remove_rollback_naive (count, max_no_snapshots,
+                                                max_snapshot_dist);
+      break;
+    case main_ns::partiallypersistent:
+      test_insert_modify_remove_partiallypersistent (count);
+      break;
+    }
+
+    sqlite3_close (db);
 //   test_insert_modify_remove_ephemeral (count);
-
-  return 0;
+    return 0;
+  }
+  catch (string e) {
+    cerr << "E: " << e << endl;
+    return 1;
+  }
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;

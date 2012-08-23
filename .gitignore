@@ -6,3 +6,4 @@ install_manifest.txt
 *.*~
 build/
 .main.cpp.kate-swp
+*.kate-swp

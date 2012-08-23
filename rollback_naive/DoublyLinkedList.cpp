@@ -16,9 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// #define DEBUG_SNAPSHOT_FEATURE
-// #include <iostream>
-
 #include "DoublyLinkedList.h"
 #include <iostream>
 
@@ -32,15 +29,22 @@ namespace rollback_naive {
 
     snapshots =
       vector < std::pair < std::size_t, ephemeral::DoublyLinkedList > >();
-    snapshots.push_back (std::make_pair < std::size_t,
-                         ephemeral::DoublyLinkedList > (next_record_index,
-                                                        ephemeral::DoublyLinkedList
-                                                        (ephemeral_current)));
+    max_snapshot_dist = INIT_MAX_SNAPSHOT_DIST;
+    max_no_snapshots = MAX_NO_SNAPSHOTS;
+
+    snapshots.push_back (std::make_pair (next_record_index,
+                                         ephemeral::DoublyLinkedList
+                                         (ephemeral_current)));
 #ifdef DEBUG_SNAPSHOT_FEATURE
     cout << "Snapshot no. " << snapshots.size () << " made" << endl;
 #endif
-    max_snapshot_dist = MAX_SNAPSHOT_DIST;
   };
+
+  DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots,
+                                      size_t max_snapshot_dist) : DoublyLinkedList() {
+    this->max_no_snapshots = max_no_snapshots;
+    this->max_snapshot_dist = max_snapshot_dist;
+  }
 
   size_t DoublyLinkedList::num_records () {
     return records.size ();
@@ -196,10 +200,30 @@ namespace rollback_naive {
     next_record_index++;
 
     if (next_record_index >= max_snapshot_dist * snapshots.size () - 1) {
-      snapshots.push_back (std::make_pair < std::size_t,
-                           ephemeral::DoublyLinkedList > (next_record_index,
-                                                          ephemeral::DoublyLinkedList
-                                                          (ephemeral_current)));
+
+      if (snapshots.size () == max_no_snapshots - 1) {
+
+        size_t exponent = 2;
+//         size_t exponent = MAX_NO_SNAPSHOTS / INIT_MAX_SNAPSHOT_DIST;
+//         if (exponent <= 1) {
+//           exponent = 2;
+//         }
+
+//         cout << "Increasing max snapshot distance from " << max_snapshot_dist << " to " << max_snapshot_dist * exponent << endl;
+        
+        max_snapshot_dist *= exponent;
+
+        vector < pair < size_t, ephemeral::DoublyLinkedList > >new_snapshots;
+        size_t index = 0;
+        for (size_t i = 0; i < snapshots.size(); i += exponent) {
+          new_snapshots.push_back (snapshots[i]);
+        }
+        snapshots = new_snapshots;
+      }
+
+      snapshots.push_back (std::make_pair (next_record_index,
+                                           ephemeral::DoublyLinkedList
+                                           (ephemeral_current)));
 
 #ifdef DEBUG_SNAPSHOT_FEATURE
       cout << "Snapshot no. " << snapshots.size () << " made" << endl;
@@ -276,21 +300,33 @@ namespace rollback_naive {
   }
 
   ephemeral::Node * DoublyLinkedList::head_at (size_t v) {
+#ifdef DEBUG_SNAPSHOT_FEATURE
+    size_t rolls = 0;
+#endif
     jump_to_snapshot (v);
 
     while (v > next_record_index) {
+#ifdef DEBUG_SNAPSHOT_FEATURE
+      ++rolls;
+#endif
       rollforward ();
     }
 
     while (v < next_record_index) {
+#ifdef DEBUG_SNAPSHOT_FEATURE
+      ++rolls;
+#endif
       rollback ();
     }
 
+#ifdef DEBUG_SNAPSHOT_FEATURE
+    cout << rolls << " rolls" << endl;
+#endif
     return ephemeral_current.head;
   }
 
   void DoublyLinkedList::jump_to_snapshot (size_t v) {
-    if (abs ((int) (v - next_record_index)) <= max_snapshot_dist / 2) {
+    if (labs ((v - next_record_index)) <= max_snapshot_dist / 2) {
 #ifdef DEBUG_SNAPSHOT_FEATURE
       cout << "Closer than " << max_snapshot_dist / 2 +
         1 << ", not jumping" << endl;
@@ -304,15 +340,15 @@ namespace rollback_naive {
       snapshot_index = snapshots.size () - 1;
     }
 
-    if ((next_record_index + max_snapshot_dist / 2 + 1) / max_snapshot_dist ==
-        snapshot_index) {
-#ifdef DEBUG_SNAPSHOT_FEATURE
-      cout << "Would jump to snapshot no. " << snapshot_index +
-        1 << ", but we're close enough" << endl;
-#endif
-      return;
-    }
-
+//     if ((next_record_index + max_snapshot_dist / 2 + 1) / max_snapshot_dist ==
+//         snapshot_index) {
+// #ifdef DEBUG_SNAPSHOT_FEATURE
+//       cout << "Would jump to snapshot no. " << snapshot_index +
+//         1 << ", but we're close enough" << endl;
+// #endif
+//       return;
+//     }
+// 
     pair < size_t, ephemeral::DoublyLinkedList > &snapshot =
       snapshots[snapshot_index];
 #ifdef DEBUG_SNAPSHOT_FEATURE
@@ -326,3 +362,4 @@ namespace rollback_naive {
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+

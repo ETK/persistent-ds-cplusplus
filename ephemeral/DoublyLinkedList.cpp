@@ -16,9 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef VERIFY_STRICT
-#include <cassert>
-#endif
 #include <iostream>
 
 #include "DoublyLinkedList.h"
@@ -26,21 +23,9 @@
 using namespace std;
 
 namespace ephemeral {
-#ifdef VERIFY_STRICT
-  size_t DoublyLinkedList::real_size() {
-    size_t result = 0UL;
-    Node* node = head;
-    while (node) {
-      ++result;
-      node = node->next;
-    }
-    return result;
-  }
-#endif
-
   DoublyLinkedList::DoublyLinkedList () {
-    head = 0;
-    size = 0;
+    head = 0x0;
+    size = 0x0;
   };
 
   DoublyLinkedList::DoublyLinkedList (const DoublyLinkedList &
@@ -50,7 +35,7 @@ namespace ephemeral {
       node = node->next;
     }
     while (node) {
-      Node * new_node = new Node();
+      Node *new_node = new Node ();
       new_node->data = node->data;
       insert (*new_node);
       node = node->prev;
@@ -59,6 +44,65 @@ namespace ephemeral {
     assert (size == other.size);
 #endif
   }
+
+  DoublyLinkedList & DoublyLinkedList::operator= (const DoublyLinkedList &
+                                                  other) {
+    if (this != &other) {
+      if (head) {
+        delete head;
+      }
+      head = 0;
+
+      Node *node = other.head;
+      while (node && node->next) {
+        node = node->next;
+      }
+      while (node) {
+        Node *new_node = new Node ();
+        new_node->data = node->data;
+        insert (*new_node);
+        node = node->prev;
+      }
+#ifdef VERIFY_STRICT
+      assert (size == other.size);
+#endif
+    }
+    return *this;
+  }
+
+DoublyLinkedList::DoublyLinkedList (DoublyLinkedList && other):head (std::move (other.head)),
+    size (other.size)
+  {
+    other.head = 0x0;
+    other.size = 0;
+  }
+
+  DoublyLinkedList & DoublyLinkedList::
+    DoublyLinkedList::operator= (DoublyLinkedList && other) {
+    if (this != &other) {
+      if (head) {
+        delete head;
+      }
+
+      head = other.head;
+      size = other.size;
+
+      other.head = 0x0;
+      other.size = 0;
+    }
+  }
+
+#ifdef VERIFY_STRICT
+  size_t DoublyLinkedList::real_size () {
+    size_t result = 0UL;
+    Node *node = head;
+    while (node) {
+      ++result;
+      node = node->next;
+    };
+    return result;
+  }
+#endif
 
   void DoublyLinkedList::insert (Node & new_node) {
     if (head) {
@@ -70,7 +114,7 @@ namespace ephemeral {
     ++size;
 
 #ifdef VERIFY_STRICT
-    assert (real_size() == size);
+    assert (real_size () == size);
 #endif
   }
 
@@ -95,7 +139,7 @@ namespace ephemeral {
       ++size;
     }
 #ifdef VERIFY_STRICT
-    assert (real_size() == size);
+    assert (real_size () == size);
 #endif
   }
 
@@ -112,7 +156,7 @@ namespace ephemeral {
     to_remove.prev = 0;
     --size;
 #ifdef VERIFY_STRICT
-    assert (real_size() == size);
+    assert (real_size () == size);
 #endif
   }
 

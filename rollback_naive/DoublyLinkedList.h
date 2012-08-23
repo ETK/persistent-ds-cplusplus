@@ -26,7 +26,14 @@
 #include "../ephemeral/DoublyLinkedList.h"
 #include "../ephemeral/Node.h"
 
-#define MAX_SNAPSHOT_DIST 20UL
+// #define DEBUG_SNAPSHOT_FEATURE
+#undef DEBUG_SNAPSHOT_FEATURE
+#ifdef DEBUG_SNAPSHOT_FEATURE
+#include <iostream>
+#endif
+
+#define INIT_MAX_SNAPSHOT_DIST 100UL
+#define MAX_NO_SNAPSHOTS 1200UL
 
 namespace rollback_naive {
   enum operation_t {
@@ -52,6 +59,7 @@ namespace rollback_naive {
 
   public:
     DoublyLinkedList ();
+    DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot_dist);
 
     void insert (size_t node_data, std::size_t index);
 
@@ -72,8 +80,10 @@ namespace rollback_naive {
       ephemeral::DoublyLinkedList ephemeral_current;
 
       std::vector < record_t > records;
-      std::vector < std::pair<std::size_t, ephemeral::DoublyLinkedList> > snapshots;
+      std::vector < std::pair < std::size_t,
+      ephemeral::DoublyLinkedList > >snapshots;
       std::size_t max_snapshot_dist;
+      std::size_t max_no_snapshots;
 
     void rollback ();
     void rollforward ();
