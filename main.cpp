@@ -16,6 +16,7 @@
 #include "ephemeral/DoublyLinkedList.h"
 #include "partiallypersistent/DoublyLinkedList.h"
 #include "rollback_naive/DoublyLinkedList.h"
+#include "rollback_reorder/DoublyLinkedList.h"
 
 // #undef RANDOMIZE
 #define RANDOMIZE
@@ -25,6 +26,7 @@ using namespace std;
 namespace main_ns {
 enum mode_t {
   rollback_naive,
+  rollback_reorder,
   partiallypersistent
 };
 
@@ -35,6 +37,8 @@ mode_to_string (mode_t mode) {
   switch (mode) {
   case rollback_naive:
     return "rollback_naive";
+  case rollback_reorder:
+    return "rollback_reorder";
   case partiallypersistent:
     return "partiallypersistent";
   default:
@@ -94,6 +98,16 @@ print_all_versions (partiallypersistent::DoublyLinkedList & list) {
 
 void
 print_all_versions (rollback_naive::DoublyLinkedList & list) {
+  for (vector < pair < size_t, partiallypersistent::Node * > >::size_type i =
+       1; i <= list.num_records (); ++i) {
+    cout << "List at version " << i << " (size " << list.size_at (i) << "): ";
+    size_t printed_size = list.print_at_version (i);
+    cout << "printed size: " << printed_size << endl;
+  }
+}
+
+void
+print_all_versions (rollback_reorder::DoublyLinkedList & list) {
   for (vector < pair < size_t, partiallypersistent::Node * > >::size_type i =
        1; i <= list.num_records (); ++i) {
     cout << "List at version " << i << " (size " << list.size_at (i) << "): ";
@@ -249,6 +263,120 @@ test_insert_modify_remove_rollback_naive (size_t count,
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
   log_operation_to_db (rollback_naive, count, "access", max_no_snapshots,
+                       max_snapshot_dist, begin_operation, end_operation);
+}
+
+void
+test_insert_modify_remove_rollback_reorder (size_t count,
+                                          size_t max_no_snapshots,
+                                          size_t max_snapshot_dist) {
+  double begin_operation, end_operation;
+
+  rollback_reorder::DoublyLinkedList list (max_no_snapshots, max_snapshot_dist);
+
+  cout << "rollback;insert;" << count << ";";
+#ifdef RANDOMIZE
+  cout << "random;";
+#else
+  cout << "sequential;";
+#endif
+  begin_operation = nano_time ();
+  for (size_t i = 0; i < count; ++i) {
+#ifdef RANDOMIZE
+    list.insert (i,
+                 list.size () >
+                 0 ? (double) rand () * list.size () / RAND_MAX : 0);
+#else
+    list.insert (i, 0);
+#endif
+  }
+  end_operation = nano_time ();
+  cout << (end_operation - begin_operation) << endl;
+
+  log_operation_to_db (rollback_reorder, count, "insert", max_no_snapshots,
+                       max_snapshot_dist, begin_operation, end_operation);
+
+  if (count <= 100) {
+    print_all_versions (list);
+  }
+
+  for (size_t i = 0; i < 10; ++i) {
+    cout << "rollback;modify;" << count << ";";
+#ifdef RANDOMIZE
+    cout << "random;";
+#else
+    cout << "sequential;";
+#endif
+    begin_operation = nano_time ();
+    for (size_t j = 0; j < count; ++j) {
+      ephemeral::Node * node = list.head ();
+#ifdef RANDOMIZE
+      size_t index = (double) rand () * list.size () / RAND_MAX;
+#else
+      size_t index = count / 10;
+#endif
+
+      list.modify_data (index, j);
+    }
+    end_operation = nano_time ();
+    cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (rollback_reorder, count, "modify", max_no_snapshots,
+                       max_snapshot_dist, begin_operation, end_operation);
+  }
+
+  cout << "rollback;remove;" << count << ";";
+#ifdef RANDOMIZE
+  cout << "random;";
+#else
+  cout << "sequential;";
+#endif
+  begin_operation = nano_time ();
+  for (size_t i = 0; i < count; ++i) {
+    ephemeral::Node * node = list.head ();
+    if (node) {
+#ifdef RANDOMIZE
+      size_t index = (double) rand () * list.size () / RAND_MAX;
+#endif
+      list.remove (index);
+    } else {
+      cout << "List empty at version " << list.num_records () << endl;
+    }
+  }
+  end_operation = nano_time ();
+  cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (rollback_reorder, count, "remove", max_no_snapshots,
+                       max_snapshot_dist, begin_operation, end_operation);
+
+  cout << "rollback;access;" << count << ";";
+#ifdef RANDOMIZE
+  cout << "random;";
+#else
+  cout << "sequential;";
+#endif
+  size_t sum = 0UL;
+  begin_operation = nano_time ();
+  for (size_t i = 0UL; i < count; ++i) {
+    size_t version_index = (double) rand () * list.num_records () / RAND_MAX;
+    size_t v = version_index + 1;
+    ephemeral::Node * n = list.head_at (v);
+    size_t list_size = list.size_at (v);
+    if (list_size == 0) {
+      continue;
+    }
+    size_t list_index = (double) rand () * list_size / RAND_MAX;
+    for (size_t j = 0; j < list_index; ++j) {
+      if (n->next) {
+        n = n->next;
+      } else {
+        break;
+      }
+    }
+    size_t data = n->data;
+    sum += data;
+  }
+  end_operation = nano_time ();
+  cout << (end_operation - begin_operation) << endl;
+  log_operation_to_db (rollback_reorder, count, "access", max_no_snapshots,
                        max_snapshot_dist, begin_operation, end_operation);
 }
 
@@ -469,6 +597,8 @@ main (int argc, char **argv) {
         }
       } else if ("-r" == arg || "--rollback-naive" == arg) {
         mode = main_ns::rollback_naive;
+      } else if ("-o" == arg || "--rollback-naive" == arg) {
+        mode = main_ns::rollback_reorder;
       } else if ("-p" == arg || "--partially-persistent" == arg) {
         mode = main_ns::partiallypersistent;
       }
@@ -511,6 +641,10 @@ main (int argc, char **argv) {
     case main_ns::rollback_naive:
       test_insert_modify_remove_rollback_naive (count, max_no_snapshots,
                                                 max_snapshot_dist);
+    case main_ns::rollback_reorder:
+      test_insert_modify_remove_rollback_reorder (count, max_no_snapshots,
+                                                max_snapshot_dist);
+      break;
       break;
     case main_ns::partiallypersistent:
       test_insert_modify_remove_partiallypersistent (count);

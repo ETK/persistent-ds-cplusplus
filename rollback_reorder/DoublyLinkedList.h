@@ -46,7 +46,7 @@ namespace rollback_reorder {
       std::size_t index;
       std::size_t old_data;
       std::size_t data;
-      std::size_t size;
+      std::size_t size = 0;
 
       bool operator < (const record_t& other) const {
         return index < other.index;
@@ -90,7 +90,8 @@ namespace rollback_reorder {
 
     void rollback ();
     void rollforward ();
-    void jump_to_snapshot (size_t v);
+    void jump_to_snapshot (std::size_t v);
+    void ensure_version (std::size_t v);
 
       std::size_t next_record_index;
   };

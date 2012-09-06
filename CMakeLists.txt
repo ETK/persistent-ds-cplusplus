@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 SET(CMAKE_CXX_FLAGS "-std=c++0x")
 
 add_executable(test_dot_graph partiallypersistent/DoublyLinkedList.cpp partiallypersistent/Node.cpp test_dot_graph.cpp)
-add_executable(msc rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp partiallypersistent/DoublyLinkedList.cpp partiallypersistent/Node.cpp main.cpp)
+add_executable(msc rollback_reorder/DoublyLinkedList.cpp rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp partiallypersistent/DoublyLinkedList.cpp partiallypersistent/Node.cpp main.cpp)
 target_link_libraries(msc rt sqlite3)
 
 add_executable(test_rollback_naive rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_naive.cpp)

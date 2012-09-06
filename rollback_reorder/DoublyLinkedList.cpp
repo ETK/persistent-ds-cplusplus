@@ -53,16 +53,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 
 
   void DoublyLinkedList::insert (size_t node_data, std::size_t index) {
-    if (records.size () > 0) {
-      if (next_record_index < records.size () - 1) {
-        next_record_index = snapshots.back ().first;
-        ephemeral_current = snapshots.back ().second;
-
-        while (next_record_index < records.size () - 1) {
-          rollforward ();
-        }
-      }
-    }
+    ensure_version (records.size ());
 
     record_t record;
     record.operation = INSERT;
@@ -88,15 +79,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
       }
     }
 
-    if (records.size () > 0) {
-      if (next_record_index < records.size () - 1) {
-        next_record_index = snapshots.back ().first;
-        ephemeral_current = snapshots.back ().second;
-        while (next_record_index < records.size () - 1) {
-          rollforward ();
-        }
-      }
-    }
+    ensure_version (records.size ());
 
     record_t record;
     record.operation = MODIFY;
@@ -118,15 +101,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
       }
     }
 
-    if (records.size () > 0) {
-      if (next_record_index < records.size () - 1) {
-        next_record_index = snapshots.back ().first;
-        ephemeral_current = snapshots.back ().second;
-        while (next_record_index < records.size () - 1) {
-          rollforward ();
-        }
-      }
-    }
+    ensure_version (records.size ());
 
     record_t record;
     record.operation = REMOVE;
@@ -232,23 +207,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     }
   }
 
-  bool first_only (const pair < record_t, int64_t > &a, const pair < record_t,
-                   int64_t > &b) {
-    if (a.first.operation < b.first.operation) {
-      return true;
-    } else if (a.first.operation == b.first.operation) {
-      if (a.first.operation == INSERT) {
-        return a.first.index < b.first.index;
-      } else if (a.first.operation == REMOVE) {
-        return a.first.index > b.first.index;
-      } else {
-        return false;
-      }
-    } else {
-      return false;
-    }
-  }
-
   bool remove_insert_index (const pair < record_t, int64_t > &a,
                             const pair < record_t, int64_t > &b) {
     if (a.first.operation > b.first.operation) {
@@ -266,23 +224,70 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     }
   }
 
+  record_t reverse_record (record_t record) {
+    switch (record.operation) {
+    case INSERT:
+      record.operation = REMOVE;
+      record.old_data = record.data;
+      break;
+    case REMOVE:
+      record.operation = INSERT;
+      record.data = record.old_data;
+      break;
+    case MODIFY:
+      size_t temp = record.old_data;
+      record.old_data = record.data;
+      record.data = temp;
+      break;
+    }
+    return record;
+  }
+
   size_t DoublyLinkedList::print_at_version (size_t v) {
-    if (next_record_index < v) {
+    ensure_version (v);
+    ephemeral_current.print ();
+    return ephemeral_current.size;
+  }
+
+  size_t DoublyLinkedList::size () {
+    ensure_version (records.size ());
+    return ephemeral_current.size;
+  }
+
+  ephemeral::Node * DoublyLinkedList::head () {
+    ensure_version (records.size ());
+    return ephemeral_current.head;
+  }
+
+  size_t DoublyLinkedList::size_at (size_t v) {
+    ensure_version (v);
+    return ephemeral_current.size;
+  }
+
+  ephemeral::Node * DoublyLinkedList::head_at (size_t v) {
+    ensure_version (v);
+    return ephemeral_current.head;
+  }
+
+  void DoublyLinkedList::ensure_version (std::size_t v) {
+    if (next_record_index == v || v == -1) {
+      return;
+    }
+
+    jump_to_snapshot (v);
+
+    if (next_record_index != v) {
       // 1. Work on copy of records from current to v
       vector < pair < record_t, int64_t >> recs;
-      for (size_t i = next_record_index; i < v; ++i) {
-        record_t r = records[i];
-        recs.push_back (make_pair (records[i], records[i].index));
-        switch (r.operation) {
-        case INSERT:
-          cout << "i(" << r.data << "," << r.index << ")" << endl;
-          break;
-        case REMOVE:
-          cout << "r(" << r.index << ")" << endl;
-          break;
-        case MODIFY:
-          cout << "m(" << r.data << "," << r.index << ")" << endl;
-          break;
+      if (next_record_index < v) {
+        for (size_t i = next_record_index; i < v; ++i) {
+          record_t r = records[i];
+          recs.push_back (make_pair (r, r.index));
+        }
+      } else {
+        for (size_t i = next_record_index; i > v; --i) {
+          record_t r = reverse_record (records[i]);
+          recs.push_back (make_pair (r, r.index));
         }
       }
 
@@ -306,9 +311,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
                 --index;
               } else if (recs[j].first.index == index) {
                 // Remove both, adjust in-between indices and move on.
-                cout << "Erasing i(" << r.data << ", " << r.index << ") and ";
-                cout << "r(" << recs[j].first.index << ")" << endl;
-
                 for (size_t k = i + 1; k < j; ++k) {
                   if (recs[k].first.operation != REMOVE
                       && recs[k].first.index >= r.index
@@ -319,21 +321,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 
                 recs.erase (recs.begin () + j);
                 recs.erase (recs.begin () + i);
-
-                for (size_t k = 0; k < recs.size (); ++k) {
-                  record_t r = recs[k].first;
-                  switch (r.operation) {
-                  case INSERT:
-                    cout << "i(" << r.data << "," << r.index << ")" << endl;
-                    break;
-                  case REMOVE:
-                    cout << "r(" << r.index << ")" << endl;
-                    break;
-                  case MODIFY:
-                    cout << "m(" << r.data << "," << r.index << ")" << endl;
-                    break;
-                  }
-                }
                 // count from same index now that Xi was removed
                 --i;
                 break;
@@ -343,9 +330,9 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
         }
       }
 
+      // 3. Alter indices on operations prior to sorting
       for (size_t i = 0; i < recs.size (); ++i) {
         record_t ri = recs[i].first;
-        recs[i].second = ri.index;
         switch (ri.operation) {
         case INSERT:
         case MODIFY:{
@@ -373,30 +360,12 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
             }
             recs[i].first.index = index;
             break;
-//         case MODIFY:
-//           break;
           }
         }
       }
 
+      // 4. Sort records by operation desc, index asc
       sort (recs.begin (), recs.end (), remove_insert_index);
-      cout << "Sorting by operation desc, index asc" << endl;
-
-      for (size_t k = 0; k < recs.size (); ++k) {
-        record_t r = recs[k].first;
-        switch (r.operation) {
-        case INSERT:
-          cout << "i(" << r.data << "," << r.index << ")" << endl;
-          break;
-        case REMOVE:
-          cout << "r(" << r.
-            index << ") " << "(was " << recs[k].second << ")" << endl;
-          break;
-        case MODIFY:
-          cout << "m(" << r.data << "," << r.index << ")" << endl;
-          break;
-        }
-      }
 
       ephemeral::Node * node = ephemeral_current.head;
       size_t index = 0;
@@ -430,6 +399,8 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
               --index;
             }
           }
+
+          --ephemeral_current.size;
         } else if (ri.operation == INSERT) {
           ephemeral::Node * new_node = new ephemeral::Node ();
           new_node->data = ri.data;
@@ -462,105 +433,16 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
           new_node->next = node;
 
           node = new_node;
+          ++ephemeral_current.size;
         }
       }
 
       next_record_index = v;
     }
-// #ifdef DEBUG_SNAPSHOT_FEATURE
-//     size_t rolls = 0;
-// #endif
-// 
-//     jump_to_snapshot (v);
-// 
-//     while (v > next_record_index) {
-// #ifdef DEBUG_SNAPSHOT_FEATURE
-//       ++rolls;
-// #endif
-//       rollforward ();
-//     }
-
-    while (v < next_record_index) {
-#ifdef DEBUG_SNAPSHOT_FEATURE
-      ++rolls;
-#endif
-      rollback ();
-    }
-
-#ifdef DEBUG_SNAPSHOT_FEATURE
-    cout << rolls << " rolls" << endl;
-#endif
-    ephemeral_current.print ();
-    return ephemeral_current.size;
   }
 
-  size_t DoublyLinkedList::size () {
-    if (next_record_index < records.size () - 1) {
-      next_record_index = snapshots.back ().first;
-      ephemeral_current = snapshots.back ().second;
 
-      while (num_records () > next_record_index) {
-        rollforward ();
-      }
-    }
-
-    return ephemeral_current.size;
-  }
-
-  ephemeral::Node * DoublyLinkedList::head () {
-    if (next_record_index < records.size () - 1) {
-      next_record_index = snapshots.back ().first;
-      ephemeral_current = snapshots.back ().second;
-
-      while (num_records () > next_record_index) {
-        rollforward ();
-      }
-    }
-
-    return ephemeral_current.head;
-  }
-
-  size_t DoublyLinkedList::size_at (size_t v) {
-    jump_to_snapshot (v);
-
-    while (v > next_record_index) {
-      rollforward ();
-    }
-
-    while (v < next_record_index) {
-      rollback ();
-    }
-
-    return ephemeral_current.size;
-  }
-
-  ephemeral::Node * DoublyLinkedList::head_at (size_t v) {
-#ifdef DEBUG_SNAPSHOT_FEATURE
-    size_t rolls = 0;
-#endif
-    jump_to_snapshot (v);
-
-    while (v > next_record_index) {
-#ifdef DEBUG_SNAPSHOT_FEATURE
-      ++rolls;
-#endif
-      rollforward ();
-    }
-
-    while (v < next_record_index) {
-#ifdef DEBUG_SNAPSHOT_FEATURE
-      ++rolls;
-#endif
-      rollback ();
-    }
-
-#ifdef DEBUG_SNAPSHOT_FEATURE
-    cout << rolls << " rolls" << endl;
-#endif
-    return ephemeral_current.head;
-  }
-
-  void DoublyLinkedList::jump_to_snapshot (size_t v) {
+  void DoublyLinkedList::jump_to_snapshot (std::size_t v) {
     if (labs ((v - next_record_index)) <= max_snapshot_dist / 2) {
 #ifdef DEBUG_SNAPSHOT_FEATURE
       cout << "Closer than " << max_snapshot_dist / 2 +
@@ -643,6 +525,9 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     r (0);
 
     print_at_version (records.size ());
+    print_at_version (records.size () - 4);
+    print_at_version (records.size () - 1);
+    print_at_version (records.size () - 9);
   }
 }
 
