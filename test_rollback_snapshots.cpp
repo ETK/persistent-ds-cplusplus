@@ -5,6 +5,7 @@
 #define DEBUG_SNAPSHOT_FEATURE
 
 #include "rollback_naive/DoublyLinkedList.h"
+#include "rollback_reorder/DoublyLinkedList.h"
 
 using namespace std;
 
@@ -25,8 +26,14 @@ void test_rollback_snapshots () {
   }
 }
 
+void test_rollback_reorder() {
+  rollback_reorder::DoublyLinkedList list(5000, 5000);
+  list.test_reorder ();
+}
+
 int main (int argc, char **argv) {
-  test_rollback_snapshots();
+//   test_rollback_snapshots();
+  test_rollback_reorder();
   return 0;
 }
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on;

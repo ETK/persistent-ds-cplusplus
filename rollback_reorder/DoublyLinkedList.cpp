@@ -41,8 +41,8 @@ namespace rollback_reorder {
 #endif
   };
 
-  DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots,
-                                      size_t max_snapshot_dist) : DoublyLinkedList() {
+DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot_dist):DoublyLinkedList ()
+  {
     this->max_no_snapshots = max_no_snapshots;
     this->max_snapshot_dist = max_snapshot_dist;
   }
@@ -211,12 +211,12 @@ namespace rollback_reorder {
 //         }
 
 //         cout << "Increasing max snapshot distance from " << max_snapshot_dist << " to " << max_snapshot_dist * exponent << endl;
-        
+
         max_snapshot_dist *= exponent;
 
         vector < pair < size_t, ephemeral::DoublyLinkedList > >new_snapshots;
         size_t index = 0;
-        for (size_t i = 0; i < snapshots.size(); i += exponent) {
+        for (size_t i = 0; i < snapshots.size (); i += exponent) {
           new_snapshots.push_back (snapshots[i]);
         }
         snapshots = new_snapshots;
@@ -232,75 +232,253 @@ namespace rollback_reorder {
     }
   }
 
-  bool first_only (const pair<record_t, int64_t>& a, const pair<record_t, int64_t>& b) {
-    return a.first < b.first;
+  bool first_only (const pair < record_t, int64_t > &a, const pair < record_t,
+                   int64_t > &b) {
+    if (a.first.operation < b.first.operation) {
+      return true;
+    } else if (a.first.operation == b.first.operation) {
+      if (a.first.operation == INSERT) {
+        return a.first.index < b.first.index;
+      } else if (a.first.operation == REMOVE) {
+        return a.first.index > b.first.index;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  bool remove_insert_index (const pair < record_t, int64_t > &a,
+                            const pair < record_t, int64_t > &b) {
+    if (a.first.operation > b.first.operation) {
+      return true;
+    } else if (a.first.operation == b.first.operation) {
+      if (a.first.operation == INSERT) {
+        return a.first.index < b.first.index;
+      } else if (a.first.operation == REMOVE) {
+        return a.first.index > b.first.index;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
   size_t DoublyLinkedList::print_at_version (size_t v) {
     if (next_record_index < v) {
+      // 1. Work on copy of records from current to v
       vector < pair < record_t, int64_t >> recs;
       for (size_t i = next_record_index; i < v; ++i) {
+        record_t r = records[i];
         recs.push_back (make_pair (records[i], records[i].index));
+        switch (r.operation) {
+        case INSERT:
+          cout << "i(" << r.data << "," << r.index << ")" << endl;
+          break;
+        case REMOVE:
+          cout << "r(" << r.index << ")" << endl;
+          break;
+        case MODIFY:
+          cout << "m(" << r.data << "," << r.index << ")" << endl;
+          break;
+        }
       }
 
-      int64_t new_order[recs.size ()];
-      for (int64_t i = 0; i < recs.size (); ++i) {
-        new_order[i] = 0;
-        for (int64_t j = 0; j < i; ++j) {
-          if (recs[j].second <= recs[i].second) {
-            new_order[i]--;
+      // 2. Remove matching inserts and removes
+      for (size_t i = 0; i < recs.size (); ++i) {
+        record_t r = recs[i].first;
+        if (r.operation == INSERT) {
+          size_t index = r.index;
+          for (size_t j = i + 1; j < recs.size (); ++j) {
+            if (recs[j].first.operation == INSERT
+                && recs[j].first.index <= index) {
+              ++index;
+            } else if (recs[j].first.operation == MODIFY
+                       && recs[j].first.index == index) {
+              recs[i].first.data = recs[j].first.data;
+              recs.erase (recs.begin () + j);
+              --j;
+              continue;
+            } else if (recs[j].first.operation == REMOVE) {
+              if (recs[j].first.index < index) {
+                --index;
+              } else if (recs[j].first.index == index) {
+                // Remove both, adjust in-between indices and move on.
+                cout << "Erasing i(" << r.data << ", " << r.index << ") and ";
+                cout << "r(" << recs[j].first.index << ")" << endl;
+
+                for (size_t k = i + 1; k < j; ++k) {
+                  if (recs[k].first.operation != REMOVE
+                      && recs[k].first.index >= r.index
+                      || recs[k].first.index > r.index) {
+                    --recs[k].first.index;
+                  }
+                }
+
+                recs.erase (recs.begin () + j);
+                recs.erase (recs.begin () + i);
+
+                for (size_t k = 0; k < recs.size (); ++k) {
+                  record_t r = recs[k].first;
+                  switch (r.operation) {
+                  case INSERT:
+                    cout << "i(" << r.data << "," << r.index << ")" << endl;
+                    break;
+                  case REMOVE:
+                    cout << "r(" << r.index << ")" << endl;
+                    break;
+                  case MODIFY:
+                    cout << "m(" << r.data << "," << r.index << ")" << endl;
+                    break;
+                  }
+                }
+                // count from same index now that Xi was removed
+                --i;
+                break;
+              }
+            }
           }
         }
       }
-      for (int64_t i = 0; i < recs.size (); ++i) {
-        recs[i].second += new_order[i];
-      }
-      sort (recs.begin (), recs.end (), first_only);
 
-      for (int64_t i = 0; i < recs.size (); ++i) {
-        recs[i].second += i;
+      for (size_t i = 0; i < recs.size (); ++i) {
+        record_t ri = recs[i].first;
+        recs[i].second = ri.index;
+        switch (ri.operation) {
+        case INSERT:
+        case MODIFY:{
+            size_t index = ri.index;
+            for (size_t j = i + 1; j < recs.size (); ++j) {
+              record_t rj = recs[j].first;
+              if (rj.operation == INSERT && rj.index < index) {
+                ++index;
+              } else if (rj.operation == REMOVE && rj.index < index) {
+                --index;
+              }
+            }
+            recs[i].first.index = index;
+            break;
+          }
+        case REMOVE:{
+            size_t index = ri.index;
+            for (size_t j = 0; j < recs.size (); ++j) {
+              record_t rj = recs[j].first;
+              if (j < i && rj.operation == INSERT && rj.index < index) {
+                --index;
+              } else if (j > i && rj.operation == REMOVE && rj.index < index) {
+                ++index;
+              }
+            }
+            recs[i].first.index = index;
+            break;
+//         case MODIFY:
+//           break;
+          }
+        }
       }
 
-      sort (recs.begin (), recs.end (), first_only);
+      sort (recs.begin (), recs.end (), remove_insert_index);
+      cout << "Sorting by operation desc, index asc" << endl;
+
+      for (size_t k = 0; k < recs.size (); ++k) {
+        record_t r = recs[k].first;
+        switch (r.operation) {
+        case INSERT:
+          cout << "i(" << r.data << "," << r.index << ")" << endl;
+          break;
+        case REMOVE:
+          cout << "r(" << r.
+            index << ") " << "(was " << recs[k].second << ")" << endl;
+          break;
+        case MODIFY:
+          cout << "m(" << r.data << "," << r.index << ")" << endl;
+          break;
+        }
+      }
 
       ephemeral::Node * node = ephemeral_current.head;
       size_t index = 0;
+
+      while (node != 0x0 && node->next && index < recs[0].first.index) {
+        node = node->next;
+        ++index;
+      }
+
       for (size_t i = 0; i < recs.size (); ++i) {
-        while (index < recs[i].second) {
-          ++index;
-          node = node->next;
-        }
-        ephemeral::Node * new_node = new ephemeral::Node ();
-        new_node->data = recs[i].first.data;
+        record_t ri = recs[i].first;
+        if (ri.operation == REMOVE) {
+          while (index > ri.index) {
+            node = node->prev;
+            --index;
+          }
+          if (node->prev) {
+            node->prev->next = node->next;
+          }
+          if (node->next) {
+            node->next->prev = node->prev;
+          }
+          if (index == 0) {
+            ephemeral_current.head = node->next;
+          }
+          if (node->next) {
+            node = node->next;
+          } else {
+            node = node->prev;
+            if (index > 0) {
+              --index;
+            }
+          }
+        } else if (ri.operation == INSERT) {
+          ephemeral::Node * new_node = new ephemeral::Node ();
+          new_node->data = ri.data;
+          bool already_done = false;
+          while (index < recs[i].first.index) {
+            ++index;
+            if (node->next) {
+              node = node->next;
+            } else {
+              node->next = new_node;
+              new_node->prev = node;
+              node = new_node;
+              already_done = true;
+              break;
+            }
+          }
+          if (already_done) {
+            break;
+          }
 
-        if (node->prev) {
-          node->prev->next = new_node;
-          new_node->prev = node->prev;
-        } else {
-          ephemeral_current.head = new_node;
-        }
-        node->prev = new_node;
-        new_node->next = node;
+          if (node && node->prev) {
+            node->prev->next = new_node;
+            new_node->prev = node->prev;
+          } else {
+            ephemeral_current.head = new_node;
+          }
+          if (node) {
+            node->prev = new_node;
+          }
+          new_node->next = node;
 
-        node = new_node;
+          node = new_node;
+        }
       }
 
       next_record_index = v;
     }
-
-
-#ifdef DEBUG_SNAPSHOT_FEATURE
-    size_t rolls = 0;
-#endif
-
-    jump_to_snapshot (v);
-
-    while (v > next_record_index) {
-#ifdef DEBUG_SNAPSHOT_FEATURE
-      ++rolls;
-#endif
-      rollforward ();
-    }
+// #ifdef DEBUG_SNAPSHOT_FEATURE
+//     size_t rolls = 0;
+// #endif
+// 
+//     jump_to_snapshot (v);
+// 
+//     while (v > next_record_index) {
+// #ifdef DEBUG_SNAPSHOT_FEATURE
+//       ++rolls;
+// #endif
+//       rollforward ();
+//     }
 
     while (v < next_record_index) {
 #ifdef DEBUG_SNAPSHOT_FEATURE
@@ -396,7 +574,6 @@ namespace rollback_reorder {
     if (snapshot_index >= snapshots.size ()) {
       snapshot_index = snapshots.size () - 1;
     }
-
 //     if ((next_record_index + max_snapshot_dist / 2 + 1) / max_snapshot_dist ==
 //         snapshot_index) {
 // #ifdef DEBUG_SNAPSHOT_FEATURE
@@ -417,44 +594,56 @@ namespace rollback_reorder {
     ephemeral_current = ephemeral::DoublyLinkedList (snapshot.second);
   }
 
-  void DoublyLinkedList::test_reorder () {
-    insert(6, 0);
-    insert(2, 0);
-    insert(4, 0);
-    insert(5, 0);
-    insert(1, 0);
-    print_at_version(5);
-    record_t insert_record;
-    insert_record.operation = INSERT;
-    
-    insert_record.data = 7;
-    insert_record.index = 0;
-    insert_record.size = 6;
-    records.push_back(insert_record);
-    
-    insert_record.data = 9;
-    insert_record.index = 4;
-    insert_record.size = 7;
-    records.push_back(insert_record);
-    
-    insert_record.data = 3;
-    insert_record.index = 2;
-    insert_record.size = 8;
-    records.push_back(insert_record);
-    
-    insert_record.data = 0;
-    insert_record.index = 7;
-    insert_record.size = 9;
-    records.push_back(insert_record);
-    
-    insert_record.data = 8;
-    insert_record.index = 0;
-    insert_record.size = 10;
-    records.push_back(insert_record);
+  void DoublyLinkedList::i (size_t data, size_t index) {
+    record_t r;
+    r.index = index;
+    r.data = data;
+    r.old_data = data;
+    r.operation = INSERT;
+    records.push_back (r);
+  }
 
-    print_at_version(10);
+  void DoublyLinkedList::m (std::size_t data, size_t index) {
+    record_t r;
+    r.operation = MODIFY;
+    r.index = index;
+    r.data = data;
+//     r.old_data = data; // FIXME: ??? Maybe at rollforward time?
+    records.push_back (r);
+  }
+
+  void DoublyLinkedList::r (size_t index) {
+    record_t r;
+    r.operation = REMOVE;
+    r.index = index;
+//    r.old_data = data; // FIXME: ??? Maybe at rollforward time?
+    records.push_back (r);
+  }
+
+  void DoublyLinkedList::test_reorder () {
+    insert (0, 0);
+    insert (3, 0);
+    insert (5, 0);
+    insert (7, 0);
+    insert (2, 0);
+    print_at_version (5);
+
+    i (4, 3);
+    i (6, 1);
+    r (3);
+    i (1, 5);
+    i (8, 3);
+    r (5);
+    r (0);
+    i (9, 2);
+    r (6);
+    r (1);
+    r (3);
+    r (1);
+    r (0);
+
+    print_at_version (records.size ());
   }
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
-
