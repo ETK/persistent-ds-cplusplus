@@ -566,7 +566,7 @@ main (int argc, char **argv) {
   size_t max_no_snapshots = 1200UL;
   size_t max_snapshot_dist = 100UL;
 
-  main_ns::mode_t mode = main_ns::rollback_naive;
+  main_ns::mode_t mode = main_ns::rollback_reorder;
 
   try {
     for (int i = 1; i < argc; ++i) {
