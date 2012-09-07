@@ -3,6 +3,7 @@
 #include <ctime>
 #include <cstdlib>
 
+#include <algorithm>
 #include <unistd.h>
 #include <ios>
 #include <fstream>
@@ -132,6 +133,7 @@ log_operation_to_db (const mode_t mode, size_t count, const string operation,
     throw ss.str ();
   }
   string git_hash = exec ("git rev-parse HEAD");
+  git_hash.erase(std::remove(git_hash.begin(), git_hash.end(), '\n'), git_hash.end());
   stringstream sql;
   sql.precision (15);
   sql.setf (ios::fixed);
@@ -160,7 +162,7 @@ test_insert_modify_remove_rollback_naive (size_t count,
 
   rollback_naive::DoublyLinkedList list (max_no_snapshots, max_snapshot_dist);
 
-  cout << "rollback;insert;" << count << ";";
+  cout << "rollback_naive;insert;" << count << ";";
 #ifdef RANDOMIZE
   cout << "random;";
 #else
@@ -187,7 +189,7 @@ test_insert_modify_remove_rollback_naive (size_t count,
   }
 
   for (size_t i = 0; i < 10; ++i) {
-    cout << "rollback;modify;" << count << ";";
+    cout << "rollback_naive;modify;" << count << ";";
 #ifdef RANDOMIZE
     cout << "random;";
 #else
@@ -210,7 +212,7 @@ test_insert_modify_remove_rollback_naive (size_t count,
                        max_snapshot_dist, begin_operation, end_operation);
   }
 
-  cout << "rollback;remove;" << count << ";";
+  cout << "rollback_naive;remove;" << count << ";";
 #ifdef RANDOMIZE
   cout << "random;";
 #else
@@ -233,7 +235,7 @@ test_insert_modify_remove_rollback_naive (size_t count,
   log_operation_to_db (rollback_naive, count, "remove", max_no_snapshots,
                        max_snapshot_dist, begin_operation, end_operation);
 
-  cout << "rollback;access;" << count << ";";
+  cout << "rollback_naive;access;" << count << ";";
 #ifdef RANDOMIZE
   cout << "random;";
 #else
@@ -274,7 +276,7 @@ test_insert_modify_remove_rollback_reorder (size_t count,
 
   rollback_reorder::DoublyLinkedList list (max_no_snapshots, max_snapshot_dist);
 
-  cout << "rollback;insert;" << count << ";";
+  cout << "rollback_reorder;insert;" << count << ";";
 #ifdef RANDOMIZE
   cout << "random;";
 #else
@@ -301,7 +303,7 @@ test_insert_modify_remove_rollback_reorder (size_t count,
   }
 
   for (size_t i = 0; i < 10; ++i) {
-    cout << "rollback;modify;" << count << ";";
+    cout << "rollback_reorder;modify;" << count << ";";
 #ifdef RANDOMIZE
     cout << "random;";
 #else
@@ -324,7 +326,7 @@ test_insert_modify_remove_rollback_reorder (size_t count,
                        max_snapshot_dist, begin_operation, end_operation);
   }
 
-  cout << "rollback;remove;" << count << ";";
+  cout << "rollback_reorder;remove;" << count << ";";
 #ifdef RANDOMIZE
   cout << "random;";
 #else
@@ -347,7 +349,7 @@ test_insert_modify_remove_rollback_reorder (size_t count,
   log_operation_to_db (rollback_reorder, count, "remove", max_no_snapshots,
                        max_snapshot_dist, begin_operation, end_operation);
 
-  cout << "rollback;access;" << count << ";";
+  cout << "rollback_reorder;access;" << count << ";";
 #ifdef RANDOMIZE
   cout << "random;";
 #else
@@ -631,20 +633,15 @@ main (int argc, char **argv) {
       cerr << "SQL error: " << zErrMsg << endl;
       sqlite3_free (zErrMsg);
     }
-    rc = sqlite3_exec (db, "select * from results", callback, 0, &zErrMsg);
-    if (rc != SQLITE_OK) {
-      cerr << "SQL error: " << zErrMsg << endl;
-      sqlite3_free (zErrMsg);
-    }
 
     switch (mode) {
     case main_ns::rollback_naive:
       test_insert_modify_remove_rollback_naive (count, max_no_snapshots,
                                                 max_snapshot_dist);
+      break;
     case main_ns::rollback_reorder:
       test_insert_modify_remove_rollback_reorder (count, max_no_snapshots,
                                                 max_snapshot_dist);
-      break;
       break;
     case main_ns::partiallypersistent:
       test_insert_modify_remove_partiallypersistent (count);

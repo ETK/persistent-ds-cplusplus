@@ -59,11 +59,6 @@ namespace rollback_reorder {
     DoublyLinkedList ();
     DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot_dist);
 
-    void i(std::size_t data, size_t index);
-    void r(size_t index);
-    void m(std::size_t data, size_t index);
-    void test_reorder();
-
     void insert (size_t node_data, std::size_t index);
 
     /// removes the specified node from the next version

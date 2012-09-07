@@ -456,15 +456,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     if (snapshot_index >= snapshots.size ()) {
       snapshot_index = snapshots.size () - 1;
     }
-//     if ((next_record_index + max_snapshot_dist / 2 + 1) / max_snapshot_dist ==
-//         snapshot_index) {
-// #ifdef DEBUG_SNAPSHOT_FEATURE
-//       cout << "Would jump to snapshot no. " << snapshot_index +
-//         1 << ", but we're close enough" << endl;
-// #endif
-//       return;
-//     }
-// 
     pair < size_t, ephemeral::DoublyLinkedList > &snapshot =
       snapshots[snapshot_index];
 #ifdef DEBUG_SNAPSHOT_FEATURE
@@ -474,60 +465,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 #endif
     next_record_index = snapshot.first;
     ephemeral_current = ephemeral::DoublyLinkedList (snapshot.second);
-  }
-
-  void DoublyLinkedList::i (size_t data, size_t index) {
-    record_t r;
-    r.index = index;
-    r.data = data;
-    r.old_data = data;
-    r.operation = INSERT;
-    records.push_back (r);
-  }
-
-  void DoublyLinkedList::m (std::size_t data, size_t index) {
-    record_t r;
-    r.operation = MODIFY;
-    r.index = index;
-    r.data = data;
-//     r.old_data = data; // FIXME: ??? Maybe at rollforward time?
-    records.push_back (r);
-  }
-
-  void DoublyLinkedList::r (size_t index) {
-    record_t r;
-    r.operation = REMOVE;
-    r.index = index;
-//    r.old_data = data; // FIXME: ??? Maybe at rollforward time?
-    records.push_back (r);
-  }
-
-  void DoublyLinkedList::test_reorder () {
-    insert (0, 0);
-    insert (3, 0);
-    insert (5, 0);
-    insert (7, 0);
-    insert (2, 0);
-    print_at_version (5);
-
-    i (4, 3);
-    i (6, 1);
-    r (3);
-    i (1, 5);
-    i (8, 3);
-    r (5);
-    r (0);
-    i (9, 2);
-    r (6);
-    r (1);
-    r (3);
-    r (1);
-    r (0);
-
-    print_at_version (records.size ());
-    print_at_version (records.size () - 4);
-    print_at_version (records.size () - 1);
-    print_at_version (records.size () - 9);
   }
 }
 

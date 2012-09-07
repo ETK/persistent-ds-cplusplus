@@ -8,7 +8,7 @@ add_executable(msc rollback_reorder/DoublyLinkedList.cpp rollback_naive/DoublyLi
 target_link_libraries(msc rt sqlite3)
 
 add_executable(test_rollback_naive rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_naive.cpp)
-add_executable(test_rollback_snapshots rollback_reorder/DoublyLinkedList.cpp rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_snapshots.cpp)
+add_executable(test_rollback_snapshots rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_snapshots.cpp)
 
 add_subdirectory(partiallypersistent)
 add_subdirectory(ephemeral)
