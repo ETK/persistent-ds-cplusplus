@@ -1,0 +1,39 @@
+\chapter{Background}
+
+\section{Persistence}
+In \cite{Driscoll198986}, a number of methods for making data structures
+persistent are described. The one with the best bounds for partial persistence
+is Node copying, which allows for $O(1)$ overhead on insertions, modifications,
+deletions and access operations with $O(1)$ space overhead for any
+constant bounded in-degree data structure, e.g. a list or a binary search tree.
+
+An alternative method to modifying the data structure design itself as is done
+with Node copying, one can employ the simple ``rollback'' technique. With every
+modifying operation performed, a record is inserted in an operation sequence
+containing enough information to roll back the operation. When a specific
+version of the data structure is desired, one can roll back or forward in the
+operation sequence until the version is reached. The introduction of snapshots
+at known intervals can decrease the time cost for accessing a specific version
+by allowing one to first jump to the snapshot nearest the desired version, then
+rolling back or forward until the version is reached. The interval between
+snapshots introduces a parameter with which one can tune the trade-off between
+access time and space consumption.
+
+\subsection{Node copying}
+Node copying is described in \cite{Driscoll198986} and works by expanding the
+existing data structure node. An array of field modifications of at least $p$ is
+introduced which represents any modifications made to the node after its
+creation. An array of so-called ``back pointers'' is maintained in node $x$
+which contains a pointer to each node $y$ that contains a normal pointer to $x$.
+If a modification is requested at a time when the modifications array is full, a
+copy of the node is created with the most recent values for each field stored in
+the original fields, and with an empty modifictations array. The back pointers
+are inherited from the original node, and each node $y_i$ which back pointer
+$x_i$ refers to is updated to point to the node copy. This can cause back
+propagation, but the amortized cost has a constant upper bound.
+\todo[inline]{Citation needed for back propagation cost amortization.}
+
+\subsection{Rollback}
+\subsubsection{Operation sequence optimization}
+When observing the following, simple sequence of operations between version
+$v_i$ and $v_4$

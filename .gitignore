@@ -7,3 +7,7 @@ install_manifest.txt
 build/
 .main.cpp.kate-swp
 *.kate-swp
+*.aux
+report/tmp
+report/Thesis.pdf
+report/Thesis.synctex.gz
