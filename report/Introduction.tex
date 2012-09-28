@@ -1,1 +1,102 @@
 \chapter{Introduction}
+\section{Persistence}
+Persistence is the topic covering the general availability of previous versions
+of a data structure for various purposes. The antonym to ``persistent'' is in
+this context called ``ephemeral'', which means that no previous version of a
+data structure is available. In the 1989 article by Driscoll et al.
+\cite{Driscoll198986}, it is described how a data structure may be made
+persistent in two different ways: partially or fully.
+
+With partially persistent data structures, any previous version is accessible,
+but not modifiable, and as such changes to the data structure can only be made
+on the most recent version.
+
+With fully persistent data structures, it is possible to make changes to a
+previous version of the data structure, thus creating an alternative branch in
+the `history' of the data structure.
+
+Partially persistent data structures can be compared with ``rollback'' databases
+as defined in \cite{10.1109/AFIPS.1987.11}.
+
+In my thesis, only partially persistent data structures will be considered.
+
+Tsotras and Kangelaris \cite{Tsotras1995237} define as the database state $s(t)$
+the collection of objects that exist at t in the real-world system modeled by
+the database. The ability to access $s(t)$ is here referred to as ``temporal
+access''. In my comparison of different approaches in practice, the cost of
+retrieving $s(t)$ will be the metric by which the approaches are measured.
+
+I will cover the following two approaches to partial persistence:
+\begin{description}
+  \item[Rollback] which requires functional extensions of the underlying data
+  structure in order to record the necessary information about the context in
+  which an operation is carried out in order to be able to reproduce or revert
+  it at a later time; and
+  \item[Node copying] which requires structural extensions of the underlying
+  data structure in order to store modification records and other necessary
+  information within the nodes of the data structure.
+\end{description}
+
+\subsection{Rollback}
+
+In the introduction section of \cite{Tsotras1995237} are described two basic,
+na\"ive solutions to being able to return $s(t)$, ``copy'' and ``log'':
+\begin{description}
+  \item[copy] works by storing a full copy of the data structure after each
+  operation, thus allowing one to access any version simply by using the copy
+  for the desired version. The obvious drawbacks of this approach is that space
+  consumption can grow very fast. E.g. if only insertions are made, the cost is
+  combinatorial $O\left(\binom{n+1}{2}\right)$ since every insertion will cost
+  $O(1)$ more than the previous. On the other hand, access takes just $O(1)$.
+  \item[log] works by storing a log of each operation made along with any
+  information necessary to revert it. When a specific version is requested for
+  access, operations can be applied or unapplied until the version is reached. 
+  The obvious drawbacks for this approach is that access costs $O(n)$ in the 
+  worst case, and if e.g. the initial, empty version has been accessed just 
+  prior to a new operation being requested, the cost of that operation would 
+  also be $O(n)$ since the whole log would have to be run through to produce 
+  the latest version upon which the operation could be carried out. On the other
+  hand, space consumption is $O(n)$ for $n$ operations.
+\end{description}
+
+An obvious improvement on both of the above methods is to design a compound data
+structure where copies are only made of a sub-set of the versions, and the
+operations log is used to recreate any versions in between. The space
+consumption would then become $$O(n)+O\left(\frac{\binom{n+1}{2}}{d}\right)$$
+where $d$ is the distance between each full copy. Similarly, the time required
+to recreate a specific version is in the worst case
+$O(1)+O\left(\frac{d}{2}\right)$.
+
+The introduction of $d$ leads to the requirement of knowing apriori the
+magnitude of the number of versions to expect. If $d$ is too small, space
+consumption limits might be reached too early; if $d$ is too large, it may take
+unproportionally long to recreate a desired version. A solution to this problem
+is automatic scaling, i.e. increasing $d$ when space consumption is nearing a
+given limit and possibly removing some datastructure copies to reflect the new
+value of $d$.
+
+For large values of $d$ it is also worth considering the implementation details
+of recreating the desired version using the operations log based on the
+nearest full copy. If, for example, $d$ is 200, it would in the worst case be
+necessary to work through 100 operations to reach the version which is exactly
+in the middle of two full copies. Depending on the underlying data structure,
+and the type and nature of the 100 operations, it can pay off to analyse,
+prune and reorder the sequence of operations to reduce the number of I/O calls.
+If, for example, the first 50 operations each insert an element, but the next 50
+operations are deletions of those very same 50 elements, the entire sequence can
+be reduced to a no-op, and the full copy can be presented as the answer to the
+access query.
+
+\subsection{Node copying}
+Node copying is described in \cite{Driscoll198986} and works by expanding the
+existing data structure node. An array of field modifications of at least $p$ is
+introduced which represents any modifications made to the node after its
+creation. An array of so-called ``back pointers'' is maintained in node $x$
+which contains a pointer to each node $y$ that contains a normal pointer to $x$.
+If a modification is requested at a time when the modifications array is full, a
+copy of the node is created with the most recent values for each field stored in
+the original fields, and with an empty modifictations array. The back pointers
+are inherited from the original node, and each node $y_i$ which back pointer
+$x_i$ refers to is updated to point to the node copy. This can cause back
+propagation, but the amortized cost has a constant upper bound.
+\todo[inline]{Citation needed for back propagation cost amortization.}
