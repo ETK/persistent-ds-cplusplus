@@ -21,7 +21,9 @@ int main (int argc, char **argv) {
   list.insert (5, 0);
   list.insert (4, 2);
   list.insert (3, 1);
+  list.set_data (list.head()->next(), 7);
   list.insert (2, 0);
+  list.remove (list.head()->next());
   list.insert (1, 0);
   
   for (size_t i = 0; i < list.get_versions ().size (); ++i) {

@@ -155,7 +155,8 @@ log_operation_to_db (const mode_t mode, size_t count, const string operation,
 }
 
 void
-test_insert_modify_remove_rollback_naive (size_t count,
+test_insert_modify_remove_rollback_naive (bool store_results,
+                                          size_t count,
                                           size_t max_no_snapshots,
                                           size_t max_snapshot_dist) {
   double begin_operation, end_operation;
@@ -181,8 +182,10 @@ test_insert_modify_remove_rollback_naive (size_t count,
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
 
-  log_operation_to_db (rollback_naive, count, "insert", max_no_snapshots,
+  if (store_results) {
+    log_operation_to_db (rollback_naive, count, "insert", max_no_snapshots,
                        max_snapshot_dist, begin_operation, end_operation);
+  }
 
   if (count <= 100) {
     print_all_versions (list);
@@ -208,8 +211,10 @@ test_insert_modify_remove_rollback_naive (size_t count,
     }
     end_operation = nano_time ();
     cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (rollback_naive, count, "modify", max_no_snapshots,
-                       max_snapshot_dist, begin_operation, end_operation);
+    if (store_results) {
+      log_operation_to_db (rollback_naive, count, "modify", max_no_snapshots,
+                         max_snapshot_dist, begin_operation, end_operation);
+    }
   }
 
   cout << "rollback_naive;remove;" << count << ";";
@@ -232,9 +237,11 @@ test_insert_modify_remove_rollback_naive (size_t count,
   }
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (rollback_naive, count, "remove", max_no_snapshots,
+  if (store_results) {
+    log_operation_to_db (rollback_naive, count, "remove", max_no_snapshots,
                        max_snapshot_dist, begin_operation, end_operation);
-
+  }
+    
   cout << "rollback_naive;access;" << count << ";";
 #ifdef RANDOMIZE
   cout << "random;";
@@ -264,14 +271,17 @@ test_insert_modify_remove_rollback_naive (size_t count,
   }
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (rollback_naive, count, "access", max_no_snapshots,
+  if (store_results) {
+    log_operation_to_db (rollback_naive, count, "access", max_no_snapshots,
                        max_snapshot_dist, begin_operation, end_operation);
+  }
 }
 
 void
-test_insert_modify_remove_rollback_reorder (size_t count,
-                                          size_t max_no_snapshots,
-                                          size_t max_snapshot_dist) {
+test_insert_modify_remove_rollback_reorder (bool store_results,
+                                            size_t count,
+                                            size_t max_no_snapshots,
+                                            size_t max_snapshot_dist) {
   double begin_operation, end_operation;
 
   rollback_reorder::DoublyLinkedList list (max_no_snapshots, max_snapshot_dist);
@@ -295,8 +305,10 @@ test_insert_modify_remove_rollback_reorder (size_t count,
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
 
-  log_operation_to_db (rollback_reorder, count, "insert", max_no_snapshots,
+  if (store_results) {
+    log_operation_to_db (rollback_reorder, count, "insert", max_no_snapshots,
                        max_snapshot_dist, begin_operation, end_operation);
+  }
 
   if (count <= 100) {
     print_all_versions (list);
@@ -322,8 +334,10 @@ test_insert_modify_remove_rollback_reorder (size_t count,
     }
     end_operation = nano_time ();
     cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (rollback_reorder, count, "modify", max_no_snapshots,
-                       max_snapshot_dist, begin_operation, end_operation);
+    if (store_results) {
+      log_operation_to_db (rollback_reorder, count, "modify", max_no_snapshots,
+                           max_snapshot_dist, begin_operation, end_operation);
+    }
   }
 
   cout << "rollback_reorder;remove;" << count << ";";
@@ -346,8 +360,10 @@ test_insert_modify_remove_rollback_reorder (size_t count,
   }
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (rollback_reorder, count, "remove", max_no_snapshots,
+  if (store_results) {
+    log_operation_to_db (rollback_reorder, count, "remove", max_no_snapshots,
                        max_snapshot_dist, begin_operation, end_operation);
+  }
 
   cout << "rollback_reorder;access;" << count << ";";
 #ifdef RANDOMIZE
@@ -378,12 +394,14 @@ test_insert_modify_remove_rollback_reorder (size_t count,
   }
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (rollback_reorder, count, "access", max_no_snapshots,
+  if (store_results) {
+    log_operation_to_db (rollback_reorder, count, "access", max_no_snapshots,
                        max_snapshot_dist, begin_operation, end_operation);
+  }
 }
 
 void
-test_insert_modify_remove_partiallypersistent (size_t count) {
+test_insert_modify_remove_partiallypersistent (bool store_results, size_t count) {
   double begin_operation, end_operation;
 
   partiallypersistent::DoublyLinkedList list;
@@ -407,8 +425,11 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
   }
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (partiallypersistent, count, "insert", 0,
+  if (store_results) {
+    log_operation_to_db (partiallypersistent, count, "insert", 0,
                        0, begin_operation, end_operation);
+  }
+  
 
   if (count <= 100) {
     print_all_versions (list);
@@ -442,8 +463,10 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
     }
     end_operation = nano_time ();
     cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (partiallypersistent, count, "modify", 0,
-                       0, begin_operation, end_operation);
+    if (store_results) {
+      log_operation_to_db (partiallypersistent, count, "modify", 0,
+                         0, begin_operation, end_operation);
+    }
   }
 
   cout << "partiallypersistent;remove;" << count << ";";
@@ -474,8 +497,10 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
   }
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (partiallypersistent, count, "remove", 0,
+  if (store_results) {
+    log_operation_to_db (partiallypersistent, count, "remove", 0,
                        0, begin_operation, end_operation);
+  }
 
   cout << "partiallypersistent;access;" << count << ";";
 #ifdef RANDOMIZE
@@ -504,8 +529,10 @@ test_insert_modify_remove_partiallypersistent (size_t count) {
   }
   end_operation = nano_time ();
   cout << (end_operation - begin_operation) << endl;
-  log_operation_to_db (partiallypersistent, count, "access", 0,
+  if (store_results) {
+    log_operation_to_db (partiallypersistent, count, "access", 0,
                        0, begin_operation, end_operation);
+  }
 }
 
 // void
@@ -567,6 +594,7 @@ main (int argc, char **argv) {
   size_t count = 1000UL;
   size_t max_no_snapshots = 1200UL;
   size_t max_snapshot_dist = 100UL;
+  bool store_results = false;
 
   main_ns::mode_t mode = main_ns::rollback_reorder;
 
@@ -603,6 +631,8 @@ main (int argc, char **argv) {
         mode = main_ns::rollback_reorder;
       } else if ("-p" == arg || "--partially-persistent" == arg) {
         mode = main_ns::partiallypersistent;
+      } else if ("-s" == arg || "--store-results" == arg) {
+        store_results = true;
       }
     }
 
@@ -636,15 +666,15 @@ main (int argc, char **argv) {
 
     switch (mode) {
     case main_ns::rollback_naive:
-      test_insert_modify_remove_rollback_naive (count, max_no_snapshots,
+      test_insert_modify_remove_rollback_naive (store_results, count, max_no_snapshots,
                                                 max_snapshot_dist);
       break;
     case main_ns::rollback_reorder:
-      test_insert_modify_remove_rollback_reorder (count, max_no_snapshots,
+      test_insert_modify_remove_rollback_reorder (store_results, count, max_no_snapshots,
                                                 max_snapshot_dist);
       break;
     case main_ns::partiallypersistent:
-      test_insert_modify_remove_partiallypersistent (count);
+      test_insert_modify_remove_partiallypersistent (store_results, count);
       break;
     }
 
@@ -658,4 +688,4 @@ main (int argc, char **argv) {
   }
 }
 
-// kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+// kate: indent-mode cstyle; indent-width 1; replace-tabs on; ;
