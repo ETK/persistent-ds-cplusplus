@@ -143,7 +143,6 @@ log_operation_to_db (const mode_t mode, size_t count, const string operation,
                                                                       long)
     begin_operation << ", " << (long long) end_operation << ", '" << operation
     << "', " << (long long) (end_operation - begin_operation) << ")";
-//   cout << sql.str () << endl;
   rc = sqlite3_exec (db, sql.str ().c_str (), callback, 0, &zErrMsg);
   if (rc != SQLITE_OK) {
     stringstream ss;
@@ -535,54 +534,6 @@ test_insert_modify_remove_partiallypersistent (bool store_results, size_t count)
   }
 }
 
-// void
-// test_insert_modify_remove_ephemeral (size_t count) {
-// #ifdef PROFILE_TIME
-//   timespec begin;
-//   clock_gettime(CLOCK_REALTIME, &begin);
-//   begin.tv_sec * 1e9 + begin.tv_nsec;
-// #endif
-// 
-//   ephemeral::DoublyLinkedList list;
-// 
-//   for (size_t i = 0; i < count; ++i) {
-//     ephemeral::Node n;
-//     n.data = i;
-//     list.insert (n, list.size > 0 ? rand () * list.size / RAND_MAX : 0);
-//   }
-//   for (size_t i = 0; i < count; ++i) {
-//     size_t index = rand () * list.size / RAND_MAX;
-//     ephemeral::Node * node = list.head;
-//     for (size_t j = 0; j < index; ++j) {
-//       if (node->next) {
-//         node = node->next;
-//       } else {
-//         break;
-//       }
-//     }
-//     node->data = i;
-//   }
-//   for (size_t i = 0; i < count; ++i) {
-//     size_t index = rand () * list.size / RAND_MAX;
-//     ephemeral::Node * node = list.head;
-//     for (size_t j = 0; j < index; ++j) {
-//       node = node->next;
-//     }
-//     list.remove (*node);
-//   }
-// 
-// #ifdef PROFILE_TIME
-//   clock_t end = clock ();
-// 
-//   cout << "Ephemeral: " << count << " insertions and deletions: " <<
-//     ((end - begin) * 1000.0 / CLOCKS_PER_SEC) << "ms" << endl;
-// //   double vm, rss;
-// //   process_mem_usage (vm, rss);
-// //   cout << "VM: " << vm << "KB; RSS: " << rss << "KB" << endl;
-// #endif
-// 
-// }
-
 }
 
 int
@@ -679,7 +630,6 @@ main (int argc, char **argv) {
     }
 
     sqlite3_close (db);
-//   test_insert_modify_remove_ephemeral (count);
     return 0;
   }
   catch (string e) {

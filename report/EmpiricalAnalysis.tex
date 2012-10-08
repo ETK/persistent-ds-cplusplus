@@ -26,3 +26,30 @@ Memory & Hynix/Hyundai 2048 MB DDR3 RAM @ 1333 MHz $\times$ 2 \\
 %\end{table}
 
 \section{Parameter value effects on performance}
+\begin{figure}[!hbp]
+    \includegraphics[width=\textwidth]{figures/rollback_naive_results_plot.png}
+    \caption{Na\"ive rollback implementation: Plot of average time in ms per
+    access operation for combinations of the two parameters: minimum distance
+    between snapshots ranging from 50 to 250 and maximum allowed number of
+    snapshots ranging from 1000 to 10000.}
+    \label{fig:rollback_naive_results_plot.png}
+\end{figure}
+
+\begin{figure}[!hbp]
+    \includegraphics[width=\textwidth]{figures/rollback_reorder_results_plot.png}
+    \caption{Rollback implementation with operations optimization: Plot of
+    average time in ms per access operation for combinations of the two
+    parameters: minimum distance between snapshots ranging from 50 to 250 and
+    maximum allowed number of snapshots ranging from 1000 to 10000.}
+    \label{fig:rollback_reorder_results_plot.png}
+\end{figure}
+
+\begin{figure}[!hbp]
+    \includegraphics[width=\textwidth]{figures/rollback_results_count_var_plot.png}
+    \caption{All implementations compared: When comparing all the
+    implementations with the optimal parameters chosen for the rollback
+    implementations, it is clear that the Node Copying method is far more
+    efficient at accessing previous versions than either of the rollback
+    implementations.}
+    \label{fig:rollback_results_count_var_plot.png}
+\end{figure}
