@@ -1,5 +1,27 @@
 \chapter{Method}
 
+\begin{enumerate}
+  \item Description of Node Copying as a method
+  \begin{enumerate}
+    \item Node structure expansion
+    \begin{enumerate}
+      \item Back pointers
+      \item Modifications
+      \item Bounds on numbers of the above
+      \item How it works
+      \item Why it works
+    \end{enumerate}
+    \item Surrounding structure (collection of version information)
+    \begin{enumerate}
+      \item Considerations about effecient storage and retrieval of version info
+    \end{enumerate}
+  \end{enumerate}
+  \item Description of ``Rollback'' as a method
+  \item Description of reordering and optimization of operations
+\end{enumerate}
+
+
+
 This chapter should include:
 \begin{itemize}
   \item Ensuring that the implementations of different approaches are fair
@@ -20,7 +42,7 @@ na\"ive solutions to the query for $s(t)$, namely ``copy'' and ``log'':
   combinatorial $O\left(\binom{n+1}{2}\right)$ since every insertion will cost
   $O(1)$ more than the previous due to the growing size of each copy. On the
   other hand, access takes just $O(1)$.
-  
+
   \item[log] works by storing a log of each operation made along with any
   information necessary to revert it. When a specific version is requested for
   access, operations can be applied or unapplied until the version is reached. 
@@ -61,6 +83,50 @@ operations are deletions of those very same 50 elements, the entire sequence can
 be reduced to a no-op, and the full copy can be presented as the answer to the
 access query.
 
+\subsection{Algorithm for optimization of operation batch}
+\begin{algorithm}
+  \caption{Pseudo-code for algorithm optimizing batch of operations}
+  \begin{algorithmic}[1]
+    %\Require current version $v_k$, desired version $v_d$
+    \Function{OptimizeBatch}{current version $v_k$, desired version $v_d$}
+      \State $O \gets \textsc{empty vector}$
+      \For {each operation $o_i$ between $v_k$ and $v_d$}
+        \If {$v_k<v_d$}
+          \State push $o_i$ to back of $O$
+        \Else
+          \State push inverse of $o_i$ to back of $O$
+        \EndIf
+      \EndFor
+      \For {each operation $o_i$ in $O$}
+        \If {$o_i$ is an \textsc{insert} operation}
+          \State $c \gets \textsc{index}(o_i)$
+          \For {operation $o_j \in o_{i+1},\ldots$}
+            \If {$o_j$ is an \textsc{insert} operation and \textsc{index}($o_j$)$<c$}
+              \State $c \gets c+1$
+            \ElsIf {$o_j$ is a \textsc{modify} operation and \textsc{index}($o_j$)$=c$}
+              \State $\textsc{data}(o_i) \gets \textsc{data}(o_j)$
+              \State $\textsc{delete}(o_j)$
+              \State $\textsc{continue}\textnormal{ for loop with next }o_j$
+            \ElsIf {$o_j$ is a \textsc{remove} operation}
+              \If {\textsc{index}($o_j$) < c}
+                \State $c \gets c-1$
+              \ElsIf {\textsc{index}($o_j$) = c}
+                \For {operation $o_k \in o_{i+1},\ldots,o_{j-1}$}
+                  \State $\textsc{index}(o_k) \gets \textsc{index}(o_k) - 1$
+                \EndFor
+                \State $\textsc{delete}(o_i)$
+                \State $\textsc{delete}(o_k)$
+                \State $\textsc{continue}\textnormal{ for loop with next }o_i$
+              \EndIf
+            \EndIf
+          \EndFor
+        \EndIf
+      \EndFor
+      \State \Return $O$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
 \section{Node copying}
 Node copying is described in \cite{Driscoll198986} and works by expanding the
 existing data structure node. An array of field modifications of at least $p$ is
@@ -86,7 +152,7 @@ propagation, but the amortized cost has a constant upper bound.
 
 \begin{figure}[!hbp]
     \includegraphics[width=\textwidth]{figures/pp-7-versions.pdf}
-    \caption{7 versions of a doubly linked list made  partially persistent by 
+    \caption{7 versions of a doubly linked list made  partially persistent by
     the Node Copying method}
     \label{fig:pp-7-versions.pdf}
 \end{figure}
