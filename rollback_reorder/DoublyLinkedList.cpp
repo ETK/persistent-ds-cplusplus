@@ -115,11 +115,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     record_t & record = records[next_record_index - 1];
 
     ephemeral::Node * node = ephemeral_current.head;
-    size_t begin = 1;
-    if (record.operation == INSERT) {
-      begin = 0;
-    }
-    for (size_t i = begin; i < record.index; ++i) {
+    for (size_t i = 0; i < record.index; ++i) {
       if (node->next) {
         node = node->next;
       } else {
@@ -128,21 +124,46 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     }
 
     switch (record.operation) {
-    case INSERT:
-      ephemeral_current.remove (*node);
+    case INSERT: {
+      record.data = node->data;
+      record.old_data = node->data;
+      if (ephemeral_current.head == node) {
+        ephemeral_current.head = 0x0;
+      }
+      if (node) {
+        if (node->prev) {
+          node->prev->next = node->next;
+        }
+        if (node->next) {
+          node->next->prev = node->prev;
+        }
+      }
+      --ephemeral_current.size;
+//       ephemeral_current.remove (*node);
       delete node;
       break;
-    case REMOVE:{
+    }
+    case REMOVE: {
         ephemeral::Node * new_node = new ephemeral::Node ();
         new_node->data = record.data;
-        ephemeral_current.insert (*new_node, record.index);
+        new_node->next = node;
+        if (node) {
+          new_node->prev = node->prev;
+          if (node->prev) {
+            node->prev->next = new_node;
+          }
+          node->prev = new_node;
+        }
+        if (node == 0x0 || node == ephemeral_current.head) {
+          ephemeral_current.head = new_node;
+        }
+        ++ephemeral_current.size;
         break;
-      }
+    }
     case MODIFY:
       node->data = record.old_data;
       break;
     }
-    next_record_index--;
   }
 
   void DoublyLinkedList::rollforward () {
@@ -152,6 +173,8 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     for (size_t i = 0; i < record.index; ++i) {
       if (node->next) {
         node = node->next;
+      } else {
+        throw "fuck off you moron";
       }
     }
 
@@ -159,13 +182,38 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     case INSERT:{
         ephemeral::Node * new_node = new ephemeral::Node ();
         new_node->data = record.data;
-        ephemeral_current.insert (*new_node, record.index);
+        new_node->next = node;
+        if (node) {
+          new_node->prev = node->prev;
+          if (node->prev) {
+            node->prev->next = new_node;
+          }
+          node->prev = new_node;
+        }
+        if (node == 0x0 || node == ephemeral_current.head) {
+          ephemeral_current.head = new_node;
+        }
+        ++ephemeral_current.size;
         break;
       }
     case REMOVE:
       record.data = node->data;
       record.old_data = node->data;
-      ephemeral_current.remove (*node);
+      if (ephemeral_current.head == node) {
+        ephemeral_current.head = node->next;
+      }
+      if (node) {
+        if (node->prev) {
+          node->prev->next = node->next;
+        }
+        if (node->next) {
+          node->next->prev = node->prev;
+        }
+      }
+      --ephemeral_current.size;
+//       ephemeral_current.remove (*node);
+      node->prev = 0x0;
+      node->next = 0x0;
       delete node;
       break;
     case MODIFY:
@@ -210,15 +258,18 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
   bool remove_insert_index (const pair < record_t, int64_t > &a,
                             const pair < record_t, int64_t > &b) {
     if (a.first.operation > b.first.operation) {
+      if (a.first.operation == MODIFY && b.first.operation == INSERT) {
+        return a.first.index < b.first.index;
+      }
       return true;
     } else if (a.first.operation == b.first.operation) {
-      if (a.first.operation == INSERT) {
-        return a.first.index < b.first.index;
-      } else if (a.first.operation == REMOVE) {
+      if (a.first.operation == REMOVE) {
         return a.first.index > b.first.index;
       } else {
-        return false;
+        return a.first.index < b.first.index;
       }
+    } else if (b.first.operation == MODIFY && a.first.operation == INSERT) {
+      return a.first.index < b.first.index;
     } else {
       return false;
     }
@@ -285,7 +336,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
           recs.push_back (make_pair (r, r.index));
         }
       } else {
-        for (size_t i = next_record_index; i > v; --i) {
+        for (size_t i = next_record_index - 1; i >= v; --i) {
           record_t r = reverse_record (records[i]);
           recs.push_back (make_pair (r, r.index));
         }
@@ -294,7 +345,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
       // 2. Remove matching inserts and removes
       for (size_t i = 0; i < recs.size (); ++i) {
         record_t r = recs[i].first;
-        if (r.operation == INSERT) {
+        if (r.operation == INSERT || r.operation == MODIFY) {
           size_t index = r.index;
           for (size_t j = i + 1; j < recs.size (); ++j) {
             if (recs[j].first.operation == INSERT
@@ -310,17 +361,22 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
               if (recs[j].first.index < index) {
                 --index;
               } else if (recs[j].first.index == index) {
-                // Remove both, adjust in-between indices and move on.
-                for (size_t k = i + 1; k < j; ++k) {
-                  if (recs[k].first.operation != REMOVE
-                      && recs[k].first.index >= r.index
-                      || recs[k].first.index > r.index) {
-                    --recs[k].first.index;
+                if (r.operation == INSERT) {
+                  // Remove both, adjust in-between indices and move on.
+                  for (size_t k = i + 1; k < j; ++k) {
+                    if (recs[k].first.operation != REMOVE
+                        && recs[k].first.index >= r.index
+                        || recs[k].first.index > r.index) {
+                      --recs[k].first.index;
+                    }
                   }
+                  recs.erase (recs.begin () + j);
+                  recs.erase (recs.begin () + i);
+                } else if (r.operation == MODIFY) {
+                  // Remove modify, since node will be removed afterwards anyway
+                  recs.erase (recs.begin () + i);
                 }
 
-                recs.erase (recs.begin () + j);
-                recs.erase (recs.begin () + i);
                 // count from same index now that Xi was removed
                 --i;
                 break;
@@ -354,8 +410,10 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
               record_t rj = recs[j].first;
               if (j < i && rj.operation == INSERT && rj.index < index) {
                 --index;
-              } else if (j > i && rj.operation == REMOVE && rj.index < index) {
+              } else if (j < i && rj.operation == REMOVE && rj.index < index) {
                 ++index;
+//               } else if (j > i && rj.operation == REMOVE && rj.index > index) {
+//                 ++index;
               }
             }
             recs[i].first.index = index;
@@ -405,6 +463,10 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
           ephemeral::Node * new_node = new ephemeral::Node ();
           new_node->data = ri.data;
           bool already_done = false;
+          while (index > recs[i].first.index) {
+            node = node->prev;
+            --index;
+          }
           while (index < recs[i].first.index) {
             ++index;
             if (node->next) {
@@ -434,6 +496,16 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 
           node = new_node;
           ++ephemeral_current.size;
+        } else if (ri.operation == MODIFY) {
+          while (index < recs[i].first.index) {
+            ++index;
+            if (node->next) {
+              node = node->next;
+            } else {
+              break;
+            }
+          }
+          node->data = recs[i].first.data;
         }
       }
 

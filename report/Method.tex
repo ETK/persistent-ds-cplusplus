@@ -122,6 +122,12 @@ access query.
           \EndFor
         \EndIf
       \EndFor
+      \Statex
+      \State \textsc{sort}($O$) \{
+      \State \hspace{12pt} \textsc{remove} op.s first by ascending index,
+      \State \hspace{12pt} \textsc{modify},\textsc{insert} op.s last by descending index
+      \State \}
+      \Statex
       \State \Return $O$
     \EndFunction
   \end{algorithmic}

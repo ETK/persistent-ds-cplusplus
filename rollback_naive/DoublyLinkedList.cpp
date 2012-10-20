@@ -147,19 +147,44 @@ namespace rollback_naive {
       if (node->next) {
         node = node->next;
       } else {
-        throw "Index too large!";
+        break;
+//         throw "Index too large!";
       }
     }
 
     switch (record.operation) {
     case INSERT:
-      ephemeral_current.remove (*node);
+      record.data = node->data;
+      record.old_data = node->data;
+      if (node) {
+        if (node->prev) {
+          node->prev->next = node->next;
+        }
+        if (node->next) {
+          node->next->prev = node->prev;
+        }
+      }
+      --ephemeral_current.size;
+      if (ephemeral_current.head == node) {
+        ephemeral_current.head = 0x0;
+      }
       delete node;
       break;
     case REMOVE:{
         ephemeral::Node * new_node = new ephemeral::Node ();
         new_node->data = record.data;
-        ephemeral_current.insert (*new_node, record.index);
+        new_node->next = node;
+        if (node) {
+          new_node->prev = node->prev;
+          if (node->prev) {
+            node->prev->next = new_node;
+          }
+          node->prev = new_node;
+        }
+        if (node == 0x0 || node == ephemeral_current.head) {
+          ephemeral_current.head = new_node;
+        }
+        ++ephemeral_current.size;
         break;
       }
     case MODIFY:
@@ -183,13 +208,36 @@ namespace rollback_naive {
     case INSERT:{
         ephemeral::Node * new_node = new ephemeral::Node ();
         new_node->data = record.data;
-        ephemeral_current.insert (*new_node, record.index);
+        new_node->next = node;
+        if (node) {
+          new_node->prev = node->prev;
+          if (node->prev) {
+            node->prev->next = new_node;
+          }
+          node->prev = new_node;
+        }
+        if (node == 0x0 || node == ephemeral_current.head) {
+          ephemeral_current.head = new_node;
+        }
+        ++ephemeral_current.size;
         break;
       }
     case REMOVE:
       record.data = node->data;
       record.old_data = node->data;
-      ephemeral_current.remove (*node);
+      if (ephemeral_current.head == node) {
+        ephemeral_current.head = 0x0;
+      }
+      if (node) {
+        if (node->prev) {
+          node->prev->next = node->next;
+        }
+        if (node->next) {
+          node->next->prev = node->prev;
+        }
+      }
+      --ephemeral_current.size;
+//       ephemeral_current.remove (*node);
       delete node;
       break;
     case MODIFY:
