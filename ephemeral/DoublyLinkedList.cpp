@@ -163,6 +163,9 @@ DoublyLinkedList::DoublyLinkedList (DoublyLinkedList && other):head (std::move (
   void DoublyLinkedList::print () {
     Node *node = head;
     while (node) {
+      if (node->data < 10) {
+        cout << " ";
+      }
       cout << node->data << " ";
       if (node->next != node) {
         node = node->next;

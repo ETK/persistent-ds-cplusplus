@@ -320,6 +320,59 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     return ephemeral_current.head;
   }
 
+  bool unsorted(const vector<record_t>& v) {
+    size_t last_index = 0;
+    for (vector<record_t>::const_iterator c_iter = v.cbegin(); c_iter != v.cend(); ++c_iter) {
+      size_t index = (*c_iter).index;
+      if (index < last_index) {
+        return true;
+      }
+      last_index = index;
+    }
+    return false;
+  }
+
+  vector < record_t > reorder (vector < record_t > v) {
+    vector < record_t > result;
+    while (v.size () > 0) {
+
+      // Pick out record with lowest index
+      size_t min_i;
+      size_t min_index = -1;
+      for (size_t i = 0; i < v.size (); ++i) {
+        if (v[i].index < min_index) {
+          min_i = i;
+          min_index = v[i].index;
+        }
+      }
+      record_t ri = v[min_i];
+      v.erase (v.begin () + min_i);
+
+      // Compensate where relevant
+      switch (ri.operation) {
+      case INSERT:
+        for (int64_t i = min_i - 1; i >= 0; --i) {
+          if (v[i].index > ri.index) {
+            v[i].index++;
+          }
+        }
+        break;
+      case MODIFY:
+        break;
+      case REMOVE:
+        for (int64_t i = min_i - 1; i >= 0; --i) {
+          if (v[i].index > ri.index) {
+            v[i].index--;
+          }
+        }
+        break;
+      }
+      result.push_back (ri);
+    }
+    return result;
+  }
+  
+
   void DoublyLinkedList::ensure_version (std::size_t v) {
     if (next_record_index == v || v == -1) {
       return;
@@ -329,114 +382,77 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 
     if (next_record_index != v) {
       // 1. Work on copy of records from current to v
-      vector < pair < record_t, int64_t >> recs;
+      vector < record_t > recs;
       if (next_record_index < v) {
         for (size_t i = next_record_index; i < v; ++i) {
           record_t r = records[i];
-          recs.push_back (make_pair (r, r.index));
+          recs.push_back (r);
         }
       } else {
         for (size_t i = next_record_index - 1; i >= v; --i) {
           record_t r = reverse_record (records[i]);
-          recs.push_back (make_pair (r, r.index));
+          recs.push_back (r);
         }
       }
 
-      // 2. Remove matching inserts and removes
-      for (size_t i = 0; i < recs.size (); ++i) {
-        record_t r = recs[i].first;
-        if (r.operation == INSERT || r.operation == MODIFY) {
-          size_t index = r.index;
-          for (size_t j = i + 1; j < recs.size (); ++j) {
-            if (recs[j].first.operation == INSERT
-                && recs[j].first.index <= index) {
-              ++index;
-            } else if (recs[j].first.operation == MODIFY
-                       && recs[j].first.index == index) {
-              recs[i].first.data = recs[j].first.data;
-              recs.erase (recs.begin () + j);
-              --j;
-              continue;
-            } else if (recs[j].first.operation == REMOVE) {
-              if (recs[j].first.index < index) {
-                --index;
-              } else if (recs[j].first.index == index) {
-                if (r.operation == INSERT) {
-                  // Remove both, adjust in-between indices and move on.
-                  for (size_t k = i + 1; k < j; ++k) {
-                    if (recs[k].first.operation != REMOVE
-                        && recs[k].first.index >= r.index
-                        || recs[k].first.index > r.index) {
-                      --recs[k].first.index;
-                    }
-                  }
-                  recs.erase (recs.begin () + j);
-                  recs.erase (recs.begin () + i);
-                } else if (r.operation == MODIFY) {
-                  // Remove modify, since node will be removed afterwards anyway
-                  recs.erase (recs.begin () + i);
-                }
+//       // 2. Remove matching inserts and removes
+//       for (size_t i = 0; i < recs.size (); ++i) {
+//         record_t r = recs[i];
+//         if (r.operation == INSERT || r.operation == MODIFY) {
+//           size_t index = r.index;
+//           for (size_t j = i + 1; j < recs.size (); ++j) {
+//             if (recs[j].operation == INSERT
+//                 && recs[j].index <= index) {
+//               ++index;
+//             } else if (recs[j].operation == MODIFY
+//                        && recs[j].index == index) {
+//               recs[i].data = recs[j].data;
+//               recs.erase (recs.begin () + j);
+//               --j;
+//               continue;
+//             } else if (recs[j].operation == REMOVE) {
+//               if (recs[j].index < index) {
+//                 --index;
+//               } else if (recs[j].index == index) {
+//                 if (r.operation == INSERT) {
+//                   // Remove both, adjust in-between indices and move on.
+//                   for (size_t k = i + 1; k < j; ++k) {
+//                     if (recs[k].operation == REMOVE
+//                         && recs[k].index >= r.index
+//                         || recs[k].index > r.index) {
+//                       --recs[k].index;
+//                     }
+//                   }
+//                   recs.erase (recs.begin () + j);
+//                   recs.erase (recs.begin () + i);
+//                 } else if (r.operation == MODIFY) {
+//                   // Remove modify, since node will be removed afterwards anyway
+//                   recs.erase (recs.begin () + i);
+//                 }
+// 
+//                 // count from same index now that Xi was removed
+//                 --i;
+//                 break;
+//               }
+//             }
+//           }
+//         }
+//       }
 
-                // count from same index now that Xi was removed
-                --i;
-                break;
-              }
-            }
-          }
-        }
+      // 3. Sort by index until nice and clean
+      while (unsorted(recs)) {
+        recs = reorder(recs);
       }
-
-      // 3. Alter indices on operations prior to sorting
-      for (size_t i = 0; i < recs.size (); ++i) {
-        record_t ri = recs[i].first;
-        switch (ri.operation) {
-        case INSERT:
-        case MODIFY:{
-            size_t index = ri.index;
-            for (size_t j = i + 1; j < recs.size (); ++j) {
-              record_t rj = recs[j].first;
-              if (rj.operation == INSERT && rj.index < index) {
-                ++index;
-              } else if (rj.operation == REMOVE && rj.index < index) {
-                --index;
-              }
-            }
-            recs[i].first.index = index;
-            break;
-          }
-        case REMOVE:{
-            size_t index = ri.index;
-            for (size_t j = i - 1; j >= 0; --j) {
-              record_t rj = recs[j].first;
-              if (j < i && rj.operation == INSERT && rj.index < index) {
-                --index;
-              } else if (j < i && rj.operation == REMOVE && rj.index < index) {
-                ++index;
-              }
-            }
-            recs[i].first.index = index;
-            break;
-          }
-        }
-      }
-
-      // 4. Sort records by operation desc, index asc
-      sort (recs.begin (), recs.end (), remove_insert_index);
 
       ephemeral::Node * node = ephemeral_current.head;
       size_t index = 0;
 
-      while (node != 0x0 && node->next && index < recs[0].first.index) {
-        node = node->next;
-        ++index;
-      }
-
       for (size_t i = 0; i < recs.size (); ++i) {
-        record_t ri = recs[i].first;
+        record_t ri = recs[i];
         if (ri.operation == REMOVE) {
-          while (index > ri.index) {
-            node = node->prev;
-            --index;
+          while (index < ri.index) {
+            node = node->next;
+            ++index;
           }
           if (node->prev) {
             node->prev->next = node->next;
@@ -461,11 +477,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
           ephemeral::Node * new_node = new ephemeral::Node ();
           new_node->data = ri.data;
           bool already_done = false;
-          while (index > recs[i].first.index) {
-            node = node->prev;
-            --index;
-          }
-          while (index < recs[i].first.index) {
+          while (index < recs[i].index) {
             ++index;
             if (node->next) {
               node = node->next;
@@ -478,7 +490,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
             }
           }
           if (already_done) {
-            break;
+            continue;
           }
 
           if (node && node->prev) {
@@ -495,7 +507,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
           node = new_node;
           ++ephemeral_current.size;
         } else if (ri.operation == MODIFY) {
-          while (index < recs[i].first.index) {
+          while (index < recs[i].index) {
             ++index;
             if (node->next) {
               node = node->next;
@@ -503,7 +515,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
               break;
             }
           }
-          node->data = recs[i].first.data;
+          node->data = recs[i].data;
         }
       }
 
@@ -513,13 +525,13 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 
 
   void DoublyLinkedList::jump_to_snapshot (std::size_t v) {
-    if (labs ((v - next_record_index)) <= max_snapshot_dist / 2) {
-#ifdef DEBUG_SNAPSHOT_FEATURE
-      cout << "Closer than " << max_snapshot_dist / 2 +
-        1 << ", not jumping" << endl;
-#endif
-      return;
-    }
+//     if (labs ((v - next_record_index)) <= max_snapshot_dist / 2) {
+// #ifdef DEBUG_SNAPSHOT_FEATURE
+//       cout << "Closer than " << max_snapshot_dist / 2 +
+//         1 << ", not jumping" << endl;
+// #endif
+//       return;
+//     }
 
     size_t snapshot_index =
       (v + max_snapshot_dist / 2 + 1) / max_snapshot_dist;
@@ -539,3 +551,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+
+
+

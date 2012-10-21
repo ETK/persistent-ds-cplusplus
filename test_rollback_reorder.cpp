@@ -47,9 +47,16 @@ void test_rollback_reorder () {
 }
 
 int main (int argc, char **argv) {
-  srand(2);
-//   srand((unsigned)time(NULL));
+//   srand(3);
+  unsigned seed;
+  if (argc == 1) {
+    seed = (unsigned)time(NULL);
+  } else if (argc == 2) {
+    seed = atoi(argv[1]);
+  }
+  srand(seed);
   test_rollback_reorder();
+  cout << "seed: " << seed << endl;
   return 0;
 }
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on;

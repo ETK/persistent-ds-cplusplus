@@ -29,6 +29,8 @@
 #define INIT_MAX_SNAPSHOT_DIST 100UL
 #define MAX_NO_SNAPSHOTS 1200UL
 
+// #define DEBUG_SNAPSHOT_FEATURE
+
 namespace rollback_reorder {
   enum operation_t {
     INSERT,
