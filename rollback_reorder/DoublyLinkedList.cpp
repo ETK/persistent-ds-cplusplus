@@ -406,14 +406,12 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
           }
         case REMOVE:{
             size_t index = ri.index;
-            for (size_t j = 0; j < recs.size (); ++j) {
+            for (size_t j = i - 1; j >= 0; --j) {
               record_t rj = recs[j].first;
               if (j < i && rj.operation == INSERT && rj.index < index) {
                 --index;
               } else if (j < i && rj.operation == REMOVE && rj.index < index) {
                 ++index;
-//               } else if (j > i && rj.operation == REMOVE && rj.index > index) {
-//                 ++index;
               }
             }
             recs[i].first.index = index;
