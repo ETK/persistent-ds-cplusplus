@@ -13,12 +13,12 @@ double rand01() {
 }
 
 void test_rollback_reorder () {
-  rollback_reorder::DoublyLinkedList list = rollback_reorder::DoublyLinkedList(1000, 10);
+  rollback_reorder::DoublyLinkedList list = rollback_reorder::DoublyLinkedList(1000, 50);
   vector<size_t> versions = vector<size_t>();
   size_t i = 0;
   cout << i << ":";
   list.print_at_version(i);
-  for (i = 0; i < 50; ++i) {
+  for (i = 0; i < 200; ++i) {
     double r = rand01();
     size_t index = (size_t) (rand01() * list.size());
     if (r < 0.1 && list.size() > 0) {

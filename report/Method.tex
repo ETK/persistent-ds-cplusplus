@@ -17,18 +17,48 @@
     \end{enumerate}
   \end{enumerate}
   \item Description of ``Rollback'' as a method
-  \item Description of reordering and optimization of operations
+  \item Description of reordering and optimization of operations (see algorithm \ref{alg:opsort} on page \pageref{alg:opsort})
 \end{enumerate}
 
+\begin{algorithm}[!h]
+  \caption{Algorithm for sorting a set of operations}
+  \label{alg:opsort}
+  \begin{algorithmic}
+    \Function {SortOperations}{set of operations $O$}
+      \State result $\gets$ empty set
+      \While {$O$ not empty}
+        \State // Find left-most operation with minimum index of application
+        \State $o_{min} \gets$ op. with minimum index of application
+        \State $index_{min} \gets$ index in $O$ of $o_{min}$
+        \State \textsc{remove} $o_{min}$ from $O$
+        \Statex
+        \State // Compensate operations which will now be after $o_{min}$ instead of before
+        \If {$o_{min}$ is an \textsc{insert} op.}
+          \For {each op. $o_i,o_i\in \left\{O | 0\le i<index_{min}\right\}$ }
+            \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$)-1
+          \EndFor
+        \ElsIf {$o_{min}$ is a \textsc{remove} op.}
+          \For {each op. $o_i,o_i\in \left\{O | 0\le i<index_{min}\right\}$}
+            \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$)+1
+          \EndFor
+        \EndIf
+        \State \textsc{append} $o_{min}$ to result
+      \EndWhile
+      \Statex
+      \State \Return result
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
 
 
-This chapter should include:
-\begin{itemize}
-  \item Ensuring that the implementations of different approaches are fair
-  \item Application profiles (modify-first, then access vs. mixed modify/access)
-  \item Analysis what it costs having to know specifics of data structure to
-  implement operation sequence pruning/optimization
-\end{itemize}
+
+%This chapter should include:
+%\begin{itemize}
+%  \item Ensuring that the implementations of different approaches are fair
+%  \item Application profiles (modify-first, then access vs. mixed modify/access)
+%  \item Analysis what it costs having to know specifics of data structure to
+%  implement operation sequence pruning/optimization
+%\end{itemize}
 
 \section{Rollback}
 
@@ -90,28 +120,28 @@ access query.
     %\Require current version $v_k$, desired version $v_d$
     \Function{OptimizeBatch}{current version $v_k$, desired version $v_d$}
       \State $O \gets \textsc{empty vector}$
-      \For {each operation $o_i$ between $v_k$ and $v_d$}
+      \For {each op. $o_i$ belonging to versions between $v_k$ and $v_d$}
         \If {$v_k<v_d$}
           \State push $o_i$ to back of $O$
         \Else
           \State push inverse of $o_i$ to back of $O$
         \EndIf
       \EndFor
-      \For {each operation $o_i$ in $O$}
-        \If {$o_i$ is an \textsc{insert} operation}
+      \For {op. $o_i$ in $O$}
+        \If {$o_i$ is an \textsc{insert} op.}
           \State $c \gets \textsc{index}(o_i)$
-          \For {operation $o_j \in o_{i+1},\ldots$}
-            \If {$o_j$ is an \textsc{insert} operation and \textsc{index}($o_j$)$<c$}
+          \For {op. $o_j \in o_{i+1},\ldots$}
+            \If {$o_j$ is an \textsc{insert} op. and \textsc{index}($o_j$)$<c$}
               \State $c \gets c+1$
-            \ElsIf {$o_j$ is a \textsc{modify} operation and \textsc{index}($o_j$)$=c$}
+            \ElsIf {$o_j$ is a \textsc{modify} op. and \textsc{index}($o_j$)$=c$}
               \State $\textsc{data}(o_i) \gets \textsc{data}(o_j)$
               \State $\textsc{delete}(o_j)$
               \State $\textsc{continue}\textnormal{ for loop with next }o_j$
-            \ElsIf {$o_j$ is a \textsc{remove} operation}
+            \ElsIf {$o_j$ is a \textsc{remove} op.}
               \If {\textsc{index}($o_j$) < c}
                 \State $c \gets c-1$
               \ElsIf {\textsc{index}($o_j$) = c}
-                \For {operation $o_k \in o_{i+1},\ldots,o_{j-1}$}
+                \For {op. $o_k \in \left\{O|k>i \land i<j \land \textsc{index}(o_k)>\textsc{index}(o_i)\right\}$}
                   \State $\textsc{index}(o_k) \gets \textsc{index}(o_k) - 1$
                 \EndFor
                 \State $\textsc{delete}(o_i)$
