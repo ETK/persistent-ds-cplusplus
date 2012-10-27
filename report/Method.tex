@@ -70,10 +70,28 @@ arrays; one for ``back pointers'' and one for ``modifications''.
 
 \section{Rollback}
 Rollback is an approach to persistence based on the techniques described in
-\cite{Tsotras1995237}, namely the combination of the na\"ive ``log'' and
-``copy'' methods.
-\todo[inline]{Describe ``log'' and ``copy'' as well as their hybrid, and justify
-its comparison to Node Copying.}
+\cite{Tsotras1995237}, namely the combination of the na\"ive ``copy'' and
+``log'' methods.
+\subsection{The na\"ive approaches}
+The ``copy'' approach makes a full copy of every version of the data structure
+and makes it available by direct indexing to achieve $O(1)$ access overhead
+factor. Creating each copy becomes more expensive in time and space the more
+elements are inserted. In the worst case, when only insertions and no deletions
+or modifications are made, the cost of creating $n$ versions is
+$O\left(\binom{n+1}{2}\right)$.
+
+The ``log'' approach conserves space by recording for each change made to the
+data structure just enough information necessary to undo or redo it, thus giving
+a space overhead factor per operation of $O(1)$. A ``current'' version
+$v_{current}$ of the data structure is maintained. Given $v_{current}$, the
+version $v_x$ can be produced by undoing or redoing all the changes between
+$v_{current}$ and $v_x$ depending on which is the oldest. As the number of
+versions $n$ increases, accessing a specific version becomes potentially more
+costly. In the worst case, the overhead factor is $O(n)$ when $v_{current}$ is
+$v_0$ and the desired version is $v_n$, or opposite.
+
+\subsection{The hybrid approach}
+\todo[inline]{Describe the hybrid, and justify its comparison to Node Copying.}
 
 \subsection{Operations batch optimization}
 See pseudo-code for the reordering in algorithm \ref{alg:opsort}.
