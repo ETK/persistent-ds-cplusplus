@@ -1,27 +1,20 @@
 \chapter{Method}
 
-\begin{enumerate}
-  \item Description of Node Copying as a method
-  \begin{enumerate}
-    \item Node structure expansion
-    \begin{enumerate}
-      \item Back pointers
-      \item Modifications
-      \item Bounds on numbers of the above
-      \item How it works
-      \item Why it works
-    \end{enumerate}
+\begin{enumerate}   \item Description of Node Copying as a method
+  \begin{enumerate}     \item Node structure expansion
+    \begin{enumerate}       \item Back pointers
+      \item Modifications \item Bounds on numbers of the above \item How it
+      works \item Why it works     \end{enumerate}
     \item Surrounding structure (collection of version information)
-    \begin{enumerate}
-      \item Considerations about effecient storage and retrieval of version info
-    \end{enumerate}
+    \begin{enumerate}       \item Considerations about effecient storage and
+    retrieval of version info     \end{enumerate}
   \end{enumerate}
-  \item Description of ``Rollback'' as a method
-  \begin{enumerate}
-    \item Description of reordering and optimization of operations (see algorithm \ref{alg:opsort} on page \pageref{alg:opsort})
+  \item Description of ``Rollback'' as a method \begin{enumerate}     \item
+  Description of reordering and optimization of operations (see algorithm
+  \ref{alg:opsort} on page \pageref{alg:opsort})
   \end{enumerate}
   \item Definitions of various application profiles (how the DS is used)
-\end{enumerate}
+  \end{enumerate}
 
 \section{The Node Copying method}
 Node Copying is a method described in \cite{Driscoll198986} by which a data
@@ -88,14 +81,72 @@ version $v_x$ can be produced by undoing or redoing all the changes between
 $v_{current}$ and $v_x$ depending on which is the oldest. As the number of
 versions $n$ increases, accessing a specific version becomes potentially more
 costly. In the worst case, the overhead factor is $O(n)$ when $v_{current}$ is
-$v_0$ and the desired version is $v_n$, or opposite.
+$v_0$ and $v_x$ is $v_n$, or opposite.
 
 \subsection{The hybrid approach}
-\todo[inline]{Describe the hybrid, and justify its comparison to Node Copying.}
+An obvious hybrid of the two na\"ive approaches is to keep the records of each
+operation like in the ``log'' approach, and storing a full copy like in the
+``copy'' approach only at certain intervals. To access version $v_x$, the
+nearest version to $v_x$ of which there exists a full copy, $v_s$, is retrieved.
+Then, using the log of the versions from $v_s$ to $v_x$, the data structure
+corresponding to $v_x$ is produced and returned.
+
+Naturally, a user parameter is necessary to control the intervals at which full
+copies are made. Let this parameter be $d$ and the number of versions $n$. There
+will then be $\left\lfloor \frac{n}{d} \right\rfloor$ full copies, and the
+maximum number of undos or redos to reach a specific version is then
+$O(k+\frac{d}{2})$, where $k$ is the time required to retrieve the full copy. It
+is now easy to see that the greater $d$ is, the fewer full copies will be made,
+and thus the space cost is reduced accordingly. Likewise, the distance to the
+version in the middle between two full copies increases with $d$, inducing a
+higher cost for producing that version.
+
+\todo[inline]{Justify its comparison to Node Copying?}
+
+\subsubsection{Adaptive copy interval increase}
+It might be preferrable to be able to specify a space usage limit rather than a
+fixed interval distance. When the space limit is near, $d$ is increased by a
+factor $c$, and the existing full copies are discarded save every $c$ copy, thus
+freeing up space for additional full copies.
+
+\todo[inline]{Insert figure illustrating adaptive copy interval increase.}
+
+If there are costs involved with deleting a copy of the data structure, the
+interval increase will cause the version in which it is performed to cost more
+than usual versions. When analyzed, the cost can be amortized over the other
+versions, leading to an overhead of $O(1)$.
+
+\todo[inline]{Write proof using potential method.}
 
 \subsection{Operations batch optimization}
+For certain underlying data structures, it may prove to be feasible to
+pre-process the batch of operations between a full copy $v_s$ and the requested
+version $v_x$ in order to reduce the actual work necessary to reach $v_x$.
+
+Two different types of pre-processing can be made to reduce work:
+
+\begin{description}
+
+  \item[Eliminating operations] If an element is first inserted by one operation
+  and since removed by another, both operations can be removed from the batch.
+  Likewise, if an element is inserted with one value and a later operation
+  modifies it, those two operations can be reduced to one.
+
+  \item[Reordering operations] If some operations are potentially expensive to
+  perform on the underlying data structure, such as inserting inside a linked
+  list, the operations can be reordered to allow the to be carried out in a more
+  efficient way. With the example of a linked list, it is expensive to carry out
+  the operations in an isolated fashion since every operation would have to
+  start from the head of the list. If instead the operations are reordered such
+  that they can be applied in sequence with non-decreasing index, the head of
+  the list need only be accessed once.
+\end{description}
+
+
+\todo[inline]{Mention that it requires more knowledge of underlying DS. Prove
+that the algorithm is correct.}
+
 See pseudo-code for the reordering in algorithm \ref{alg:opsort}.
-\todo[inline]{Describe properly the purpose and how it works, including proof}
 
 \begin{algorithm}[!h]
   \caption{Algorithm for sorting a set of operations}
