@@ -26,10 +26,21 @@
 \usepackage{todonotes}
 \usepackage[chapter]{algorithm}
 \usepackage{algpseudocode,amsmath}
+
+% New definitions
+\algnewcommand\algorithmicswitch{\textbf{switch}}
+\algnewcommand\algorithmiccase{\textbf{case}}
+% New "environments"
+\algdef{SE}[SWITCH]{Switch}{EndSwitch}[1]{\algorithmicswitch\ #1\ \algorithmicdo}{\algorithmicend\ \algorithmicswitch}%
+\algdef{SE}[CASE]{Case}{EndCase}[1]{\algorithmiccase\ #1}{\algorithmicend\ \algorithmiccase}%
+
 \algnotext{EndFor}
 \algnotext{EndIf}
 \algnotext{EndWhile}
 \algnotext{EndFunction}
+\algnotext{EndProcedure}
+\algnotext{EndSwitch}
+\algnotext{EndCase}
 
 %
 %==================================================================================================

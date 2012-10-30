@@ -372,6 +372,25 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     return result;
   }
   
+  
+  void print_operations_batch(const vector<record_t>& recs) {
+    for (size_t i = 0; i < recs.size(); ++i) {
+      const record_t& r = recs[i];
+      cout << i << ": ";
+      switch (r.operation) {
+        case INSERT:
+          cout << "insert(" << r.data << "," << r.index << ")" << endl;
+          break;
+        case MODIFY:
+          cout << "modify(" << r.data << "," << r.index << ")" << endl;
+          break;
+        case REMOVE:
+          cout << "remove(" << r.index << ")" << endl;
+          break;
+      }
+    }
+  }
+  
 
   void DoublyLinkedList::ensure_version (std::size_t v) {
     if (next_record_index == v || v == -1) {
@@ -394,6 +413,78 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
           recs.push_back (r);
         }
       }
+      
+//       cout << "Original sequence:" << endl;
+//       print_operations_batch(recs);
+//       cout << endl;
+      
+      if (recs.size() > 0) {
+        for (size_t i = recs.size() - 1; i != -1; --i) {
+          switch (recs[i].operation) {
+            case INSERT:
+            case MODIFY:
+              size_t c = recs[i].index;
+              for (size_t j = i + 1; j < recs.size(); ++j) {
+                record_t rj = recs[j];
+                
+                if (rj.operation == INSERT) {
+                    if (rj.index <= c) {
+                      ++c;
+                    }
+                } else if (rj.operation == MODIFY) {
+                    if (rj.index == c) {
+//                       cout << "Updating " << i << ", then removing " << j << ":" << endl;
+                      recs[i].data = rj.data;
+                      recs.erase(recs.begin() + j);
+                      --j;
+//                       print_operations_batch(recs);
+//                       cout << endl;
+                    }
+                } else if (rj.operation == REMOVE) {
+                    if (rj.index < c) {
+                      --c;
+                    } else if (rj.index == c) {
+                      switch (recs[i].operation) {
+                        case INSERT:
+                          for (size_t k = i + 1; k < j; ++k) {
+                            if (recs[k].index > c) {
+                              --recs[k].index;
+                            } else {
+                              switch (recs[k].operation) {
+                                case INSERT:
+                                  if (recs[k].index <= c) {
+                                    ++c;
+                                  }
+                                  break;
+                                case REMOVE:
+                                  if (recs[k].index <=  c) {
+                                    --c;
+                                  }
+                              }
+                            }
+                          }
+//                           cout << "Removing " << j << ", then " << i << ":" << endl;
+                          recs.erase(recs.begin() + j);
+                          recs.erase(recs.begin() + i);
+                          break;
+                        case MODIFY:
+//                           cout << "Removing " << i << ":" << endl;
+                          recs.erase(recs.begin() + i);
+                          break;
+                      }
+//                       print_operations_batch(recs);
+//                       cout << endl;
+                      break;
+                    }
+                }
+              }
+              break;
+          }
+        }
+      }
+
+//       cout << "Final sequence:" << endl;
+//       print_operations_batch(recs);
 
 //       // 2. Remove matching inserts and removes
 //       for (size_t i = 0; i < recs.size (); ++i) {

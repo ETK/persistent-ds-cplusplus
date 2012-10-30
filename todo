@@ -1,0 +1,15 @@
+- Bevis for rollback reorder
+- Hvad er ideen?
+- Køretidsanalyse
+- Empiriske observationer
+- Optimal rækkefølge, men ikke sæt af operationer
+- En algoritme i et stræk
+- Sammenlign metoderne teoretisk
+- Forklar forskellige ideer + alternativer
+- Forklar hvorfor du har valgt netop den du har valgt
+- Rollback med blandet access
+- Flyt snapshot hvis det kun er et par pladser
+- Hvilke access mønstre skal testes?
+- Bevis Node Copying amortised køretid
+- Lav empiriske test
+

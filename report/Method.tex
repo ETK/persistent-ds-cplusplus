@@ -123,24 +123,105 @@ For certain underlying data structures, it may prove to be feasible to
 pre-process the batch of operations between a full copy $v_s$ and the requested
 version $v_x$ in order to reduce the actual work necessary to reach $v_x$.
 
-Two different types of pre-processing can be made to reduce work:
+Two different types of pre-processing can be made to reduce work: Eliminating
+superfluous operations and reordering operations.
 
-\begin{description}
+\subsubsection{Eliminating operations}
+The batch of operations between $v_s$ and $v_x$ may contain some operations
+which will not need to be explicitly applied. The cases are:
+\begin{enumerate}
+  \item An \textsc{insert} operation followed by a \textsc{remove} operation at
+  the same effective index -- both can be removed from the batch since they
+  cancel each other out.
+  \label{item:elop-insert-remove}
 
-  \item[Eliminating operations] If an element is first inserted by one operation
-  and since removed by another, both operations can be removed from the batch.
-  Likewise, if an element is inserted with one value and a later operation
-  modifies it, those two operations can be reduced to one.
+  \item An \textsc{insert} operation followed by a \textsc{modify} operation at
+  the same effective index -- the former can have its associated data value
+  changed to that of the latter, and the latter can be removed from the batch.
+  \label{item:elop-insert-modify}
+  
+  \item A \textsc{modify} operation followed by a \textsc{remove} operation at
+  the same effective index -- the former can be removed from the batch.
+  \label{item:elop-modify-remove}
+\end{enumerate}
 
-  \item[Reordering operations] If some operations are potentially expensive to
-  perform on the underlying data structure, such as inserting inside a linked
-  list, the operations can be reordered to allow the to be carried out in a more
-  efficient way. With the example of a linked list, it is expensive to carry out
-  the operations in an isolated fashion since every operation would have to
-  start from the head of the list. If instead the operations are reordered such
-  that they can be applied in sequence with non-decreasing index, the head of
-  the list need only be accessed once.
-\end{description}
+Cases \ref{item:elop-insert-remove} and \ref{item:elop-insert-modify} may of
+course be combined in the sequence of one \textsc{insert} operation, one or more
+\textsc{modify} operations and finally a \textsc{remove} operataion.
+
+An algorithm implementing the above elimination cases would have to consider all
+operations in the batch and properly determine if the requirements of any of the
+cases are satisfied. Pseudo-code for such an algorithm is found in
+\ref{alg:eliminate-ops}.
+
+\begin{algorithm}{p}
+  \caption{An algorithm for eliminating superfluous operations}
+  \label{alg:eliminate-ops}
+  \begin{algorithmic}
+    \Procedure{EliminateSuperfluousOps}{Batch $B$}
+      \For {each operation $o_i \in B$, last operation first}
+        \State $c\gets\textsc{index}(o_i)$
+        \If {\textsc{type}($o_i$) $\in \left\{\textsc{insert},\textsc{modify}\right\}$}
+          \For {each operation $o_j \in \left\{B|j>i\right\}$}
+            \Switch {$\textsc{type}(o_j)$}
+              \Case{\textsc{insert}}
+                \If {$\textsc{index}(o_j) \le c$}
+                  \State $c \gets c+1$
+                \EndIf
+              \EndCase
+              \Case{\textsc{modify}}
+                \If {$\textsc{index}(o_j) = c$}
+                  \State $\textsc{data}(o_i) \gets \textsc{data}(o_j)$
+                  \State remove $o_j$ from $B$
+                \EndIf
+              \EndCase
+              \Case{\textsc{remove}}
+                \If{$\textsc{index}(o_j) = c$}
+                  \If{$\textsc{type}(o_i)=\textsc{insert}$}
+                    
+                  \Else //Remove
+                  
+                  \EndIf
+                \EndIf
+              \EndCase
+              
+  %               \If {$\textsc{index}(o_j)=c \land \textsc{type}(o_j) =\textsc{modify}$}
+  %                 \State $\textsc{data}(o_i) \gets \textsc{data}(o_j)$
+  %                 \State $\textsc{remove}(o_j, B)$
+  %               \ElsIf {$\textsc{index}(o_j)=c \land \textsc{type}(o_j) =\textsc{remove}$}
+  %                 \If {$\textsc{type}(o_i)=\textsc{insert}$}
+  %                   \For {each operation $o_k \in \left\{B|i<k<j\right\}$}
+  %                     \If {$\textsc{index}(o_k)>\textsc{index}(o_i)$}
+  %                       
+  %                     \EndIf
+  %                   \EndFor
+  %                 \EndIf
+  %                 \State \textsc{remove}($o_j,B$)
+  %                 \State \textsc{remove}($o_i,B$)
+  %                 \State continue with next $o_i$
+  %               \Else
+  %                 \If{$\textsc{type}(o_j) = \textsc{remove} \land c>\textsc{index}(o_j)$}
+  %                   
+  %                 \EndIf
+  %               \EndIf
+          \EndSwitch
+          \EndFor
+        \EndIf
+      \EndFor
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+ 
+\subsubsection{Reordering operations}
+
+If some operations are potentially  expensive to perform on the underlying data
+structure, such as inserting  inside a linked list, the operations can be
+reordered to allow the to be  carried out in a more efficient way. With the
+example of a linked list, it is  expensive to carry out the operations in an
+isolated fashion since every  operation would have to start from the head of the
+list. If instead the  operations are reordered such that they can be applied in
+sequence with  non-decreasing index, the head of the list need only be accessed
+once.
 
 
 \todo[inline]{Mention that it requires more knowledge of underlying DS. Prove
@@ -148,7 +229,7 @@ that the algorithm is correct.}
 
 See pseudo-code for the reordering in algorithm \ref{alg:opsort}.
 
-\begin{algorithm}[!h]
+\begin{algorithm}[!ht]
   \caption{Algorithm for sorting a set of operations}
   \label{alg:opsort}
   \begin{algorithmic}
