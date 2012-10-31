@@ -136,40 +136,18 @@ namespace rollback_naive {
   }
 
   void DoublyLinkedList::rollback () {
-    record_t & record = records[next_record_index - 1];
+    record_t & record = records[next_record_index];
 
     ephemeral::Node * node = ephemeral_current.head;
-    size_t begin = 1;
-    if (record.operation == INSERT) {
-      begin = 0;
-    }
-    for (size_t i = begin; i < record.index; ++i) {
+    for (size_t i = 0; i < record.index; ++i) {
       if (node->next) {
         node = node->next;
       } else {
-        break;
-//         throw "Index too large!";
+        throw "fuck off you moron";
       }
     }
 
     switch (record.operation) {
-    case INSERT:
-      record.data = node->data;
-      record.old_data = node->data;
-      if (node) {
-        if (node->prev) {
-          node->prev->next = node->next;
-        }
-        if (node->next) {
-          node->next->prev = node->prev;
-        }
-      }
-      --ephemeral_current.size;
-      if (ephemeral_current.head == node) {
-        ephemeral_current.head = 0x0;
-      }
-      delete node;
-      break;
     case REMOVE:{
         ephemeral::Node * new_node = new ephemeral::Node ();
         new_node->data = record.data;
@@ -187,6 +165,26 @@ namespace rollback_naive {
         ++ephemeral_current.size;
         break;
       }
+    case INSERT:
+      record.data = node->data;
+      record.old_data = node->data;
+      if (ephemeral_current.head == node) {
+        ephemeral_current.head = node->next;
+      }
+      if (node) {
+        if (node->prev) {
+          node->prev->next = node->next;
+        }
+        if (node->next) {
+          node->next->prev = node->prev;
+        }
+      }
+      --ephemeral_current.size;
+//       ephemeral_current.remove (*node);
+      node->prev = 0x0;
+      node->next = 0x0;
+      delete node;
+      break;
     case MODIFY:
       node->data = record.old_data;
       break;
@@ -201,6 +199,8 @@ namespace rollback_naive {
     for (size_t i = 0; i < record.index; ++i) {
       if (node->next) {
         node = node->next;
+      } else {
+        throw "fuck off you moron";
       }
     }
 
@@ -226,7 +226,7 @@ namespace rollback_naive {
       record.data = node->data;
       record.old_data = node->data;
       if (ephemeral_current.head == node) {
-        ephemeral_current.head = 0x0;
+        ephemeral_current.head = node->next;
       }
       if (node) {
         if (node->prev) {
@@ -238,6 +238,8 @@ namespace rollback_naive {
       }
       --ephemeral_current.size;
 //       ephemeral_current.remove (*node);
+      node->prev = 0x0;
+      node->next = 0x0;
       delete node;
       break;
     case MODIFY:
@@ -258,12 +260,12 @@ namespace rollback_naive {
 //         }
 
 //         cout << "Increasing max snapshot distance from " << max_snapshot_dist << " to " << max_snapshot_dist * exponent << endl;
-        
+
         max_snapshot_dist *= exponent;
 
         vector < pair < size_t, ephemeral::DoublyLinkedList > >new_snapshots;
         size_t index = 0;
-        for (size_t i = 0; i < snapshots.size(); i += exponent) {
+        for (size_t i = 0; i < snapshots.size (); i += exponent) {
           new_snapshots.push_back (snapshots[i]);
         }
         snapshots = new_snapshots;
@@ -373,30 +375,12 @@ namespace rollback_naive {
     return ephemeral_current.head;
   }
 
-  void DoublyLinkedList::jump_to_snapshot (size_t v) {
-    if (labs ((v - next_record_index)) <= max_snapshot_dist / 2) {
-#ifdef DEBUG_SNAPSHOT_FEATURE
-      cout << "Closer than " << max_snapshot_dist / 2 +
-        1 << ", not jumping" << endl;
-#endif
-      return;
-    }
-
+  void DoublyLinkedList::jump_to_snapshot (std::size_t v) {
     size_t snapshot_index =
       (v + max_snapshot_dist / 2 + 1) / max_snapshot_dist;
     if (snapshot_index >= snapshots.size ()) {
       snapshot_index = snapshots.size () - 1;
     }
-
-//     if ((next_record_index + max_snapshot_dist / 2 + 1) / max_snapshot_dist ==
-//         snapshot_index) {
-// #ifdef DEBUG_SNAPSHOT_FEATURE
-//       cout << "Would jump to snapshot no. " << snapshot_index +
-//         1 << ", but we're close enough" << endl;
-// #endif
-//       return;
-//     }
-// 
     pair < size_t, ephemeral::DoublyLinkedList > &snapshot =
       snapshots[snapshot_index];
 #ifdef DEBUG_SNAPSHOT_FEATURE
@@ -410,4 +394,3 @@ namespace rollback_naive {
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
-

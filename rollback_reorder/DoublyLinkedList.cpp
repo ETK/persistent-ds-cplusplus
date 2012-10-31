@@ -111,61 +111,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     rollforward ();
   }
 
-  void DoublyLinkedList::rollback () {
-    record_t & record = records[next_record_index - 1];
-
-    ephemeral::Node * node = ephemeral_current.head;
-    for (size_t i = 0; i < record.index; ++i) {
-      if (node->next) {
-        node = node->next;
-      } else {
-        throw "Index too large!";
-      }
-    }
-
-    switch (record.operation) {
-    case INSERT: {
-      record.data = node->data;
-      record.old_data = node->data;
-      if (ephemeral_current.head == node) {
-        ephemeral_current.head = 0x0;
-      }
-      if (node) {
-        if (node->prev) {
-          node->prev->next = node->next;
-        }
-        if (node->next) {
-          node->next->prev = node->prev;
-        }
-      }
-      --ephemeral_current.size;
-//       ephemeral_current.remove (*node);
-      delete node;
-      break;
-    }
-    case REMOVE: {
-        ephemeral::Node * new_node = new ephemeral::Node ();
-        new_node->data = record.data;
-        new_node->next = node;
-        if (node) {
-          new_node->prev = node->prev;
-          if (node->prev) {
-            node->prev->next = new_node;
-          }
-          node->prev = new_node;
-        }
-        if (node == 0x0 || node == ephemeral_current.head) {
-          ephemeral_current.head = new_node;
-        }
-        ++ephemeral_current.size;
-        break;
-    }
-    case MODIFY:
-      node->data = record.old_data;
-      break;
-    }
-  }
-
   void DoublyLinkedList::rollforward () {
     record_t & record = records[next_record_index];
 
@@ -498,50 +443,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
       print_operations_batch(recs);
 #endif
 
-//       // 2. Remove matching inserts and removes
-//       for (size_t i = 0; i < recs.size (); ++i) {
-//         record_t r = recs[i];
-//         if (r.operation == INSERT || r.operation == MODIFY) {
-//           size_t index = r.index;
-//           for (size_t j = i + 1; j < recs.size (); ++j) {
-//             if (recs[j].operation == INSERT
-//                 && recs[j].index <= index) {
-//               ++index;
-//             } else if (recs[j].operation == MODIFY
-//                        && recs[j].index == index) {
-//               recs[i].data = recs[j].data;
-//               recs.erase (recs.begin () + j);
-//               --j;
-//               continue;
-//             } else if (recs[j].operation == REMOVE) {
-//               if (recs[j].index < index) {
-//                 --index;
-//               } else if (recs[j].index == index) {
-//                 if (r.operation == INSERT) {
-//                   // Remove both, adjust in-between indices and move on.
-//                   for (size_t k = i + 1; k < j; ++k) {
-//                     if (recs[k].operation == REMOVE
-//                         && recs[k].index >= r.index
-//                         || recs[k].index > r.index) {
-//                       --recs[k].index;
-//                     }
-//                   }
-//                   recs.erase (recs.begin () + j);
-//                   recs.erase (recs.begin () + i);
-//                 } else if (r.operation == MODIFY) {
-//                   // Remove modify, since node will be removed afterwards anyway
-//                   recs.erase (recs.begin () + i);
-//                 }
-// 
-//                 // count from same index now that Xi was removed
-//                 --i;
-//                 break;
-//               }
-//             }
-//           }
-//         }
-//       }
-
       // 3. Sort by index until nice and clean
       while (unsorted(recs)) {
         recs = reorder(recs);
@@ -626,16 +527,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     }
   }
 
-
   void DoublyLinkedList::jump_to_snapshot (std::size_t v) {
-//     if (labs ((v - next_record_index)) <= max_snapshot_dist / 2) {
-// #ifdef DEBUG_SNAPSHOT_FEATURE
-//       cout << "Closer than " << max_snapshot_dist / 2 +
-//         1 << ", not jumping" << endl;
-// #endif
-//       return;
-//     }
-
     size_t snapshot_index =
       (v + max_snapshot_dist / 2 + 1) / max_snapshot_dist;
     if (snapshot_index >= snapshots.size ()) {
@@ -654,6 +546,3 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
-
-
-

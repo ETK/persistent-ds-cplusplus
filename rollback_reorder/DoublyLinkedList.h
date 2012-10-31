@@ -86,7 +86,6 @@ namespace rollback_reorder {
       std::size_t max_snapshot_dist;
       std::size_t max_no_snapshots;
 
-    void rollback ();
     void rollforward ();
     void jump_to_snapshot (std::size_t v);
     void ensure_version (std::size_t v);
