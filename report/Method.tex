@@ -139,7 +139,7 @@ which will not need to be explicitly applied. The cases are:
   the same effective index -- the former can have its associated data value
   changed to that of the latter, and the latter can be removed from the batch.
   \label{item:elop-insert-modify}
-  
+
   \item A \textsc{modify} operation followed by a \textsc{remove} operation at
   the same effective index -- the former can be removed from the batch.
   \label{item:elop-modify-remove}
@@ -154,14 +154,14 @@ operations in the batch and properly determine if the requirements of any of the
 cases are satisfied. Pseudo-code for such an algorithm is found in
 \ref{alg:eliminate-ops}.
 
-\begin{algorithm}{p}
+\begin{algorithm}[p]
   \caption{An algorithm for eliminating superfluous operations}
   \label{alg:eliminate-ops}
   \begin{algorithmic}
     \Procedure{EliminateSuperfluousOps}{Batch $B$}
-      \For {each operation $o_i \in B$, last operation first}
-        \State $c\gets\textsc{index}(o_i)$
+      \For {each operation $o_i \in B$, from last to first}
         \If {\textsc{type}($o_i$) $\in \left\{\textsc{insert},\textsc{modify}\right\}$}
+        \State $c\gets\textsc{index}(o_i)$
           \For {each operation $o_j \in \left\{B|j>i\right\}$}
             \Switch {$\textsc{type}(o_j)$}
               \Case{\textsc{insert}}
@@ -176,7 +176,37 @@ cases are satisfied. Pseudo-code for such an algorithm is found in
                 \EndIf
               \EndCase
               \Case{\textsc{remove}}
-                \If{$\textsc{index}(o_j) = c$}
+                \If {$\textsc{index}(o_j) < c$}
+                  \State $c \gets c-1$
+                \ElsIf {$\textsc{index}(o_j) = c$}
+                  \State $c \gets \textsc{index}(o_i)$
+                  \Switch {$\textsc{type}(o_i)$}
+                    \Case {\textsc{insert}}
+                      \For {each operation $o_k \in \left\{B|i<k<j\right\}$}
+                        \If {$\textsc{index}(o_k) > c$}
+                          \State $\textsc{index}(o_k) \gets \textsc{index}(o_k) - 1$
+                        \Else
+                          \Switch {\textsc{type}($o_k$)}
+                            \Case {\textsc{insert}}
+                              \If {$\textsc{index}(o_k) \le c$}
+                                \State $c \gets c+1$
+                              \EndIf
+                            \EndCase
+                            \Case {\textsc{remove}}
+                              \If {$\textsc{index}(o_k) \le c$}
+                                \State $c \gets c-1$
+                              \EndIf
+                            \EndCase
+                          \EndSwitch
+                        \EndIf
+                      \EndFor
+                      \State remove $o_j$ from $B$
+                      \State remove $o_i$ from $B$
+                    \EndCase
+                    \Case {\textsc{modify}}
+                      \State remove $o_i$ from $B$
+                    \EndCase
+                  \EndSwitch
                   \If{$\textsc{type}(o_i)=\textsc{insert}$}
                     
                   \Else //Remove

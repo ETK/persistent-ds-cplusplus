@@ -372,7 +372,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     return result;
   }
   
-  
+
   void print_operations_batch(const vector<record_t>& recs) {
     for (size_t i = 0; i < recs.size(); ++i) {
       const record_t& r = recs[i];
@@ -390,8 +390,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
       }
     }
   }
-  
-
   void DoublyLinkedList::ensure_version (std::size_t v) {
     if (next_record_index == v || v == -1) {
       return;
@@ -413,10 +411,11 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
           recs.push_back (r);
         }
       }
-      
-//       cout << "Original sequence:" << endl;
-//       print_operations_batch(recs);
-//       cout << endl;
+#ifdef DEBUG_ELIMINATE_OPS
+      cout << "Original sequence:" << endl;
+      print_operations_batch(recs);
+      cout << endl;
+#endif
       
       if (recs.size() > 0) {
         for (size_t i = recs.size() - 1; i != -1; --i) {
@@ -433,17 +432,22 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
                     }
                 } else if (rj.operation == MODIFY) {
                     if (rj.index == c) {
-//                       cout << "Updating " << i << ", then removing " << j << ":" << endl;
+#ifdef DEBUG_ELIMINATE_OPS
+                      cout << "Updating " << i << ", then removing " << j << ":" << endl;
+#endif
                       recs[i].data = rj.data;
                       recs.erase(recs.begin() + j);
                       --j;
-//                       print_operations_batch(recs);
-//                       cout << endl;
+#ifdef DEBUG_ELIMINATE_OPS
+                      print_operations_batch(recs);
+                      cout << endl;
+#endif
                     }
                 } else if (rj.operation == REMOVE) {
                     if (rj.index < c) {
                       --c;
                     } else if (rj.index == c) {
+                      c = recs[i].index;
                       switch (recs[i].operation) {
                         case INSERT:
                           for (size_t k = i + 1; k < j; ++k) {
@@ -463,17 +467,23 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
                               }
                             }
                           }
-//                           cout << "Removing " << j << ", then " << i << ":" << endl;
+#ifdef DEBUG_ELIMINATE_OPS
+                          cout << "Removing " << j << ", then " << i << ":" << endl;
+#endif
                           recs.erase(recs.begin() + j);
                           recs.erase(recs.begin() + i);
                           break;
                         case MODIFY:
-//                           cout << "Removing " << i << ":" << endl;
+#ifdef DEBUG_ELIMINATE_OPS
+                          cout << "Removing " << i << ":" << endl;
+#endif
                           recs.erase(recs.begin() + i);
                           break;
                       }
-//                       print_operations_batch(recs);
-//                       cout << endl;
+#ifdef DEBUG_ELIMINATE_OPS
+                      print_operations_batch(recs);
+                      cout << endl;
+#endif
                       break;
                     }
                 }
@@ -483,8 +493,10 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
         }
       }
 
-//       cout << "Final sequence:" << endl;
-//       print_operations_batch(recs);
+#ifdef DEBUG_ELIMINATE_OPS
+      cout << "Final sequence:" << endl;
+      print_operations_batch(recs);
+#endif
 
 //       // 2. Remove matching inserts and removes
 //       for (size_t i = 0; i < recs.size (); ++i) {
