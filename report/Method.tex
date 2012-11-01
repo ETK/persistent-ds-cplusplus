@@ -101,22 +101,13 @@ and thus the space cost is reduced accordingly. Likewise, the distance to the
 version in the middle between two full copies increases with $d$, inducing a
 higher cost for producing that version.
 
-\todo[inline]{Justify its comparison to Node Copying?}
-
 \subsubsection{Adaptive copy interval increase}
 It might be preferrable to be able to specify a space usage limit rather than a
 fixed interval distance. When the space limit is near, $d$ is increased by a
-factor $c$, and the existing full copies are discarded save every $c$ copy, thus
-freeing up space for additional full copies.
+factor $c$, and the existing full copies are discarded except from every $c$
+copy, thus freeing up space for additional full copies.
 
 \todo[inline]{Insert figure illustrating adaptive copy interval increase.}
-
-If there are costs involved with deleting a copy of the data structure, the
-interval increase will cause the version in which it is performed to cost more
-than usual versions. When analyzed, the cost can be amortized over the other
-versions, leading to an overhead of $O(1)$.
-
-\todo[inline]{Write proof using potential method.}
 
 \subsection{Operations batch optimization}
 For certain underlying data structures, it may prove to be feasible to
@@ -124,7 +115,9 @@ pre-process the batch of operations between a full copy $v_s$ and the requested
 version $v_x$ in order to reduce the actual work necessary to reach $v_x$.
 
 Two different types of pre-processing can be made to reduce work: Eliminating
-superfluous operations and reordering operations.
+superfluous operations and reordering operations. It is worth noting that both
+of these require knowledge of the underlying data structure, and thus requires
+more work to implement.
 
 \subsubsection{Eliminating operations}
 The batch of operations between $v_s$ and $v_x$ may contain some operations
@@ -149,33 +142,39 @@ Cases \ref{item:elop-insert-remove} and \ref{item:elop-insert-modify} may of
 course be combined in the sequence of one \textsc{insert} operation, one or more
 \textsc{modify} operations and finally a \textsc{remove} operataion.
 
-An algorithm implementing the above elimination cases would have to consider all
-operations in the batch and properly determine if the requirements of any of the
-cases are satisfied.
+Pseudo code for an algorithm handling those cases is found in Algorithm
+\ref{alg:eliminate-ops}.
+The general idea is to identify cases \ref{item:elop-insert-remove},
+\ref{item:elop-insert-modify} and \ref{item:elop-modify-remove} and make the
+necessary maintenance before removing the relevant operations.
 
-The general idea of the algorithm is to identify cases
-\ref{item:elop-insert-remove}, \ref{item:elop-insert-modify} and
-\ref{item:elop-modify-remove} and make the necessary maintenance before removing
-the relevant operations.
+\begin{description}
+  \item [Case \ref{item:elop-insert-remove}:] The operations between the
+  \textsc{insert} operation and the \textsc{remove} operation are iterated to
+  adjust the index on those operations which operate on indices greater than the
+  index of the inserted element in the corresponding version.
+  
+  \item [Case \ref{item:elop-insert-modify}:] The \textsc{insert} operation gets
+  the data value from the \textsc{modify} operation prior to the removal of the
+  latter, and no further maintenance is necessary.
+  
+  \item [Case \ref{item:elop-modify-remove}:] The \textsc{modify} operation can
+  simply be removed since it will have no net effect.
 
-In case \ref{item:elop-insert-remove}, the operations between the
-\textsc{insert} operation and the \textsc{remove} operation are iterated to
-adjust the index on those operations which operate on indices greater than the
-index of the inserted element in the corresponding version.
+\end{description}
 
-In case \ref{item:elop-insert-modify}, the \textsc{insert} operation gets the
-data value from the \textsc{modify} operation prior to the removal of the
-latter, and no further maintenance is necessary.
+The space cost of the algorithm is in the order of the batch size, i.e.
+$O(\left|B\right|)$, since a mutable copy of the relevant operations is made.
+In the worst case, when all $n$ operations are \textsc{insert} or
+\textsc{modify} operations, the time cost is
+$O\left(\left\lfloor\binom{n+1}{2}\right\rfloor\right)$, since with every
+\textsc{insert} operation, all the proceeding operations are examined when a
+matching \textsc{remove} operation is not found.
 
-In case \ref{item:elop-modify-remove}, the \textsc{modify} operation can simply
-be removed since it will have no net effect.
-
-Pseudo-code for such an algorithm is found in \ref{alg:eliminate-ops}.
-
-\begin{algorithm}[p]
+\begin{algorithm}[!ht]
   \caption{An algorithm for eliminating superfluous operations}
   \label{alg:eliminate-ops}
-  \begin{algorithmic}
+  \begin{algorithmic}[5]
     \Procedure{EliminateSuperfluousOps}{Batch $B$}
       \For {each operation $o_i \in B$, from last to first}
         \If {\textsc{type}($o_i$) $\in \left\{\textsc{insert},\textsc{modify}\right\}$}
@@ -237,41 +236,66 @@ Pseudo-code for such an algorithm is found in \ref{alg:eliminate-ops}.
  
 \subsubsection{Reordering operations}
 
-If some operations are potentially  expensive to perform on the underlying data
-structure, such as inserting  inside a linked list, the operations can be
-reordered to allow the to be  carried out in a more efficient way. With the
-example of a linked list, it is  expensive to carry out the operations in an
-isolated fashion since every  operation would have to start from the head of the
-list. If instead the  operations are reordered such that they can be applied in
-sequence with  non-decreasing index, the head of the list need only be accessed
-once.
+Applying each operation in the batch separately is potentially a time-expensive
+approach. Consider the case when each operation inserts an element at the end of
+a linked list; the bulk cost for $n$ insertions on a list of length $l$ would be
 
+$$O\left(\left\lfloor\dbinom{l+n+1}{2}\right\rfloor\right)$$
+
+since every insertion would require following 1 more pointer than the previous.
+It would indeed be more efficient to make the insertions in one go, which would
+cost $O(l+n)$ -- $l$ for reaching the end of the list, $n$ for all the
+insertions. But this is only possible if the the operations are ordered by
+non-decreasing index of application. If they are not, they can be reordered.
+
+Reordering the batch of operations by index of application requires some
+maintenance. Consider the case when an \textsc{insert} operation $o_i$, which
+has a small index of application, is moved to an earlier position in the batch
+than it had originally. Any operations which used to preceed $o_i$, and which
+after the move will instead proceed it, should take into account the additional
+element being inserted; if their index of application is greater than that of
+$o_i$, it should be incremented by 1. If $o_i$ is a \textsc{remove} operation,
+the index of operation should instead be decreased by 1 on those operations.
+
+Pseudocode for an algorithm implementing the above approach is found in
+Algorithm \ref{alg:opsort}. The space cost is linear in the number of operations
+being reordered. Consider the worst case, when the operations are ordered with
+strictly decreasing indices of application; the time cost is then
+$O\left(\left\lfloor\binom{n+1}{2}\right\rfloor\right)$, since the entire
+remaining sequence would have to be searched for the minimum index of
+application prior to the removal of that element.
+
+If the operations are already ordered by non-decreasing index of application,
+the algorithm only adds to the time cost, and so it may be worth checking that
+the sequence requires reordering prior to running the algorithm.
 
 \todo[inline]{Mention that it requires more knowledge of underlying DS. Prove
 that the algorithm is correct.}
 
-See pseudo-code for the reordering in algorithm \ref{alg:opsort}.
-
 \begin{algorithm}[!ht]
   \caption{Algorithm for sorting a set of operations}
   \label{alg:opsort}
-  \begin{algorithmic}
-    \Function {SortOperations}{set of operations $O$}
+  \begin{algorithmic}[5]
+    \Function {SortOperations}{set of operations $B$}
       \State result $\gets$ empty set
-      \While {$O$ not empty}
+      \While {$B$ not empty}
         \State // Find left-most operation with minimum index of application
         \State $o_{min} \gets$ op. with minimum index of application
-        \State $index_{min} \gets$ index in $O$ of $o_{min}$
-        \State \textsc{remove} $o_{min}$ from $O$
+        \State $index_{min} \gets$ index in $B$ of $o_{min}$
+        \State \textsc{remove} $o_{min}$ from $B$
         \Statex
         \State // Compensate operations which will now be after $o_{min}$ instead of before
         \If {$o_{min}$ is an \textsc{insert} op.}
-          \For {each op. $o_i,o_i\in \left\{O | 0\le i<index_{min}\right\}$ }
-            \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$)-1
+          \For {each op. $o_i,o_i\in \left\{B | 0\le i<index_{min}\right\}$ }
+            \If {$\textsc{index}(o_i) > index_{min}$}
+              \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) + 1
+            \EndIf
           \EndFor
         \ElsIf {$o_{min}$ is a \textsc{remove} op.}
-          \For {each op. $o_i,o_i\in \left\{O | 0\le i<index_{min}\right\}$}
-            \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$)+1
+          \For {each op. $o_i,o_i\in \left\{B | 0\le i<index_{min}\right\}$}
+            \If {$\textsc{index}(o_i) > index_{min}$}
+              \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) - 1
+            \EndIf
           \EndFor
         \EndIf
         \State \textsc{append} $o_{min}$ to result

@@ -9,7 +9,7 @@ ProjectRootRelative=./
 
 [CMake][CMake Build Directory 0]
 Build Directory Path=file:///home/s062372/projects/persistent-ds-cplusplus/build
-Build Type=DEBUG
+Build Type=Debug
 CMake Binary=file:///usr/bin/cmake
 Environment Profile=
 Extra Arguments=
@@ -81,7 +81,7 @@ Name=test_rollback_reorder
 Type=Native Application
 
 [Launch][Launch Configuration 3][Data]
-Arguments=1351610674
+Arguments=
 Configured from ProjectItem=persistent-ds-cplusplus,test_rollback_reorder
 Debugger Shell=
 Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x02\x00\x00\x00.\x00p\x00e\x00r\x00s\x00i\x00s\x00t\x00e\x00n\x00t\x00-\x00d\x00s\x00-\x00c\x00p\x00l\x00u\x00s\x00p\x00l\x00u\x00s\x00\x00\x00*\x00t\x00e\x00s\x00t\x00_\x00r\x00o\x00l\x00l\x00b\x00a\x00c\x00k\x00_\x00r\x00e\x00o\x00r\x00d\x00e\x00r)
