@@ -166,10 +166,9 @@ necessary maintenance before removing the relevant operations.
 The space cost of the algorithm is in the order of the batch size, i.e.
 $O(\left|B\right|)$, since a mutable copy of the relevant operations is made.
 In the worst case, when all $n$ operations are \textsc{insert} or
-\textsc{modify} operations, the time cost is
-$O\left(\left\lfloor\binom{n+1}{2}\right\rfloor\right)$, since with every
-\textsc{insert} operation, all the proceeding operations are examined when a
-matching \textsc{remove} operation is not found.
+\textsc{modify} operations, the time cost is $O\left(\binom{n+1}{2}\right)$,
+since with every \textsc{insert} operation, all the proceeding operations are
+examined when a matching \textsc{remove} operation is not found.
 
 \begin{algorithm}[!ht]
   \caption{An algorithm for eliminating superfluous operations}
@@ -240,7 +239,7 @@ Applying each operation in the batch separately is potentially a time-expensive
 approach. Consider the case when each operation inserts an element at the end of
 a linked list; the bulk cost for $n$ insertions on a list of length $l$ would be
 
-$$O\left(\left\lfloor\dbinom{l+n+1}{2}\right\rfloor\right)$$
+$$O\left(\dbinom{l+n+1}{2}\right)$$
 
 since every insertion would require following 1 more pointer than the previous.
 It would indeed be more efficient to make the insertions in one go, which would
@@ -261,16 +260,94 @@ Pseudocode for an algorithm implementing the above approach is found in
 Algorithm \ref{alg:opsort}. The space cost is linear in the number of operations
 being reordered. Consider the worst case, when the operations are ordered with
 strictly decreasing indices of application; the time cost is then
-$O\left(\left\lfloor\binom{n+1}{2}\right\rfloor\right)$, since the entire
-remaining sequence would have to be searched for the minimum index of
-application prior to the removal of that element.
+$O\left(\binom{n+1}{2}\right)$, since the entire remaining sequence would have
+to be searched for the minimum index of application prior to the removal of that
+element.
+
+An example of the reordering of 10 operations by the algorithm is found in
+figure \ref{fig:reorder-example}.
+
+\begin{figure}[!htp]
+  \includegraphics[width=.9\textwidth]{figures/reorder_example.pdf}
+
+  \caption{\small Example of the reorder algorithm applied to a sequence of 10
+  operations. In each iteration, the minimum operation in $S$ is colored cyan.
+  When an \textsc{insert} operation is removed from $S$, the operations to the
+  left are colored green to indicate the incrementation of their label.
+  Similarly, when a \textsc{remove} operation is removed from $S$, the
+  operations to the left are colored red to indicate the decrementation of their
+  label.}
+
+  \label{fig:reorder-example}
+\end{figure}
 
 If the operations are already ordered by non-decreasing index of application,
 the algorithm only adds to the time cost, and so it may be worth checking that
-the sequence requires reordering prior to running the algorithm.
+the sequence requires reordering prior to running the algorithm. That can be
+achieved in $O(n)$ time by testing whether each operation works on an index
+equal to or greater than the previous one.
 
-\todo[inline]{Mention that it requires more knowledge of underlying DS. Prove
-that the algorithm is correct.}
+\paragraph {Proof of reorder algorithm}
+In order to prove that the algorithm returns the optimally reordered sequence of
+operations, we must first establish the following definitions and facts:
+\begin{enumerate}
+
+  \item The original sequence $S_0$ is ordered left-to-right in the order in
+  which they should be applied to produce the correct outcome.
+
+  \item The operations are labeled by their index of application, and as such
+  any data value to be inserted or modified is not considered.
+
+\end{enumerate}
+
+
+\begin{itemize}
+  \item Let $O$ be the sequence which is to be returned. It is initially empty.
+
+  \item Let $S_i$ be the sequence which is being considered at the beginning of
+  iteration $i$.
+
+  \item The minimum label in $S_i$ is then denoted $l_{min_i}$, and the
+  operation having that label is denoted $o_{min_i}$. If more than one operation
+  has the label $l_{min_i}$, the left-most is chosen as $o_{min_i}$.
+
+  \item Let $L_i$ be the sub-sequence of operations which are located to the
+  left of $o_{min_i}$ in $S_i$, and $R_i$ be the sub-sequence of of operations
+  which are located to the right of $o_{min_i}$; i.e.: $S_i = L,o_{min_i},R$.
+
+  \item By definition, no operations in $L_i$ have a label with a lower value
+  than $l_{min}$, and all operations in $R_i$ have a label with either equal or
+  greater value than $l_{min_i}$.
+
+  \item If $o_{min_i}$ is an \textsc{insert} or a \textsc{remove} operation, and
+  it is instead assumed that the following sequence is applied instead:
+  $o_{min_i}$, $L_i$, $R_i$; then the operations in $L_i$ and thus in $R_i$ will
+  potentially work on a wrong element in the data structure. Let $Lr_i$ be the
+  relabeled $L_i$ according to the following scheme:
+
+  \begin{itemize}
+
+    \item If $o_{min_i}$ is an \textsc{insert} operation, all labels in $Lr_i$
+    are increased by 1.
+
+    \item If $o_{min_i}$ is a \textsc{remove} operation, all labels in $Lr_i$
+    are decreased by 1.
+
+  \end{itemize}
+
+  \item If the above scheme is applied, applying the sequence $L_i$, $o_{min_i}$
+  yields the same result as applying the sequence $o_{min_i}$, $Lr_i$.
+
+  \item Before iteration $i+1$, let $O := O, o_{min_i}$ and then $S_{i+1} :=
+  Lr_i, R_i$.
+
+  \item By induction, if the process is repeated, $S_i$ is eventually emptied
+  and $O$ contains the reordered sequence of operations with non-decreasing
+  index of application.
+
+\end{itemize}
+
+\todo[inline]{Prove that the algorithm is correct.}
 
 \begin{algorithm}[!ht]
   \caption{Algorithm for sorting a set of operations}
@@ -283,23 +360,18 @@ that the algorithm is correct.}
         \State $o_{min} \gets$ op. with minimum index of application
         \State $index_{min} \gets$ index in $B$ of $o_{min}$
         \State \textsc{remove} $o_{min}$ from $B$
-        \Statex
-        \State // Compensate operations which will now be after $o_{min}$ instead of before
-        \If {$o_{min}$ is an \textsc{insert} op.}
-          \For {each op. $o_i,o_i\in \left\{B | 0\le i<index_{min}\right\}$ }
-            \If {$\textsc{index}(o_i) > index_{min}$}
-              \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) + 1
-            \EndIf
-          \EndFor
-        \ElsIf {$o_{min}$ is a \textsc{remove} op.}
-          \For {each op. $o_i,o_i\in \left\{B | 0\le i<index_{min}\right\}$}
-            \If {$\textsc{index}(o_i) > index_{min}$}
-              \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) - 1
-            \EndIf
-          \EndFor
-        \EndIf
         \State \textsc{append} $o_{min}$ to result
-      \EndWhile
+        \Statex
+        \State // Compensate op.s which will now proceed rather than
+        preceed $o_{min}$
+        \For {each op. $o_i\in \left\{B | 0\le i<index_{min}\right\}$ }
+          \If {$o_{min}$ is an \textsc{insert} op.}
+                \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) + 1
+          \ElsIf {$o_{min}$ is a \textsc{remove} op.}
+                \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) - 1
+          \EndIf
+        \EndFor
+       \EndWhile
       \Statex
       \State \Return result
     \EndFunction
