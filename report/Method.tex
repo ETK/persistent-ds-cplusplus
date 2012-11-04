@@ -166,10 +166,9 @@ necessary maintenance before removing the relevant operations.
 The space cost of the algorithm is in the order of the batch size, i.e.
 $O(\left|B\right|)$, since a mutable copy of the relevant operations is made.
 In the worst case, when all $n$ operations are \textsc{insert} or
-\textsc{modify} operations, the time cost is
-$O\left(\left\lfloor\binom{n+1}{2}\right\rfloor\right)$, since with every
-\textsc{insert} operation, all the proceeding operations are examined when a
-matching \textsc{remove} operation is not found.
+\textsc{modify} operations, the time cost is $O\left(\binom{n+1}{2}\right)$,
+since with every \textsc{insert} operation, all the proceeding operations are
+examined when a matching \textsc{remove} operation is not found.
 
 \begin{algorithm}[!ht]
   \caption{An algorithm for eliminating superfluous operations}
@@ -240,7 +239,7 @@ Applying each operation in the batch separately is potentially a time-expensive
 approach. Consider the case when each operation inserts an element at the end of
 a linked list; the bulk cost for $n$ insertions on a list of length $l$ would be
 
-$$O\left(\left\lfloor\dbinom{l+n+1}{2}\right\rfloor\right)$$
+$$O\left(\dbinom{l+n+1}{2}\right)$$
 
 since every insertion would require following 1 more pointer than the previous.
 It would indeed be more efficient to make the insertions in one go, which would
@@ -261,16 +260,59 @@ Pseudocode for an algorithm implementing the above approach is found in
 Algorithm \ref{alg:opsort}. The space cost is linear in the number of operations
 being reordered. Consider the worst case, when the operations are ordered with
 strictly decreasing indices of application; the time cost is then
-$O\left(\left\lfloor\binom{n+1}{2}\right\rfloor\right)$, since the entire
-remaining sequence would have to be searched for the minimum index of
-application prior to the removal of that element.
+$O\left(\binom{n+1}{2}\right)$, since the entire remaining sequence would have
+to be searched for the minimum index of application prior to the removal of that
+element.
 
 If the operations are already ordered by non-decreasing index of application,
 the algorithm only adds to the time cost, and so it may be worth checking that
-the sequence requires reordering prior to running the algorithm.
+the sequence requires reordering prior to running the algorithm. That can be
+achieved in $O(n)$ time by testing whether each operation works on an index
+equal to or greater than the previous one.
 
-\todo[inline]{Mention that it requires more knowledge of underlying DS. Prove
-that the algorithm is correct.}
+
+\paragraph {Proof of reorder algorithm}
+In order to prove that the algorithm returns the optimally reordered sequence of
+operations, we must first establish the following definitions and facts:
+\begin{enumerate}
+  
+  \item The sequence is originally ordered left-to-right in the order in which
+  they should be applied to produce the correct outcome. An operation $a$
+  preceeds an operation $b$ if $a$ is originally applied before $b$.
+  \label{item:reorder-preceed}
+
+  \item The left-most operation in the sequence having the minimum index of
+  application is denoted $o_{min}$, and the mimimum index is denoted
+  $index_{min}$.\noindent
+  \label{item:reorder-o-min}
+
+  \item Preceeding $o_{min}$, no operation has an index of application which is
+  less than or equal to $index_{min}$.
+  \label{item:reorder-preceeding-sequence}
+  
+  \item Proceeding $o_{min}$ are only operations with indices of operation
+  greater than $index_{min}$.
+  \label{item:reorder-proceeding-sequence}
+  
+  \item Inserting an element $e$ at index $index_{min}$ will increase by 1 the
+  indices of the elements to the right of $e$. Similarly, removing an element
+  $e$ from index $index_{min}$ will decrease by 1 the indices of the elements to
+  the right where $e$ used to be.
+  \label{item:reorder-change-by-one}
+  
+  \item Let $S$ denote the entire sequence of operations and $A$ the sequence of
+  operations originally preceeding $o_{min}$. If $o_{min}$ is moved from its
+  current position in $S$ to the beginning of $S$, the elements on which the
+  operations in $A$ operate will have an index which is greater or smaller by 1
+  as described in \ref{item:reorder-change-by-one}. As a result, the index of
+  application of each operation in $A$ must be adjusted accordingly.
+  
+  The operations which originally proceeded $b$ 
+  
+  \item 
+\end{enumerate}
+
+\todo[inline]{Prove that the algorithm is correct.}
 
 \begin{algorithm}[!ht]
   \caption{Algorithm for sorting a set of operations}
@@ -283,22 +325,19 @@ that the algorithm is correct.}
         \State $o_{min} \gets$ op. with minimum index of application
         \State $index_{min} \gets$ index in $B$ of $o_{min}$
         \State \textsc{remove} $o_{min}$ from $B$
-        \Statex
-        \State // Compensate operations which will now be after $o_{min}$ instead of before
-        \If {$o_{min}$ is an \textsc{insert} op.}
-          \For {each op. $o_i,o_i\in \left\{B | 0\le i<index_{min}\right\}$ }
-            \If {$\textsc{index}(o_i) > index_{min}$}
-              \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) + 1
-            \EndIf
-          \EndFor
-        \ElsIf {$o_{min}$ is a \textsc{remove} op.}
-          \For {each op. $o_i,o_i\in \left\{B | 0\le i<index_{min}\right\}$}
-            \If {$\textsc{index}(o_i) > index_{min}$}
-              \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) - 1
-            \EndIf
-          \EndFor
-        \EndIf
         \State \textsc{append} $o_{min}$ to result
+        \Statex
+        \State // Compensate op.s which will now proceed rather than
+        preceed $o_{min}$
+          \For {each op. $o_i\in \left\{B | 0\le i<index_{min}\right\}$ }
+            \If {$\textsc{index}(o_i) > index_{min}$}
+              \If {$o_{min}$ is an \textsc{insert} op.}
+                \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) + 1
+              \ElsIf {$o_{min}$ is a \textsc{remove} op.}
+                \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) - 1
+              \EndIf
+            \EndIf
+          \EndFor
       \EndWhile
       \Statex
       \State \Return result
