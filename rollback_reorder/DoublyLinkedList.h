@@ -30,7 +30,8 @@
 #define MAX_NO_SNAPSHOTS 1200UL
 
 // #define DEBUG_SNAPSHOT_FEATURE
-#undef DEBUG_ELIMINATE_OPS
+// #define DEBUG_ELIMINATE_OPS
+// #define DEBUG_REORDER_OPS
 
 namespace rollback_reorder {
   enum operation_t {
