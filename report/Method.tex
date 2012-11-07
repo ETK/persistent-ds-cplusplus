@@ -288,66 +288,95 @@ achieved in $O(n)$ time by testing whether each operation works on an index
 equal to or greater than the previous one.
 
 \paragraph {Proof of reorder algorithm}
-In order to prove that the algorithm returns the optimally reordered sequence of
-operations, we must first establish the following definitions and facts:
-\begin{enumerate}
+\begin{definition}
+\label{def:reorder-iter}
 
-  \item The original sequence $S_0$ is ordered left-to-right in the order in
-  which they should be applied to produce the correct outcome.
+Let $S_0$ be the original sequence and let $O_0$ be an empty sequence at the
+beginning of the first iteration. By definition, the sequence $O_0$, $S_0$
+corresponds to $S_0$. At the beginning of iteration $i$, let $l_{min_i}$ be the
+minimum index of any operation in $S_i$, and let $o_{min_i}$ be the left-most
+operation in $S_i$ with such index. Let $L_i$ be the operations to the left of
+$o_{min_i}$ in $S_i$, and $R_i$ those to the right.
 
-  \item The operations are labeled by their index of application, and as such
-  any data value to be inserted or modified is not considered.
+\end{definition}
 
-\end{enumerate}
+\begin{lemma}
+\label{lem:reorder-inequality}
 
+By definition \ref{def:reorder-iter}, at the beginning of iteration $i$, all
+operations in $L_i$ have greater indices than $o_{min_i}$, and no operations in
+$R_i$ have lower indices than $o_{min_i}$.
 
-\begin{itemize}
-  \item Let $O$ be the sequence which is to be returned. It is initially empty.
+\end{lemma}
 
-  \item Let $S_i$ be the sequence which is being considered at the beginning of
-  iteration $i$.
+\begin{theorem}
+\label{theorem:reorder-swap}
 
-  \item The minimum label in $S_i$ is then denoted $l_{min_i}$, and the
-  operation having that label is denoted $o_{min_i}$. If more than one operation
-  has the label $l_{min_i}$, the left-most is chosen as $o_{min_i}$.
+Let operation $o_b$ directly follow $o_a$ in a sequence. If $o_b$ works on a
+higher index than $o_b$, swapping $o_a$ and $o_b$ in the sequence will have no
+consequence for the outcome. If, on the other hand, $o_b$ works on a lower index
+than $o_a$, letting $o_b$ be applied before $o_a$ will potentially shift the
+elements in the list on which the operations work, and $o_a$ will subsequently
+work on the wrong element unless compensation is made.
 
-  \item Let $L_i$ be the sub-sequence of operations which are located to the
-  left of $o_{min_i}$ in $S_i$, and $R_i$ be the sub-sequence of of operations
-  which are located to the right of $o_{min_i}$; i.e.: $S_i = L,o_{min_i},R$.
+Specifically, if $o_b$ is an \textsc{insert} operation, $o_a$ should be
+compensated by incrementing by 1 the index on which it works, and by
+decrementing it by 1 if $o_b$ is a \textsc{remove} operation. If $o_b$ is a
+\textsc{modify} operation, it does not shift the elements in the list, and as
+such that case can be disregarded.
 
-  \item By definition, no operations in $L_i$ have a label with a lower value
-  than $l_{min}$, and all operations in $R_i$ have a label with either equal or
-  greater value than $l_{min_i}$.
+As a result, applying $o_a$, then $o_b$ corresponds to (yields the same result
+as) applying $o_b$, then the compensated $o_a$.
 
-  \item If $o_{min_i}$ is an \textsc{insert} or a \textsc{remove} operation, and
-  it is instead assumed that the following sequence is applied instead:
-  $o_{min_i}$, $L_i$, $R_i$; then the operations in $L_i$ and thus in $R_i$ will
-  potentially work on a wrong element in the data structure. Let $Lr_i$ be the
-  relabeled $L_i$ according to the following scheme:
+Similarly, once $o_b$ has been swapped with $o_a$ and $o_a$ compensated, $o_b$
+may again be swapped with any operation to its left.
 
-  \begin{itemize}
+\end{theorem}
 
-    \item If $o_{min_i}$ is an \textsc{insert} operation, all labels in $Lr_i$
-    are increased by 1.
+\begin{theorem}
 
-    \item If $o_{min_i}$ is a \textsc{remove} operation, all labels in $Lr_i$
-    are decreased by 1.
+Let
+\begin{equation*}
+t_i = 
+\begin{cases}
+    1, & \text{if $\textsc{type}(o_{min_i}) = \textsc{insert}$}.\\
+    0, & \text{if $\textsc{type}(o_{min_i}) = \textsc{modify}$}.\\
+    -1, & \text{if $\textsc{type}(o_{min_i}) = \textsc{remove}$}.
+\end{cases}
+\end{equation*}
 
-  \end{itemize}
+and $Lr_i$ be $L_i$ with the index of each operation adjusted by $t_i$.
 
-  \item If the above scheme is applied, applying the sequence $L_i$, $o_{min_i}$
-  yields the same result as applying the sequence $o_{min_i}$, $Lr_i$.
+Then by lemma \ref{lem:reorder-inequality} and theorem
+\ref{theorem:reorder-swap}, applying the $L_i$, then $o_{min_i}$ corresponds to
+applying $o_{min_i}$, then $Lr_i$, since all operations in $L_i$ would have to
+be compensated if $o_{min_i}$ is swapped with each operation, seeing that they
+have greater indices than $o_{min_i}$ does.
 
-  \item Before iteration $i+1$, let $O := O, o_{min_i}$ and then $S_{i+1} :=
-  Lr_i, R_i$.
+Since the result of applying $o_{min_i}$, then $Lr_i$ corresponds to applying
+$L_i$, then $o_{min_i}$, no operations in $R_i$ need adjustment.
 
-  \item By induction, if the process is repeated, $S_i$ is eventually emptied
-  and $O$ contains the reordered sequence of operations with non-decreasing
-  index of application.
+If before the next iteration $O_{i+1}$ is set to $O_i$ followed by $o_{min_i}$
+and $S_{i+1}$ is set to $S_i$ with $o_{min_i}$ removed, it follows that applying
+$O_{i+1}$, then $S_{i+1}$ corresponds to applying $O_i$, then $S_i$.
 
-\end{itemize}
+\end{theorem}
 
-\todo[inline]{Prove that the algorithm is correct.}
+\begin{proof}
+
+In each iteration after $i=0$, the size of $S_i$ is smaller by 1 than $S_{i-1}$,
+until the last iteration in which $S_i$ is empty and the algorithm terminates by
+returning $O_i$.
+
+Since in the end of each operation, the operation with the minimum index is
+transferred from $S_i$ to the back of $O_{i+1}$, the operations in $O_i$ are
+ordered by non-decreasing index.
+
+In the last iteration, $O_i$ will contain operations corresponding to those in
+$S_0$, but in a non-decreasing order and compensated for their new order in the
+sequence such that the result of applying it will be the same as $S_0$. \qed
+
+\end{proof}
 
 \begin{algorithm}[!ht]
   \caption{Algorithm for sorting a set of operations}
