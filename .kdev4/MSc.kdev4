@@ -9,7 +9,7 @@ ProjectRootRelative=./
 
 [CMake][CMake Build Directory 0]
 Build Directory Path=file:///home/s062372/projects/persistent-ds-cplusplus/build
-Build Type=Debug
+Build Type=DEBUG
 CMake Binary=file:///usr/bin/cmake
 Environment Profile=
 Extra Arguments=

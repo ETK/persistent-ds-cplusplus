@@ -446,6 +446,11 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
       // 3. Sort by index until nice and clean
       while (unsorted(recs)) {
         recs = reorder(recs);
+#ifdef DEBUG_REORDER_OPS
+        cout << endl;
+        cout << "After reorder:" << endl;
+        print_operations_batch(recs);
+#endif
       }
 
       ephemeral::Node * node = ephemeral_current.head;
