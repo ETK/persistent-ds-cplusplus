@@ -4,7 +4,6 @@
 - Forklar forskellige ideer + alternativer
 - Forklar hvorfor du har valgt netop den du har valgt
 - Rollback med blandet access
-- Flyt snapshot hvis det kun er et par pladser
 - Hvilke access mønstre skal testes?
 - Bevis Node Copying amortised køretid
 - Lav empiriske test
