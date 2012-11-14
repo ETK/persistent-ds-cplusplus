@@ -71,7 +71,7 @@ and makes it available by direct indexing to achieve $O(1)$ access overhead
 factor. Creating each copy becomes more expensive in time and space the more
 elements are inserted. In the worst case, when only insertions and no deletions
 or modifications are made, the cost of creating $n$ versions is
-$O\left(\binom{n+1}{2}\right)$.
+$O\left(n^2\right)$.
 
 The ``log'' approach conserves space by recording for each change made to the
 data structure just enough information necessary to undo or redo it, thus giving
@@ -109,10 +109,11 @@ copy, thus freeing up space for additional full copies.
 
 \todo[inline]{Insert figure illustrating adaptive copy interval increase.}
 
-\subsection{Operations batch optimization}
+\subsection{Operations sequence optimization}
 For certain underlying data structures, it may prove to be feasible to
-pre-process the batch of operations between a full copy $v_s$ and the requested
-version $v_x$ in order to reduce the actual work necessary to reach $v_x$.
+pre-process the sequence of operations between a full copy $v_s$ and the
+requested version $v_x$ in order to reduce the actual work necessary to reach
+$v_x$.
 
 Two different types of pre-processing can be made to reduce work: Eliminating
 superfluous operations and reordering operations. It is worth noting that both
@@ -120,21 +121,22 @@ of these require knowledge of the underlying data structure, and thus requires
 more work to implement.
 
 \subsubsection{Eliminating operations}
-The batch of operations between $v_s$ and $v_x$ may contain some operations
+The sequence of operations between $v_s$ and $v_x$ may contain some operations
 which will not need to be explicitly applied. The cases are:
 \begin{enumerate}
   \item An \textsc{insert} operation followed by a \textsc{remove} operation at
-  the same effective index -- both can be removed from the batch since they
+  the same effective index -- both can be removed from the sequence since they
   cancel each other out.
   \label{item:elop-insert-remove}
 
   \item An \textsc{insert} operation followed by a \textsc{modify} operation at
   the same effective index -- the former can have its associated data value
-  changed to that of the latter, and the latter can be removed from the batch.
+  changed to that of the latter, and the latter can be removed from the
+  sequence.
   \label{item:elop-insert-modify}
 
   \item A \textsc{modify} operation followed by a \textsc{remove} operation at
-  the same effective index -- the former can be removed from the batch.
+  the same effective index -- the former can be removed from the sequence.
   \label{item:elop-modify-remove}
 \end{enumerate}
 
@@ -148,37 +150,75 @@ The general idea is to identify cases \ref{item:elop-insert-remove},
 \ref{item:elop-insert-modify} and \ref{item:elop-modify-remove} and make the
 necessary maintenance before removing the relevant operations.
 
-\begin{description}
-  \item [Case \ref{item:elop-insert-remove}:] The operations between the
-  \textsc{insert} operation and the \textsc{remove} operation are iterated to
-  adjust the index on those operations which operate on indices greater than the
-  index of the inserted element in the corresponding version.
-  
-  \item [Case \ref{item:elop-insert-modify}:] The \textsc{insert} operation gets
-  the data value from the \textsc{modify} operation prior to the removal of the
-  latter, and no further maintenance is necessary.
-  
-  \item [Case \ref{item:elop-modify-remove}:] The \textsc{modify} operation can
-  simply be removed since it will have no net effect.
+It iterates through the sequence backwards, i.e. from the last operation to the
+first. If an \textsc{insert} or a \textsc{modify} operation $o_i$ is found, it
+starts looking forwards for a matching \textsc{modify} or \textsc{remove}
+operation. This is done by iterating through the proceeding operations while
+keeping track of which index $c$ of the inserted or modified element would have
+after each of the proceeding operations; if a proceeding operation $o_j$ inserts
+or removes an element to the left of the originally inserted or modified
+element, then the index would be shifted to the right or to the left,
+respectively.
 
-\end{description}
+\newcommand{\specialcell}[2][c]{%
+  \begin{tabular}[#1]{@{}l@{}}#2\end{tabular}}
 
-The space cost of the algorithm is in the order of the batch size, i.e.
-$O(\left|B\right|)$, since a mutable copy of the relevant operations is made.
+If $o_j$ removes or modifies the element at index $c$, the type of $o_i$
+determines what happens next. Table \ref{tab:oioj} shows which action is taken
+depending on the types of $o_i$ and $o_j$.
+
+\begin{table}[h]
+  \caption{The table shows which action is taken depending on the types of $o_i$ and $o_j$.}
+  \label{tab:oioj}
+  \begin{tabular}{|l|l|l|}
+    \hline
+    $o_j \backslash o_i$ & insert & modify\\
+    \hline
+    modify & update $o_i$, remove $o_j$ & update $o_i$, remove $o_j$\\
+    \hline
+    remove & \specialcell[t]{compensate between $o_i$ and $o_j$, \\ then remove both} & remove $o_i$\\
+    \hline
+  \end{tabular}
+\end{table}
+
+The compensation referred to in the case when $o_i$ is an \textsc{insert}
+operation and $o_j$ is a \textsc{remove} operation works as follows:
+
+Like in the iteration of the operations proceeding $o_i$, the index $c$ of the
+inserted element is maintained while the operations between $o_i$ and $o_j$
+(both exclusive) are iterated first to last.
+
+Since no operation prior to $o_j$ matches $o_i$, it is safe to assume that all
+operations between them have either greater or smaller indices than $c$. If the
+operation $o_k$ between $o_i$ and $o_j$ works on a smaller index, it will
+compensate the maintained index $c$ by -1 or +1. If $o_k$ works on a greater
+index, $o_k$ will itself have the index it works on reduced by 1, since its
+original index depended on the element of $o_i$ being inserted before it.
+
+When all operations between $o_i$ and $o_j$ have been examined thusly, $o_j$ and
+$o_i$ are removed from the sequence and the backwards iteration is resumed.
+
+When the backwards iteration is finished examining the first operation in the
+sequence, the algorithm terminates and the sequence now contains no operations
+matching cases \ref{item:elop-insert-remove}, \ref{item:elop-insert-modify} or
+\ref{item:elop-modify-remove}.
+
+The space cost of the algorithm is in the order of the sequence size, i.e.
+$O(\left|S\right|)$, since a mutable copy of the relevant operations is made.
 In the worst case, when all $n$ operations are \textsc{insert} or
-\textsc{modify} operations, the time cost is $O\left(\binom{n+1}{2}\right)$,
-since with every \textsc{insert} operation, all the proceeding operations are
-examined when a matching \textsc{remove} operation is not found.
+\textsc{modify} operations, the time cost is $O\left(n^2\right)$, since with
+every \textsc{insert} operation, all the proceeding operations are examined when
+a matching \textsc{remove} operation is not found.
 
 \begin{algorithm}[!ht]
   \caption{An algorithm for eliminating superfluous operations}
   \label{alg:eliminate-ops}
   \begin{algorithmic}[5]
-    \Procedure{EliminateSuperfluousOps}{Batch $B$}
-      \For {each operation $o_i \in B$, from last to first}
+    \Procedure{EliminateSuperfluousOps}{Sequence $S$}
+      \For {each operation $o_i \in S$, from last to first}
         \If {\textsc{type}($o_i$) $\in \left\{\textsc{insert},\textsc{modify}\right\}$}
         \State $c\gets\textsc{index}(o_i)$
-          \For {each operation $o_j \in \left\{B|j>i\right\}$}
+          \For {each operation $o_j \in \left\{S|j>i\right\}$}
             \Switch {$\textsc{type}(o_j)$}
               \Case{\textsc{insert}}
                 \If {$\textsc{index}(o_j) \le c$}
@@ -188,7 +228,7 @@ examined when a matching \textsc{remove} operation is not found.
               \Case{\textsc{modify}}
                 \If {$\textsc{index}(o_j) = c$}
                   \State $\textsc{data}(o_i) \gets \textsc{data}(o_j)$
-                  \State remove $o_j$ from $B$
+                  \State remove $o_j$ from $S$
                 \EndIf
               \EndCase
               \Case{\textsc{remove}}
@@ -198,7 +238,7 @@ examined when a matching \textsc{remove} operation is not found.
                   \State $c \gets \textsc{index}(o_i)$
                   \Switch {$\textsc{type}(o_i)$}
                     \Case {\textsc{insert}}
-                      \For {each operation $o_k \in \left\{B|i<k<j\right\}$}
+                      \For {each operation $o_k \in \left\{S|i<k<j\right\}$}
                         \If {$\textsc{index}(o_k) > c$}
                           \State $\textsc{index}(o_k) \gets \textsc{index}(o_k) - 1$
                         \Else
@@ -216,11 +256,11 @@ examined when a matching \textsc{remove} operation is not found.
                           \EndSwitch
                         \EndIf
                       \EndFor
-                      \State remove $o_j$ from $B$
-                      \State remove $o_i$ from $B$
+                      \State remove $o_j$ from $S$
+                      \State remove $o_i$ from $S$
                     \EndCase
                     \Case {\textsc{modify}}
-                      \State remove $o_i$ from $B$
+                      \State remove $o_i$ from $S$
                     \EndCase
                   \EndSwitch
                 \EndIf
@@ -235,33 +275,32 @@ examined when a matching \textsc{remove} operation is not found.
  
 \subsubsection{Reordering operations}
 
-Applying each operation in the batch separately is potentially a time-expensive
-approach. Consider the case when each operation inserts an element at the end of
-a linked list; the bulk cost for $n$ insertions on a list of length $l$ would be
-
-$$O\left(\dbinom{l+n+1}{2}\right)$$
-
-since every insertion would require following 1 more pointer than the previous.
+Applying each operation in the sequence separately is potentially a time
+expensive approach. Consider the case when each operation inserts an element at
+the end of a linked list; the bulk cost for $n$ insertions on a list of length
+$l$ would be $O\left(\left(l+n\right)^2\right)$ since every insertion would
+require following 1 more pointer than the previous.
 It would indeed be more efficient to make the insertions in one go, which would
 cost $O(l+n)$ -- $l$ for reaching the end of the list, $n$ for all the
 insertions. But this is only possible if the the operations are ordered by
 non-decreasing index of application. If they are not, they can be reordered.
 
-Reordering the batch of operations by index of application requires some
+Reordering the sequence of operations by index of application requires some
 maintenance. Consider the case when an \textsc{insert} operation $o_i$, which
-has a small index of application, is moved to an earlier position in the batch
-than it had originally. Any operations which used to preceed $o_i$, and which
-after the move will instead proceed it, should take into account the additional
-element being inserted; if their index of application is greater than that of
-$o_i$, it should be incremented by 1. If $o_i$ is a \textsc{remove} operation,
-the index of operation should instead be decreased by 1 on those operations.
+has a small index of application, is moved to an earlier position in the
+sequence than it had originally. Any operations which used to preceed $o_i$, and
+which after the move will instead proceed it, should take into account the
+additional element being inserted; if their index of application is greater than
+that of $o_i$, it should be incremented by 1. If $o_i$ is a \textsc{remove}
+operation, the index of operation should instead be decreased by 1 on those
+operations.
 
 Pseudocode for an algorithm implementing the above approach is found in
 Algorithm \ref{alg:opsort}. The space cost is linear in the number of operations
 being reordered. Consider the worst case, when the operations are ordered with
 strictly decreasing indices of application; the time cost is then
-$O\left(\binom{n+1}{2}\right)$, since the entire remaining sequence would have
-to be searched for the minimum index of application prior to the removal of that
+$O\left(n^2\right)$, since the entire remaining sequence would have to be
+searched for the minimum index of application prior to the removal of that
 element.
 
 An example of the reordering of 10 operations by the algorithm is found in
@@ -377,6 +416,12 @@ $S_0$, but in a non-decreasing order and compensated for their new order in the
 sequence such that the result of applying it will be the same as $S_0$. \qed
 
 \end{proof}
+
+When compared to the worst-case cost of applying the elements individually,
+which is $O\left(\left(l+n\right)^2\right)$ for $n$ operations on an existing
+list of length $l$, it is worth noting that only in the case of an empty list
+and a long sequence of operations, the reordering algorithm is asymptotically as
+slow. Otherwise, it is asymptotically faster.
 
 \begin{algorithm}[!ht]
   \caption{Algorithm for sorting a set of operations}
