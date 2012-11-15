@@ -144,77 +144,16 @@ Cases \ref{item:elop-insert-remove} and \ref{item:elop-insert-modify} may of
 course be combined in the sequence of one \textsc{insert} operation, one or more
 \textsc{modify} operations and finally a \textsc{remove} operataion.
 
+
+\paragraph{Algorithm.}
 Pseudo code for an algorithm handling those cases is found in Algorithm
 \ref{alg:eliminate-ops}.
-The general idea is to identify cases \ref{item:elop-insert-remove},
-\ref{item:elop-insert-modify} and \ref{item:elop-modify-remove} and make the
-necessary maintenance before removing the relevant operations.
 
-It iterates through the sequence backwards, i.e. from the last operation to the
-first. If an \textsc{insert} or a \textsc{modify} operation $o_i$ is found, it
-starts looking forwards for a matching \textsc{modify} or \textsc{remove}
-operation. This is done by iterating through the proceeding operations while
-keeping track of which index $c$ of the inserted or modified element would have
-after each of the proceeding operations; if a proceeding operation $o_j$ inserts
-or removes an element to the left of the originally inserted or modified
-element, then the index would be shifted to the right or to the left,
-respectively.
-
-\newcommand{\specialcell}[2][c]{%
-  \begin{tabular}[#1]{@{}l@{}}#2\end{tabular}}
-
-If $o_j$ removes or modifies the element at index $c$, the type of $o_i$
-determines what happens next. Table \ref{tab:oioj} shows which action is taken
-depending on the types of $o_i$ and $o_j$.
-
-\begin{table}[h]
-  \caption{The table shows which action is taken depending on the types of $o_i$ and $o_j$.}
-  \label{tab:oioj}
-  \begin{tabular}{|l|l|l|}
-    \hline
-    $o_j \backslash o_i$ & insert & modify\\
-    \hline
-    modify & update $o_i$, remove $o_j$ & update $o_i$, remove $o_j$\\
-    \hline
-    remove & \specialcell[t]{compensate between $o_i$ and $o_j$, \\ then remove both} & remove $o_i$\\
-    \hline
-  \end{tabular}
-\end{table}
-
-The compensation referred to in the case when $o_i$ is an \textsc{insert}
-operation and $o_j$ is a \textsc{remove} operation works as follows:
-
-Like in the iteration of the operations proceeding $o_i$, the index $c$ of the
-inserted element is maintained while the operations between $o_i$ and $o_j$
-(both exclusive) are iterated first to last.
-
-Since no operation prior to $o_j$ matches $o_i$, it is safe to assume that all
-operations between them have either greater or smaller indices than $c$. If the
-operation $o_k$ between $o_i$ and $o_j$ works on a smaller index, it will
-compensate the maintained index $c$ by -1 or +1. If $o_k$ works on a greater
-index, $o_k$ will itself have the index it works on reduced by 1, since its
-original index depended on the element of $o_i$ being inserted before it.
-
-When all operations between $o_i$ and $o_j$ have been examined thusly, $o_j$ and
-$o_i$ are removed from the sequence and the backwards iteration is resumed.
-
-When the backwards iteration is finished examining the first operation in the
-sequence, the algorithm terminates and the sequence now contains no operations
-matching cases \ref{item:elop-insert-remove}, \ref{item:elop-insert-modify} or
-\ref{item:elop-modify-remove}.
-
-The space cost of the algorithm is in the order of the sequence size, i.e.
-$O(\left|S\right|)$, since a mutable copy of the relevant operations is made.
-In the worst case, when all $n$ operations are \textsc{insert} or
-\textsc{modify} operations, the time cost is $O\left(n^2\right)$, since with
-every \textsc{insert} operation, all the proceeding operations are examined when
-a matching \textsc{remove} operation is not found.
-
-\begin{algorithm}[!ht]
+\begin{algorithm}[p]
   \caption{An algorithm for eliminating superfluous operations}
   \label{alg:eliminate-ops}
   \begin{algorithmic}[5]
-    \Procedure{EliminateSuperfluousOps}{Sequence $S$}
+    \Procedure{EliminateSuperfluousOps}{sequence of operations $S$}
       \For {each operation $o_i \in S$, from last to first}
         \If {\textsc{type}($o_i$) $\in \left\{\textsc{insert},\textsc{modify}\right\}$}
         \State $c\gets\textsc{index}(o_i)$
@@ -273,6 +212,77 @@ a matching \textsc{remove} operation is not found.
   \end{algorithmic}
 \end{algorithm}
  
+The general idea is to identify cases \ref{item:elop-insert-remove},
+\ref{item:elop-insert-modify} and \ref{item:elop-modify-remove} and make the
+necessary maintenance before removing the relevant operations.
+
+It iterates through the sequence backwards, i.e. from the last operation to the
+first. If an \textsc{insert} or a \textsc{modify} operation $o_i$ is found, it
+starts looking forwards for a matching \textsc{modify} or \textsc{remove}
+operation. This is done by iterating through the proceeding operations while
+keeping track of which index $c$ of the inserted or modified element would have
+after each of the proceeding operations; if a proceeding operation $o_j$ inserts
+or removes an element to the left of the originally inserted or modified
+element, then the index would be shifted to the right or to the left,
+respectively.
+
+\newcommand{\specialcell}[2][c]{%
+  \begin{tabular}[#1]{@{}l@{}}#2\end{tabular}}
+
+If $o_j$ removes or modifies the element at index $c$, the type of $o_i$
+determines what happens next. Table \ref{tab:oioj} shows which action is taken
+depending on the types of $o_i$ and $o_j$.
+
+\begin{table}[h]
+  \center
+  \begin{tabular}{|l|l|l|}\hline
+    \diagbox{$o_i$\ \ }{$o_j$}&
+    \textsc{modify} & \textsc{remove}\\
+    \hline
+    \textsc{insert} & update $o_i$ data, remove $o_j$ & \specialcell[t]{compensate between $o_i$ and $o_j$, \\ then remove both}\\
+    \hline
+    \textsc{modify} & update $o_i$ data, remove $o_j$ & remove $o_i$\\
+    \hline
+  \end{tabular}
+  \caption{The table shows which action is taken depending on the types of $o_i$ and $o_j$.}
+  \label{tab:oioj}
+\end{table}
+
+The compensation referred to in the case when $o_i$ is an \textsc{insert}
+operation and $o_j$ is a \textsc{remove} operation works as follows:
+
+\begin{itemize}
+
+  \item Like in the iteration of the operations proceeding $o_i$, the index $c$
+  of the inserted element is maintained while the operations between $o_i$ and
+  $o_j$ (both exclusive) are iterated first to last.
+
+  \item Since no operation prior to $o_j$ matches $o_i$, it is safe to assume
+  that all operations between them have either greater or smaller indices than
+  $c$. If the operation $o_k$ between $o_i$ and $o_j$ works on a smaller index,
+  it will compensate the maintained index $c$ by -1 or +1. If $o_k$ works on a
+  greater index, $o_k$ will itself have the index it works on reduced by 1,
+  since its original index depended on the element of $o_i$ being inserted
+  before it.
+  
+  \item When all operations between $o_i$ and $o_j$ have been examined thusly,
+  $o_j$ and $o_i$ are removed from the sequence and the backwards iteration is
+  resumed.
+  
+\end{itemize}
+
+When the backwards iteration is finished examining the first operation in the
+sequence, the algorithm terminates and the sequence now contains no operations
+matching cases \ref{item:elop-insert-remove}, \ref{item:elop-insert-modify} or
+\ref{item:elop-modify-remove}.
+
+The space cost of the algorithm is in the order of the sequence size, i.e.
+$O(\left|S\right|)$, since a mutable copy of the relevant operations is made.
+In the worst case, when all $n$ operations are \textsc{insert} or
+\textsc{modify} operations, the time cost is $O\left(n^2\right)$, since with
+every \textsc{insert} operation, all the proceeding operations are examined when
+a matching \textsc{remove} operation is not found.
+
 \subsubsection{Reordering operations}
 
 Applying each operation in the sequence separately is potentially a time
@@ -295,18 +305,50 @@ that of $o_i$, it should be incremented by 1. If $o_i$ is a \textsc{remove}
 operation, the index of operation should instead be decreased by 1 on those
 operations.
 
-Pseudocode for an algorithm implementing the above approach is found in
-Algorithm \ref{alg:opsort}. The space cost is linear in the number of operations
-being reordered. Consider the worst case, when the operations are ordered with
-strictly decreasing indices of application; the time cost is then
-$O\left(n^2\right)$, since the entire remaining sequence would have to be
-searched for the minimum index of application prior to the removal of that
-element.
+\paragraph{Algorithm.} Pseudocode for an algorithm implementing the above
+approach is found in Algorithm \ref{alg:opsort}.
+
+\begin{algorithm}[!ht]
+  \caption{Algorithm for reordering a set of operations}
+  \label{alg:opsort}
+  \begin{algorithmic}[5]
+    \Function {ReorderOperations}{sequence of operations $S$}
+      \State $R \gets$ empty set
+      \While {$S$ not empty}
+        \State // Find left-most operation with minimum index of application
+        \State $o_{min} \gets$ op. with minimum index of application
+        \State $index_{min} \gets$ index in $S$ of $o_{min}$
+        \State \textsc{remove} $o_{min}$ from $S$
+        \State \textsc{append} $o_{min}$ to $R$
+        \Statex
+        \State // Compensate op.s which will now proceed rather than
+        preceed $o_{min}$
+        \If {$o_{min}$ is an \textsc{insert} op.}
+          \For {each op. $o_i\in \left\{S | 0\le i<index_{min}\right\}$ }
+            \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) + 1
+          \EndFor
+        \ElsIf {$o_{min}$ is a \textsc{remove} op.}
+          \For {each op. $o_i\in \left\{S | 0\le i<index_{min}\right\}$ }
+            \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) - 1
+          \EndFor
+        \EndIf
+       \EndWhile
+      \Statex
+      \State \Return $R$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+The space cost is linear in the number of operations being reordered. Consider
+the worst case, when the operations are ordered with strictly decreasing indices
+of application; the time cost is then $O\left(n^2\right)$, since the entire
+remaining sequence would have to be searched for the minimum index of
+application prior to the removal of that element.
 
 An example of the reordering of 10 operations by the algorithm is found in
 figure \ref{fig:reorder-example}.
 
-\begin{figure}[!htp]
+\begin{figure}[p]
   \includegraphics[width=.9\textwidth]{figures/reorder_example.pdf}
 
   \caption{\small Example of the reorder algorithm applied to a sequence of 10
@@ -330,12 +372,13 @@ equal to or greater than the previous one.
 \begin{definition}
 \label{def:reorder-iter}
 
-Let $S_0$ be the original sequence and let $O_0$ be an empty sequence at the
-beginning of the first iteration. By definition, the sequence $O_0$, $S_0$
-corresponds to $S_0$. At the beginning of iteration $i$, let $l_{min_i}$ be the
-minimum index of any operation in $S_i$, and let $o_{min_i}$ be the left-most
-operation in $S_i$ with such index. Let $L_i$ be the operations to the left of
-$o_{min_i}$ in $S_i$, and $R_i$ those to the right.
+Let $S_0$ be the original sequence given as input to the algorithm, and let
+$O_0$ be an empty sequence at the beginning of the first iteration. By
+definition, the sequence $O_0$, $S_0$ corresponds to (yields the same result as)
+$S_0$. At the beginning of iteration $i$, let $l_{min_i}$ be the minimum index
+of any operation in $S_i$, and let $o_{min_i}$ be the left-most operation in
+$S_i$ with such index. Let $L_i$ be the operations to the left of $o_{min_i}$ in
+$S_i$, and $R_i$ those to the right.
 
 \end{definition}
 
@@ -344,76 +387,78 @@ $o_{min_i}$ in $S_i$, and $R_i$ those to the right.
 
 By definition \ref{def:reorder-iter}, at the beginning of iteration $i$, all
 operations in $L_i$ have greater indices than $o_{min_i}$, and no operations in
-$R_i$ have lower indices than $o_{min_i}$.
+$R_i$ have smaller indices than $o_{min_i}$.
 
 \end{lemma}
 
-\begin{theorem}
-\label{theorem:reorder-swap}
-
-Let operation $o_b$ directly follow $o_a$ in a sequence. If $o_b$ works on a
-higher index than $o_b$, swapping $o_a$ and $o_b$ in the sequence will have no
-consequence for the outcome. If, on the other hand, $o_b$ works on a lower index
-than $o_a$, letting $o_b$ be applied before $o_a$ will potentially shift the
-elements in the list on which the operations work, and $o_a$ will subsequently
-work on the wrong element unless compensation is made.
+Since we intend to change the order of operations, consider the case of swapping
+two operations. Let operation $o_b$ directly follow $o_a$ in a sequence. If
+$o_b$ works on a smaller index than $o_a$, letting $o_b$ be applied before $o_a$
+will potentially shift the elements in the list on which the operations work,
+and $o_a$ will subsequently work on the wrong element unless compensation is
+made.
 
 Specifically, if $o_b$ is an \textsc{insert} operation, $o_a$ should be
 compensated by incrementing by 1 the index on which it works, and by
 decrementing it by 1 if $o_b$ is a \textsc{remove} operation. If $o_b$ is a
 \textsc{modify} operation, it does not shift the elements in the list, and as
-such that case can be disregarded.
+such nothing additional needs to be done after swapping the operations.
 
-As a result, applying $o_a$, then $o_b$ corresponds to (yields the same result
-as) applying $o_b$, then the compensated $o_a$.
+As a result, applying $o_a$, then $o_b$ corresponds to applying $o_b$, then the
+compensated $o_a$.
 
-Similarly, once $o_b$ has been swapped with $o_a$ and $o_a$ compensated, $o_b$
-may again be swapped with any operation to its left.
+Once $o_b$ has been swapped with $o_a$ and $o_a$ compensated, $o_b$ may again be
+swapped with any operation to its left in a similar fashion, if that operation
+also works on a greater index than $o_b$.
+
+\begin{theorem}
+\label{theorem:reorder-swap}
+
+Any operation $o_b$ may be swapped with the immediately preceeding operation
+$o_a$ if $o_a$ has a greater index of application. When $o_a$ is duly
+compensated, the result will be the same.
 
 \end{theorem}
 
-\begin{theorem}
+If $o_{min_i}$ is swapped with each operation in $L_i$ -- which is possible by
+taking into account lemma \ref{lem:reorder-inequality} and theorem
+\ref{theorem:reorder-swap} -- it eventually ends up to the left of the
+operations of $L_i$. Each of those operations would need compensation due to
+working on greater indices than $o_{min_i}$.
 
 Let
 \begin{equation*}
-t_i = 
-\begin{cases}
-    1, & \text{if $\textsc{type}(o_{min_i}) = \textsc{insert}$}.\\
-    0, & \text{if $\textsc{type}(o_{min_i}) = \textsc{modify}$}.\\
-    -1, & \text{if $\textsc{type}(o_{min_i}) = \textsc{remove}$}.
-\end{cases}
+  t_i = 
+  \begin{cases}
+      1, & \text{if $\textsc{type}(o_{min_i}) = \textsc{insert}$}.\\
+      0, & \text{if $\textsc{type}(o_{min_i}) = \textsc{modify}$}.\\
+      -1, & \text{if $\textsc{type}(o_{min_i}) = \textsc{remove}$}.
+  \end{cases}
 \end{equation*}
 
-and $Lr_i$ be $L_i$ with the index of each operation adjusted by $t_i$.
-
-Then by lemma \ref{lem:reorder-inequality} and theorem
-\ref{theorem:reorder-swap}, applying the $L_i$, then $o_{min_i}$ corresponds to
-applying $o_{min_i}$, then $Lr_i$, since all operations in $L_i$ would have to
-be compensated if $o_{min_i}$ is swapped with each operation, seeing that they
-have greater indices than $o_{min_i}$ does.
+If we define $Lr_i$ as the same as $L_i$, except adding $t_i$ to the index of
+each operation, then applying $L_i$, then $o_{min_i}$ corresponds to applying
+$o_{min_i}$, then $Lr_i$.
 
 Since the result of applying $o_{min_i}$, then $Lr_i$ corresponds to applying
 $L_i$, then $o_{min_i}$, no operations in $R_i$ need adjustment.
 
-If before the next iteration $O_{i+1}$ is set to $O_i$ followed by $o_{min_i}$
-and $S_{i+1}$ is set to $S_i$ with $o_{min_i}$ removed, it follows that applying
-$O_{i+1}$, then $S_{i+1}$ corresponds to applying $O_i$, then $S_i$.
+\begin{theorem}
+\label{thm:end-of-iter}
+
+If, before the end of iteration $i$, $O_{i+1}$ is set to $O_i || o_{min_i}$ and
+$S_{i+1}$ is set to $S_i \setminus \left\{o_{min_i}\right\}$, it follows that
+applying $O_{i+1}$, then $S_{i+1}$ corresponds to applying $O_i$, then $S_i$.
 
 \end{theorem}
 
 \begin{proof}
 
-In each iteration after $i=0$, the size of $S_i$ is smaller by 1 than $S_{i-1}$,
-until the last iteration in which $S_i$ is empty and the algorithm terminates by
-returning $O_i$.
-
 Since in the end of each operation, the operation with the minimum index is
-transferred from $S_i$ to the back of $O_{i+1}$, the operations in $O_i$ are
-ordered by non-decreasing index.
-
-In the last iteration, $O_i$ will contain operations corresponding to those in
-$S_0$, but in a non-decreasing order and compensated for their new order in the
-sequence such that the result of applying it will be the same as $S_0$. \qed
+transferred from $S_{i-1}$ to the back of $O_i$, the operations in $O_i$ are
+ordered by non-decreasing index. At the end of the last iteration, where
+$i=\left|S_0\right|$, $S_i$ is empty and $O_i$ contains as many operations as
+$S_0$, but in non-decreasing order of index of application. \qed
 
 \end{proof}
 
@@ -421,33 +466,4 @@ When compared to the worst-case cost of applying the elements individually,
 which is $O\left(\left(l+n\right)^2\right)$ for $n$ operations on an existing
 list of length $l$, it is worth noting that only in the case of an empty list
 and a long sequence of operations, the reordering algorithm is asymptotically as
-slow. Otherwise, it is asymptotically faster.
-
-\begin{algorithm}[!ht]
-  \caption{Algorithm for sorting a set of operations}
-  \label{alg:opsort}
-  \begin{algorithmic}[5]
-    \Function {SortOperations}{set of operations $B$}
-      \State result $\gets$ empty set
-      \While {$B$ not empty}
-        \State // Find left-most operation with minimum index of application
-        \State $o_{min} \gets$ op. with minimum index of application
-        \State $index_{min} \gets$ index in $B$ of $o_{min}$
-        \State \textsc{remove} $o_{min}$ from $B$
-        \State \textsc{append} $o_{min}$ to result
-        \Statex
-        \State // Compensate op.s which will now proceed rather than
-        preceed $o_{min}$
-        \For {each op. $o_i\in \left\{B | 0\le i<index_{min}\right\}$ }
-          \If {$o_{min}$ is an \textsc{insert} op.}
-                \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) + 1
-          \ElsIf {$o_{min}$ is a \textsc{remove} op.}
-                \State \textsc{index}($o_i$) $\gets$ \textsc{index}($o_i$) - 1
-          \EndIf
-        \EndFor
-       \EndWhile
-      \Statex
-      \State \Return result
-    \EndFunction
-  \end{algorithmic}
-\end{algorithm}
+slow. In all other cases, it is \emph{asymptotically} faster.
