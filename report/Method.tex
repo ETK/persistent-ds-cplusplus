@@ -101,6 +101,15 @@ and thus the space cost is reduced accordingly. Likewise, the distance to the
 version in the middle between two full copies increases with $d$, inducing a
 higher cost for producing that version.
 
+As an alternative to making a mutable copy of a full copy when a nearby version
+is requested, one could instead allow the full copies to be mutable and moved
+within $\pm\frac{d}{2}$ of their original location. This will increase the
+maximum number of operations between a full copy and the desired version to $d$,
+but will reduce greatly the time cost of making a working copy of the full copy.
+If the full copies are originially uniformly distributed, direct lookup is still
+possible, but it is then needed for each full copy to annotate which version it
+represents.
+
 \subsubsection{Adaptive copy interval increase}
 It might be preferrable to be able to specify a space usage limit rather than a
 fixed interval distance. When the space limit is near, $d$ is increased by a
@@ -288,21 +297,23 @@ a matching \textsc{remove} operation is not found.
 Applying each operation in the sequence separately is potentially a time
 expensive approach. Consider the case when each operation inserts an element at
 the end of a linked list; the bulk cost for $n$ insertions on a list of length
-$l$ would be $O\left(\left(l+n\right)^2\right)$ since every insertion would
-require following 1 more pointer than the previous.
-It would indeed be more efficient to make the insertions in one go, which would
-cost $O(l+n)$ -- $l$ for reaching the end of the list, $n$ for all the
-insertions. But this is only possible if the the operations are ordered by
-non-decreasing index of application. If they are not, they can be reordered.
+$l$ would be $O\left(\left(l+n\right)^2\right)$ if every operation begins by
+iterating from the head of the list to the index of insertion.
+
+It would indeed be more efficient to make the insertions in one straight
+iteration of the linked list, which would cost $O(l+n)$ -- $l$ for reaching the
+end of the list, $n$ for all the insertions. But this is only possible if the
+the operations are ordered by non-decreasing index of application. If they are
+not, they will have to first be reordered.
 
 Reordering the sequence of operations by index of application requires some
 maintenance. Consider the case when an \textsc{insert} operation $o_i$, which
 has a small index of application, is moved to an earlier position in the
-sequence than it had originally. Any operations which used to preceed $o_i$, and
-which after the move will instead proceed it, should take into account the
+sequence than it had originally. Any operations which formerly preceeded $o_i$,
+and which after the move will instead proceed it, should take into account the
 additional element being inserted; if their index of application is greater than
 that of $o_i$, it should be incremented by 1. If $o_i$ is a \textsc{remove}
-operation, the index of operation should instead be decreased by 1 on those
+operation, the index of application should instead be decreased by 1 on those
 operations.
 
 \paragraph{Algorithm.} Pseudocode for an algorithm implementing the above
@@ -345,6 +356,12 @@ of application; the time cost is then $O\left(n^2\right)$, since the entire
 remaining sequence would have to be searched for the minimum index of
 application prior to the removal of that element.
 
+If the operations are already ordered by non-decreasing index of application,
+the algorithm only adds to the time cost, and so it may be worth checking that
+the sequence requires reordering prior to running the algorithm. That can be
+achieved in $O(n)$ time by testing whether each operation works on an index
+equal to or greater than the previous one.
+
 An example of the reordering of 10 operations by the algorithm is found in
 figure \ref{fig:reorder-example}.
 
@@ -361,12 +378,6 @@ figure \ref{fig:reorder-example}.
 
   \label{fig:reorder-example}
 \end{figure}
-
-If the operations are already ordered by non-decreasing index of application,
-the algorithm only adds to the time cost, and so it may be worth checking that
-the sequence requires reordering prior to running the algorithm. That can be
-achieved in $O(n)$ time by testing whether each operation works on an index
-equal to or greater than the previous one.
 
 \paragraph {Proof of reorder algorithm}
 \begin{definition}
