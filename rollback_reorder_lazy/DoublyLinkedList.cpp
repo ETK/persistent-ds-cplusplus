@@ -47,6 +47,51 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     this->max_snapshot_dist = max_snapshot_dist;
   }
 
+
+  const std::size_t DoublyLinkedList::a_access (const std::size_t version,
+                                                const std::size_t index) {
+    ephemeral::Node* node = head_at(version);
+    for (size_t i = 0; i < index; ++i) {
+      node = node->next;
+    }
+    if (node) {
+      return node->data;
+    } else {
+      return -1;
+    }
+  }
+
+  void DoublyLinkedList::a_insert (const std::size_t index,
+                                   const std::size_t value) {
+    insert(value, index);
+  }
+
+  void DoublyLinkedList::a_modify (const std::size_t index,
+                                   const std::size_t value) {
+    modify_data(index, value);
+  }
+
+  void DoublyLinkedList::a_remove (const std::size_t index) {
+    remove(index);
+  }
+
+  const std::size_t DoublyLinkedList::a_size_at (const std::size_t version) {
+    return size_at(version);
+  }
+
+  const std::size_t DoublyLinkedList::a_size () {
+    return size();
+  }
+
+  const std::size_t DoublyLinkedList::a_num_versions () {
+    return records.size() + 1;
+  }
+
+  void DoublyLinkedList::a_print_at (std::size_t version) {
+    ensure_version(version);
+    ephemeral_current->print();
+  }
+
   size_t DoublyLinkedList::num_records () {
     return records.size ();
   }
@@ -70,6 +115,8 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
   }
 
   void DoublyLinkedList::modify_data (std::size_t index, std::size_t value) {
+    ensure_version (records.size ());
+
     ephemeral::Node * node = ephemeral_current->head;
     for (size_t i = 0; i < index; ++i) {
       if (node->next) {
@@ -78,8 +125,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
         throw "Index too large!";
       }
     }
-
-    ensure_version (records.size ());
 
     record_t record;
     record.operation = MODIFY;
@@ -92,6 +137,8 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
   }
 
   void DoublyLinkedList::remove (std::size_t index) {
+    ensure_version (records.size ());
+
     ephemeral::Node * node = ephemeral_current->head;
     for (size_t i = 0; i < index; ++i) {
       if (node->next) {
@@ -100,8 +147,6 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
         throw "Index too large!";
       }
     }
-
-    ensure_version (records.size ());
 
     record_t record;
     record.operation = REMOVE;
@@ -261,7 +306,8 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 
   size_t DoublyLinkedList::size_at (size_t v) {
     ensure_version (v);
-    return ephemeral_current->size;
+    size_t size = ephemeral_current->size;
+    return size;
   }
 
   ephemeral::Node * DoublyLinkedList::head_at (size_t v) {
@@ -499,6 +545,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
               node->next = new_node;
               new_node->prev = node;
               node = new_node;
+              ++ephemeral_current->size;
               already_done = true;
               break;
             }

@@ -20,15 +20,18 @@
 #ifndef PARTIALLYPERSISTENT_DOUBLYLINKEDLIST_H
 #define PARTIALLYPERSISTENT_DOUBLYLINKEDLIST_H
 #include "Node.h"
+#include "../AbstractDoublyLinkedList.h"
 
 #include <utility>
 #include <vector>
 #include <cstdlib>
 #include <ostream>
 
+#define EXTRA_ASSERTS
+
 namespace partiallypersistent {
 
-  class DoublyLinkedList {
+  class DoublyLinkedList:public AbstractDoublyLinkedList {
 
   public:
     struct version_info_t {
@@ -54,19 +57,34 @@ namespace partiallypersistent {
     Node *head () const;
     Node *head_at (std::size_t v) const;
 
-    std::size_t size() const;
-    std::size_t size_at(std::size_t v) const;
+      std::size_t size () const;
+      std::size_t size_at (std::size_t v) const;
 
       std::size_t print_at_version (std::size_t v);
-    void print_dot_graph (std::size_t v, std::ofstream& out);
+    void print_dot_graph (std::size_t v, std::ofstream & out);
+
+    const std::size_t a_access (const std::size_t version,
+                                const std::size_t index);
+    void a_insert (const std::size_t index, const std::size_t value);
+    void a_modify (const std::size_t index, const std::size_t value);
+    void a_remove (const std::size_t index);
+    const std::size_t a_size ();
+    const std::size_t a_size_at (const std::size_t version);
+    const std::size_t a_num_versions ();
+    void a_print_at (std::size_t version);
 
   private:
       Node * modify_field (partiallypersistent::Node * node,
                            field_name_t field_name,
                            partiallypersistent::Node * value);
+      Node * modify_field (partiallypersistent::Node * node,
+                           field_name_t field_name,
+                           partiallypersistent::Node * value,
+                           partiallypersistent::Node * &head);
     void copy_live_node (partiallypersistent::Node * node,
                          partiallypersistent::Node * copy,
-                         field_name_t field_name, Node * value);
+                         field_name_t field_name, Node * value,
+                         partiallypersistent::Node * &head);
 
       std::vector < version_info_t > versions;
     size_t modifications;

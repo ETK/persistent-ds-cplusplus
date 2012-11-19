@@ -46,6 +46,45 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
     this->max_no_snapshots = max_no_snapshots;
     this->max_snapshot_dist = max_snapshot_dist;
   }
+  const std::size_t DoublyLinkedList::a_access (const std::size_t version,
+                                                const std::size_t index) {
+    ephemeral::Node* node = head_at(version);
+    for (size_t i = 0; i < index; ++i) {
+      node = node->next;
+    }
+    return node->data;
+  }
+
+  void DoublyLinkedList::a_insert (const std::size_t index,
+                                   const std::size_t value) {
+    insert(value, index);
+  }
+
+  void DoublyLinkedList::a_modify (const std::size_t index,
+                                   const std::size_t value) {
+    modify_data(index, value);
+  }
+
+  void DoublyLinkedList::a_remove (const std::size_t index) {
+    remove(index);
+  }
+
+  const std::size_t DoublyLinkedList::a_size () {
+    return size();
+  }
+  
+  const std::size_t DoublyLinkedList::a_size_at (const std::size_t version) {
+    return size_at(version);
+  }
+
+  const std::size_t DoublyLinkedList::a_num_versions () {
+    return records.size() + 1;
+  }
+
+  void DoublyLinkedList::a_print_at (std::size_t version) {
+    ensure_version(version);
+    ephemeral_current.print();
+  }
 
   size_t DoublyLinkedList::num_records () {
     return records.size ();

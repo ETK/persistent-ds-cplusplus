@@ -25,6 +25,8 @@
 
 using namespace std;
 
+size_t current_op_no = 0;
+
 namespace main_ns {
 enum mode_t {
   rollback_naive,
@@ -33,7 +35,19 @@ enum mode_t {
   partiallypersistent
 };
 
+enum operation_type_t {
+  insert,
+  modify,
+  remove,
+  access
+};
+
 uint64_t start_time;
+size_t count = 1000UL;
+size_t max_no_snapshots = 1200UL;
+size_t max_snapshot_dist = 100UL;
+bool store_results = false;
+bool randomize_operations = false;
 
 string
 mode_to_string (mode_t mode) {
@@ -168,10 +182,7 @@ log_operation_to_db (const mode_t mode, size_t count, const string operation,
 }
 
 void
-test_insert_modify_remove_rollback_naive (bool store_results,
-                                          size_t count,
-                                          size_t max_no_snapshots,
-                                          size_t max_snapshot_dist) {
+test_insert_modify_remove_rollback_naive () {
   double begin_operation, end_operation;
 
   rollback_naive::DoublyLinkedList list (max_no_snapshots, max_snapshot_dist);
@@ -291,10 +302,7 @@ test_insert_modify_remove_rollback_naive (bool store_results,
 }
 
 void
-test_insert_modify_remove_rollback_reorder (bool store_results,
-                                            size_t count,
-                                            size_t max_no_snapshots,
-                                            size_t max_snapshot_dist) {
+test_insert_modify_remove_rollback_reorder () {
   double begin_operation, end_operation;
 
   rollback_reorder::DoublyLinkedList list (max_no_snapshots, max_snapshot_dist);
@@ -414,10 +422,7 @@ test_insert_modify_remove_rollback_reorder (bool store_results,
 }
 
 void
-test_insert_modify_remove_rollback_reorder_lazy (bool store_results,
-                                                 size_t count,
-                                                 size_t max_no_snapshots,
-                                                 size_t max_snapshot_dist) {
+test_insert_modify_remove_rollback_reorder_lazy () {
   double begin_operation, end_operation;
 
   rollback_reorder_lazy::DoublyLinkedList list (max_no_snapshots, max_snapshot_dist);
@@ -537,7 +542,7 @@ test_insert_modify_remove_rollback_reorder_lazy (bool store_results,
 }
 
 void
-test_insert_modify_remove_partiallypersistent (bool store_results, size_t count) {
+test_insert_modify_remove_partiallypersistent () {
   double begin_operation, end_operation;
 
   partiallypersistent::DoublyLinkedList list;
@@ -673,25 +678,45 @@ test_insert_modify_remove_partiallypersistent (bool store_results, size_t count)
 
 }
 
+double rand01() {
+  return (double) rand()/RAND_MAX;
+}
+
+#include <csignal>
+#include <cstring>
+#include <iomanip>
+#include <cerrno>
+
+static void hdl (int sig, siginfo_t *siginfo, void *context) {
+  if (sig == SIGUSR1) {
+    cout.setf(ios::showpoint);
+    cout << "Progress: " << current_op_no << " / " << main_ns::count << " (" << setprecision(2) << (100.0 * current_op_no)/main_ns::count << "%)" << endl;
+  }
+}
+
 int
 main (int argc, char **argv) {
   main_ns::start_time = main_ns::nano_time();
-  
+
   using namespace main_ns;
 
-  size_t count = 1000UL;
-  size_t max_no_snapshots = 1200UL;
-  size_t max_snapshot_dist = 100UL;
-  bool store_results = false;
+  main_ns::mode_t mode = main_ns::rollback_reorder_lazy;
 
-  main_ns::mode_t mode = main_ns::rollback_reorder;
+  struct sigaction act;
+  memset (&act, '\0', sizeof(act));
+  act.sa_sigaction = &hdl;
+  act.sa_flags = SA_SIGINFO;
+  if (sigaction(SIGUSR1, &act, NULL) < 0) {
+    perror("sigaction");
+    return 1;
+  }
 
   try {
     for (int i = 1; i < argc; ++i) {
       string arg = argv[i];
       if ("-c" == arg || "--count" == arg) {
         if (++i < argc) {
-          count = atoi (argv[i]);
+          main_ns::count = atoi (argv[i]);
         } else {
           stringstream ss;
           ss << "No argument given to " << arg;
@@ -723,6 +748,8 @@ main (int argc, char **argv) {
         mode = main_ns::partiallypersistent;
       } else if ("-s" == arg || "--store-results" == arg) {
         store_results = true;
+      } else if ("--randomize-operations" == arg) {
+        randomize_operations = true;
       }
     }
 
@@ -754,22 +781,80 @@ main (int argc, char **argv) {
       sqlite3_free (zErrMsg);
     }
 
-    switch (mode) {
-    case main_ns::rollback_naive:
-      test_insert_modify_remove_rollback_naive (store_results, count, max_no_snapshots,
-                                                max_snapshot_dist);
-      break;
-    case main_ns::rollback_reorder:
-      test_insert_modify_remove_rollback_reorder (store_results, count, max_no_snapshots,
-                                                max_snapshot_dist);
-      break;
-    case main_ns::rollback_reorder_lazy:
-      test_insert_modify_remove_rollback_reorder_lazy (store_results, count, max_no_snapshots,
-                                                max_snapshot_dist);
-      break;
-    case main_ns::partiallypersistent:
-      test_insert_modify_remove_partiallypersistent (store_results, count);
-      break;
+    if (randomize_operations) {
+      srand(0);
+      AbstractDoublyLinkedList* list = 0x0;
+      switch (mode) {
+        case main_ns::partiallypersistent:
+          list = new partiallypersistent::DoublyLinkedList();
+          break;
+        case main_ns::rollback_reorder:
+          list = new rollback_reorder::DoublyLinkedList(max_no_snapshots, max_snapshot_dist);
+          break;
+        case main_ns::rollback_reorder_lazy:
+          list = new rollback_reorder_lazy::DoublyLinkedList(max_no_snapshots, max_snapshot_dist);
+          break;
+      }
+      size_t insert_count = 0;
+      long long insert_duration = 0;
+      size_t modify_count = 0;
+      long long modify_duration = 0;
+      size_t remove_count = 0;
+      long long remove_duration = 0;
+      size_t access_count = 0;
+      long long access_duration = 0;
+
+      double begin_operation;
+      for (size_t i = 0; i < main_ns::count; ++i) {
+        double r = rand01();
+        size_t list_size = list->a_size();
+        size_t index = (size_t) (rand01() * list_size);
+        size_t version = list->a_num_versions();
+        if (r < 0.25 && list_size > 0) {
+          ++remove_count;
+          begin_operation = nano_time();
+          list->a_remove(index);
+          remove_duration += (long long) (nano_time() - begin_operation);
+        } else if (r < 0.25 + 0.25 && list_size > 0) {
+          ++modify_count;
+          begin_operation = nano_time();
+          list->a_modify(index, i);
+          modify_duration += (long long) (nano_time() - begin_operation);
+        } else if (r < 0.25 + 0.25 + 0.25 && list->a_size_at(version = rand01() * list->a_num_versions()) > 0) {
+          ++access_count;
+          begin_operation = nano_time();
+          index = rand01() * list->a_size_at(version);
+          access_duration += (long long) (nano_time() - begin_operation);
+        } else {
+          ++insert_count;
+          begin_operation = nano_time();
+          list->a_insert(index, i);
+          insert_duration += (long long) (nano_time() - begin_operation);
+        }
+        ++current_op_no;
+      }
+
+      if (store_results) {
+        log_operation_to_db(mode, insert_count, "insert", max_no_snapshots, max_snapshot_dist, 0, insert_duration);
+        log_operation_to_db(mode, modify_count, "modify", max_no_snapshots, max_snapshot_dist, 0, modify_duration);
+        log_operation_to_db(mode, remove_count, "remove", max_no_snapshots, max_snapshot_dist, 0, remove_duration);
+        log_operation_to_db(mode, access_count, "access", max_no_snapshots, max_snapshot_dist, 0, access_duration);
+      }
+    } else {
+      switch (mode) {
+      case main_ns::rollback_naive:
+        test_insert_modify_remove_rollback_naive ();
+        break;
+      case main_ns::rollback_reorder:
+        test_insert_modify_remove_rollback_reorder ();
+        break;
+      case main_ns::rollback_reorder_lazy:
+        test_insert_modify_remove_rollback_reorder_lazy ();
+        break;
+      case main_ns::partiallypersistent:
+        test_insert_modify_remove_partiallypersistent ();
+        break;
+      }
     }
 
     sqlite3_close (db);

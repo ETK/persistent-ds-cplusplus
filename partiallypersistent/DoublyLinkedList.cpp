@@ -30,7 +30,6 @@
 #include <sstream>
 #endif
 
-#define EXTRA_ASSERTS
 #ifdef EXTRA_ASSERTS
 #include <cassert>
 #endif
@@ -44,6 +43,53 @@ namespace partiallypersistent {
     version = 0UL;
     modifications = 0UL;
   };
+  
+  const std::size_t DoublyLinkedList::a_access (const std::size_t version,
+                                                const std::size_t index) {
+    Node* node = head_at(version + 1);
+    for (size_t i = 0; i < index; ++i) {
+      node = node->next_at(version + 1);
+    }
+    return node->data_at(version + 1);
+  }
+
+  void DoublyLinkedList::a_insert (const std::size_t index,
+                                   const std::size_t value) {
+    insert(value, index);
+  }
+
+  void DoublyLinkedList::a_modify (const std::size_t index,
+                                   const std::size_t value) {
+    Node* node = head();
+    for (size_t i = 0; i < index; ++i) {
+      node = node->next();
+    }
+    set_data(node, value);
+  }
+
+  void DoublyLinkedList::a_remove (const std::size_t index) {
+    Node* node = head();
+    for (size_t i = 0; i < index; ++i) {
+      node = node->next();
+    }
+    remove(node);
+  }
+
+  const std::size_t DoublyLinkedList::a_size () {
+    return size();
+  }
+  
+  const std::size_t DoublyLinkedList::a_size_at (const std::size_t version) {
+    return size_at(version);
+  }
+
+  const std::size_t DoublyLinkedList::a_num_versions () {
+    return versions.size();
+  }
+
+  void DoublyLinkedList::a_print_at (std::size_t version) {
+    print_at_version(version + 1);
+  }
 
 #ifdef EXTRA_ASSERTS
   void assert_actual_size (Node * head, size_t expected_size) {
@@ -71,6 +117,7 @@ namespace partiallypersistent {
     new_node->data_val = data;
 
     if (versions.size () > 0 && head ()) {
+      Node* new_head = head();
       // skip through list until correct position is found, or insert at end if index + 1 > size
       Node *current_head = head ();
       Node *to_be_next = current_head;
@@ -96,7 +143,7 @@ namespace partiallypersistent {
 
       if (to_be_next) {
         // set pointers between new_node and to-be next
-        to_be_next = modify_field (to_be_next, PREV, new_node);
+        to_be_next = modify_field (to_be_next, PREV, new_node, new_head);
         to_be_next->next_back_ptr = new_node;
         new_node->prev_back_ptr = to_be_next;
         new_node->next_ptr = to_be_next;
@@ -106,12 +153,14 @@ namespace partiallypersistent {
       if (to_be_prev) {
         // set pointers between new_node and to-be prev
         bool to_be_prev_is_head = to_be_prev == current_head;
-        to_be_prev = modify_field (to_be_prev, NEXT, new_node);
+        to_be_prev = modify_field (to_be_prev, NEXT, new_node, new_head);
         to_be_prev->prev_back_ptr = new_node;
         new_node->next_back_ptr = to_be_prev;
         new_node->prev_ptr = to_be_prev;
         if (to_be_prev_is_head) {
           new_version.head = to_be_prev;
+        } else if (new_version.head != new_head) {
+          new_version.head = new_head;
         }
 //         to_be_prev->prev_back_ptr = new_node;
       }
@@ -151,6 +200,10 @@ namespace partiallypersistent {
 
     Node *before = to_remove->prev ();
     Node *after = to_remove->next ();
+    Node *current_head;
+    Node *new_head;
+    current_head = head();
+    new_head = current_head;
 
     if (before) {
       before->prev_back_ptr = after;
@@ -160,13 +213,13 @@ namespace partiallypersistent {
     }
 
     if (before) {
-      before = modify_field (before, NEXT, after);
+      before = modify_field (before, NEXT, after, new_head);
       if (after) {
         after->next_back_ptr = before;
       }
     }
     if (after) {
-      after = modify_field (after, PREV, before);
+      after = modify_field (after, PREV, before, new_head);
       if (before) {
         before->prev_back_ptr = after;
       }
@@ -175,6 +228,8 @@ namespace partiallypersistent {
     if (!before) {
       // to_remove has no previous node, so it must be head
       new_version.head = after;
+    } else if (current_head != new_head) {
+      new_version.head = new_head;
     } else {
       new_version.head = head ();
     }
@@ -204,6 +259,14 @@ namespace partiallypersistent {
   Node *DoublyLinkedList::modify_field (Node * node,
                                         field_name_t field_name,
                                         Node * value) {
+    Node* empty;
+    return modify_field(node, field_name, value, empty);
+  }
+  
+  Node *DoublyLinkedList::modify_field (Node * node,
+                                        field_name_t field_name,
+                                        Node * value,
+                                        Node*& head) {
 #ifdef LOGGING
     string field_name_s =
       field_name == DATA ? "DATA" : field_name == PREV ? "PREV" : "NEXT";
@@ -233,7 +296,10 @@ namespace partiallypersistent {
       node->mods[node->n_mods++] = mod;
     } else {
       Node *copy = new Node ();
-      copy_live_node (node, copy, field_name, value);
+      copy_live_node (node, copy, field_name, value, head);
+      if (copy->prev() == 0x0) {
+        head = copy;
+      }
 #ifdef LOGGING
       cout << " +> " << node_to_string (copy) << endl;
 #endif
@@ -256,13 +322,14 @@ namespace partiallypersistent {
     modifications = 1;
     new_version.version = ++version;
     new_version.size = versions.back ().size;
+    Node* current_head = head ();
 
     Node *modified_node =
-      modify_field (node, DATA, reinterpret_cast < Node * >(value));
+      modify_field (node, DATA, reinterpret_cast < Node * >(value), current_head);
     if (!modified_node->prev ()) {
       new_version.head = modified_node;
     } else {
-      new_version.head = head ();
+      new_version.head = current_head;
     }
     versions.push_back (new_version);
   }
@@ -270,7 +337,7 @@ namespace partiallypersistent {
   void DoublyLinkedList::copy_live_node (partiallypersistent::Node * node,
                                          Node * copy,
                                          field_name_t field_name,
-                                         Node * value) {
+                                         Node * value, Node *& head) {
 #ifdef LOGGING
     cout << "  COPY (";
 #endif
@@ -318,16 +385,26 @@ namespace partiallypersistent {
       if (field_name == NEXT && copy->prev_back_ptr == value) {
         copy->prev_back_ptr->prev_ptr = copy;
       } else {
-        copy->prev_back_ptr = modify_field (copy->prev_back_ptr, PREV, copy);
+        copy->prev_back_ptr = modify_field (copy->prev_back_ptr, PREV, copy, head);
         copy = copy->prev_back_ptr->prev ();
       }
       copy->prev_back_ptr->next_back_ptr = copy;
     }
     if (copy->next_back_ptr) {
       if (field_name == PREV && copy->next_back_ptr == value) {
-        copy->next_back_ptr->next_ptr = copy;
+        bool found_in_mods = false;
+        for (size_t i = copy->next_back_ptr->n_mods - 1; i != -1; --i) {
+          if (copy->next_back_ptr->mods[i].field_name == NEXT) {
+            copy->next_back_ptr->mods[i].value = copy;
+            found_in_mods = true;
+            break;
+          }
+        }
+        if (!found_in_mods) {
+          copy->next_back_ptr->next_ptr = copy;
+        }
       } else {
-        copy->next_back_ptr = modify_field (copy->next_back_ptr, NEXT, copy);
+        copy->next_back_ptr = modify_field (copy->next_back_ptr, NEXT, copy, head);
         copy = copy->next_back_ptr->next ();
       }
       copy->next_back_ptr->prev_back_ptr = copy;
@@ -377,11 +454,17 @@ namespace partiallypersistent {
   size_t DoublyLinkedList::size_at (size_t v) const {
     return versions[v].size;
   } size_t DoublyLinkedList::size () const {
-    return versions.back ().size;
-  } void print_dot_graph_helper (Node * n, size_t v,
-                                 set < Node * >&printed,
-                                 const set < Node * >&live_set,
-                                 ofstream & out) {
+    if (versions.size() > 0) {
+      return versions.back ().size;
+    } else {
+      return 0;
+    }
+  };
+
+  void print_dot_graph_helper (Node * n, size_t v,
+                               set < Node * >&printed,
+                               const set < Node * >&live_set,
+                               ofstream & out) {
     if (printed.find (n) != printed.end ()) {
       return;
     }

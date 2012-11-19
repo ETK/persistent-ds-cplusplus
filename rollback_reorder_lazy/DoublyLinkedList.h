@@ -25,6 +25,7 @@
 
 #include "../ephemeral/DoublyLinkedList.h"
 #include "../ephemeral/Node.h"
+#include "../AbstractDoublyLinkedList.h"
 
 #define INIT_MAX_SNAPSHOT_DIST 100UL
 #define MAX_NO_SNAPSHOTS 1200UL
@@ -57,7 +58,7 @@ namespace rollback_reorder_lazy {
     }
   };
 
-  class DoublyLinkedList {
+  class DoublyLinkedList : public AbstractDoublyLinkedList {
 
   public:
     DoublyLinkedList ();
@@ -77,6 +78,16 @@ namespace rollback_reorder_lazy {
       ephemeral::Node * head_at (std::size_t v);
       std::size_t size ();
       std::size_t size_at (std::size_t v);
+
+    const std::size_t a_access (const std::size_t version,
+                                        const std::size_t index);
+    void a_insert (const std::size_t index, const std::size_t value);
+    void a_modify (const std::size_t index, const std::size_t value);
+    void a_remove (const std::size_t index);
+    const std::size_t a_size ();
+    const std::size_t a_size_at (const std::size_t version);
+    const std::size_t a_num_versions ();
+    void a_print_at (std::size_t version);
 
   private:
       ephemeral::DoublyLinkedList* ephemeral_current;
