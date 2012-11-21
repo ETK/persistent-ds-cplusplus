@@ -254,12 +254,12 @@ main (int argc, char **argv) {
     long long remove_duration = 0;
     size_t access_count = 0;
     long long access_duration = 0;
-    
+
     double p_remove = 0.25;
     double p_modify = 0.25;
     double p_access = 0.25;
     double p_insert = 0.25;
-    
+
     double p_sum = p_remove + p_modify + p_access + p_insert;
     p_remove /= p_sum;
     p_modify /= p_sum;
@@ -292,27 +292,24 @@ main (int argc, char **argv) {
           op = main_ns::access;
         }
       }
+      begin_operation = nano_time();
       size_t list_size = list->a_size();
       size_t index = (size_t) (rand01() * list_size);
       size_t version = list->a_num_versions();
       if (op == main_ns::remove && list_size > 0) {
         ++remove_count;
-        begin_operation = nano_time();
         list->a_remove(index);
         remove_duration += (long long) (nano_time() - begin_operation);
       } else if (op == modify && list_size > 0) {
         ++modify_count;
-        begin_operation = nano_time();
         list->a_modify(index, i);
         modify_duration += (long long) (nano_time() - begin_operation);
       } else if (op == main_ns::access && list->a_size_at(version = rand01() * list->a_num_versions()) > 0) {
         ++access_count;
-        begin_operation = nano_time();
         index = rand01() * list->a_size_at(version);
         access_duration += (long long) (nano_time() - begin_operation);
       } else {
         ++insert_count;
-        begin_operation = nano_time();
         list->a_insert(index, i);
         insert_duration += (long long) (nano_time() - begin_operation);
       }
