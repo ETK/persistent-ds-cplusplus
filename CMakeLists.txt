@@ -6,6 +6,8 @@ SET(CMAKE_CXX_FLAGS "-std=c++0x")
 add_executable(test_dot_graph partiallypersistent/DoublyLinkedList.cpp partiallypersistent/Node.cpp test_dot_graph.cpp)
 add_executable(msc AbstractDoublyLinkedList.cpp rollback_reorder_lazy/DoublyLinkedList.cpp rollback_reorder/DoublyLinkedList.cpp rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp partiallypersistent/DoublyLinkedList.cpp partiallypersistent/Node.cpp main.cpp)
 target_link_libraries(msc rt sqlite3)
+add_executable(rollback_reorder_lazy_worstcase AbstractDoublyLinkedList.cpp rollback_reorder_lazy/DoublyLinkedList.cpp rollback_reorder/DoublyLinkedList.cpp rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp partiallypersistent/DoublyLinkedList.cpp partiallypersistent/Node.cpp rollback_reorder_lazy_worstcase.cpp)
+target_link_libraries(rollback_reorder_lazy_worstcase rt sqlite3)
 
 add_executable(test_rollback_naive rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_naive.cpp)
 add_executable(test_rollback_snapshots rollback_naive/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_snapshots.cpp)

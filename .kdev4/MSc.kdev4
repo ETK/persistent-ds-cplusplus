@@ -24,7 +24,7 @@ Extra Arguments=
 Install Directory=file:///usr/local
 
 [Launch]
-Launch Configurations=Launch Configuration 0,Launch Configuration 1,Launch Configuration 2,Launch Configuration 3,Launch Configuration 4
+Launch Configurations=Launch Configuration 0,Launch Configuration 1,Launch Configuration 2,Launch Configuration 3,Launch Configuration 4,Launch Configuration 5,Launch Configuration 6
 
 [Launch][Launch Configuration 0]
 Configured Launch Modes=execute
@@ -122,6 +122,42 @@ EnvironmentGroup=default
 Executable=
 External Terminal=konsole --noclose --workdir %workdir -e %exe
 Project Target=persistent-ds-cplusplus,test_merge_reorder
+Use External Terminal=false
+Working Directory=
+isExecutable=false
+
+[Launch][Launch Configuration 5]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=worstcase l
+Type=Native Application
+
+[Launch][Launch Configuration 5][Data]
+Arguments=-l
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x02\x00\x00\x00.\x00p\x00e\x00r\x00s\x00i\x00s\x00t\x00e\x00n\x00t\x00-\x00d\x00s\x00-\x00c\x00p\x00l\x00u\x00s\x00p\x00l\x00u\x00s\x00\x00\x00>\x00r\x00o\x00l\x00l\x00b\x00a\x00c\x00k\x00_\x00r\x00e\x00o\x00r\x00d\x00e\x00r\x00_\x00l\x00a\x00z\x00y\x00_\x00w\x00o\x00r\x00s\x00t\x00c\x00a\x00s\x00e)
+Dependency Action=Build
+EnvironmentGroup=default
+Executable=
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+Project Target=persistent-ds-cplusplus,rollback_reorder_lazy_worstcase
+Use External Terminal=false
+Working Directory=
+isExecutable=false
+
+[Launch][Launch Configuration 6]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=worstcase p
+Type=Native Application
+
+[Launch][Launch Configuration 6][Data]
+Arguments=-p
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x02\x00\x00\x00.\x00p\x00e\x00r\x00s\x00i\x00s\x00t\x00e\x00n\x00t\x00-\x00d\x00s\x00-\x00c\x00p\x00l\x00u\x00s\x00p\x00l\x00u\x00s\x00\x00\x00>\x00r\x00o\x00l\x00l\x00b\x00a\x00c\x00k\x00_\x00r\x00e\x00o\x00r\x00d\x00e\x00r\x00_\x00l\x00a\x00z\x00y\x00_\x00w\x00o\x00r\x00s\x00t\x00c\x00a\x00s\x00e)
+Dependency Action=Build
+EnvironmentGroup=default
+Executable=
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+Project Target=persistent-ds-cplusplus,rollback_reorder_lazy_worstcase
 Use External Terminal=false
 Working Directory=
 isExecutable=false

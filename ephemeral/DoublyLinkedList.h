@@ -24,8 +24,7 @@
 
 #include "Node.h"
 
-#define VERIFY_STRICT
-// #undef VERIFY_STRICT
+// #define VERIFY_STRICT
 #ifdef VERIFY_STRICT
 #include <cassert>
 #endif

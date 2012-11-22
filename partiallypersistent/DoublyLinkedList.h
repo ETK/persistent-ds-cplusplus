@@ -27,7 +27,7 @@
 #include <cstdlib>
 #include <ostream>
 
-#define EXTRA_ASSERTS
+// #define EXTRA_ASSERTS
 
 namespace partiallypersistent {
 

@@ -439,16 +439,17 @@ namespace partiallypersistent {
   };
 
   Node *DoublyLinkedList::head_at (std::size_t v) const {
-    Node *head = versions.front ().head;
-    for (vector < pair < size_t, Node * > >::size_type i = 0;
-         i < versions.size (); ++i) {
-      if (versions[i].version <= v) {
-        head = versions[i].head;
-      } else {
-        break;
-      }
-    }
-    return head;
+    return versions[v].head;
+//     Node *head = versions.front ().head;
+//     for (vector < pair < size_t, Node * > >::size_type i = 0;
+//          i < versions.size (); ++i) {
+//       if (versions[i].version <= v) {
+//         head = versions[i].head;
+//       } else {
+//         break;
+//       }
+//     }
+//     return head;
   }
 
   size_t DoublyLinkedList::size_at (size_t v) const {

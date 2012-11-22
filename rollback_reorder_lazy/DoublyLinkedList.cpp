@@ -161,7 +161,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 
     next_record_index++;
 
-    if (next_record_index >= max_snapshot_dist * snapshots.size () - 1) {
+    if (next_record_index > max_snapshot_dist * snapshots.size () - 1) {
 
       if (snapshots.size () == max_no_snapshots - 1) {
 
@@ -532,6 +532,10 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
             }
           }
 
+//           node->next = 0x0;
+//           node->prev = 0x0;
+//           delete node;
+
           --ephemeral_current->size;
         } else if (ri.operation == INSERT) {
           ephemeral::Node * new_node = new ephemeral::Node ();
@@ -609,3 +613,4 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+

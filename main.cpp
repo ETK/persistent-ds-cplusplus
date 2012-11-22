@@ -1,136 +1,17 @@
-#include <iostream>
-#include <vector>
-#include <ctime>
-#include <cstdlib>
+#include "main_ns.h"
 
-#include <algorithm>
-#include <unistd.h>
-#include <ios>
-#include <fstream>
 #include <csignal>
 #include <cerrno>
-#include <string>
-#include <sstream>
-#include <cstdio>
 #include <iomanip>
+
 #include <cstring>
 
-#include <sqlite3.h>
-
-#include "ephemeral/DoublyLinkedList.h"
 #include "partiallypersistent/DoublyLinkedList.h"
-// #include "rollback_naive/DoublyLinkedList.h"
 #include "rollback_reorder/DoublyLinkedList.h"
 #include "rollback_reorder_lazy/DoublyLinkedList.h"
 
 using namespace std;
 
-
-namespace main_ns {
-enum mode_t {
-  rollback_naive,
-  rollback_reorder,
-  rollback_reorder_lazy,
-  partiallypersistent
-};
-
-enum operation_type_t {
-  insert,
-  modify,
-  remove,
-  access
-};
-
-uint64_t start_time;
-size_t count = 1000UL;
-size_t max_no_snapshots = 1200UL;
-size_t max_snapshot_dist = 100UL;
-bool store_results = false;
-bool randomize_operations = false;
-size_t current_op_no = 0;
-
-string
-mode_to_string (mode_t mode) {
-  switch (mode) {
-  case rollback_naive:
-    return "rollback_naive";
-  case rollback_reorder:
-    return "rollback_reorder";
-  case rollback_reorder_lazy:
-    return "rollback_reorder_lazy";
-  case partiallypersistent:
-    return "partiallypersistent";
-  default:
-    return "unknown";
-  }
-}
-
-std::string exec (string cmd) {
-  FILE *pipe = popen (cmd.c_str (), "r");
-  if (!pipe)
-    return "ERROR";
-  char buffer[128];
-  std::string result = "";
-  while (!feof (pipe)) {
-    if (fgets (buffer, 128, pipe) != NULL)
-      result += buffer;
-  }
-  pclose (pipe);
-  return result;
-}
-
-int
-callback (void *NotUsed, int argc, char **argv, char **azColName) {
-  for (int i = 0; i < argc; ++i) {
-    cout << azColName[i] << " = " << (argv[i] ? argv[i] : "NULL") << endl;
-  }
-  return 0;
-}
-
-double
-nano_time () {
-  timespec ts;
-  clock_gettime (CLOCK_REALTIME, &ts);
-
-  return ts.tv_sec * 1e9 + ts.tv_nsec;
-}
-
-void
-log_operation_to_db (const mode_t mode, size_t count, const string operation,
-                     size_t max_no_snapshots, size_t max_snapshot_dist,
-                     const double begin_operation,
-                     const double end_operation) {
-  sqlite3 *db;
-  char *zErrMsg;
-  int rc;
-  rc = sqlite3_open ("sqlite.db", &db);
-  if (rc) {
-    stringstream ss;
-    ss << "Can't open database \"sqlite.db\": " << sqlite3_errmsg (db);
-    sqlite3_close (db);
-    throw ss.str ();
-  }
-  string git_hash = exec ("git rev-parse HEAD");
-  git_hash.erase(std::remove(git_hash.begin(), git_hash.end(), '\n'), git_hash.end());
-  stringstream sql;
-  sql.precision (15);
-  sql.setf (ios::fixed);
-  sql <<
-    "insert into results (start_time, implementation, count, max_no_snapshots, max_snapshot_dist, version, begin_time, end_time, operation, duration) values (" << start_time << ", '"
-    << mode_to_string(mode) << "', " << count << ", " << max_no_snapshots << ", " << max_snapshot_dist << ", " << "'" << git_hash << "', " << (long
-                                                                      long)
-    begin_operation << ", " << (long long) end_operation << ", '" << operation
-    << "', " << (long long) (end_operation - begin_operation) << ")";
-  rc = sqlite3_exec (db, sql.str ().c_str (), callback, 0, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    stringstream ss;
-    ss << "SQL error: " << zErrMsg << endl;
-    sqlite3_free (zErrMsg);
-    throw ss.str ();
-  }
-  sqlite3_close (db);
-}
-}
 
 double rand01() {
   return (double) rand()/RAND_MAX;
@@ -139,7 +20,7 @@ double rand01() {
 static void hdl (int sig, siginfo_t *siginfo, void *context) {
   if (sig == SIGUSR1) {
     cout.setf(ios::showpoint);
-    cout << "Progress: " << main_ns::current_op_no << " / " << main_ns::count
+    cout << "Progress: " << setprecision(15) << main_ns::current_op_no << " / " << main_ns::count
          << " (" << setprecision(4)
          << (100.0 * main_ns::current_op_no) / main_ns::count << "%)"
          << endl;
@@ -153,6 +34,10 @@ main (int argc, char **argv) {
   using namespace main_ns;
 
   main_ns::mode_t mode = main_ns::rollback_reorder_lazy;
+  double p_remove = 0.25;
+  double p_modify = 0.25;
+  double p_access = 0.25;
+  double p_insert = 0.25;
 
   struct sigaction act;
   memset (&act, '\0', sizeof(act));
@@ -190,8 +75,6 @@ main (int argc, char **argv) {
           ss << "No argument given to " << arg;
           throw ss.str ();
         }
-      } else if ("-r" == arg || "--rollback-naive" == arg) {
-        mode = main_ns::rollback_naive;
       } else if ("-o" == arg || "--rollback-reorder" == arg) {
         mode = main_ns::rollback_reorder;
       } else if ("-l" == arg || "--rollback-reorder-lazy" == arg) {
@@ -254,11 +137,6 @@ main (int argc, char **argv) {
     long long remove_duration = 0;
     size_t access_count = 0;
     long long access_duration = 0;
-
-    double p_remove = 0.25;
-    double p_modify = 0.25;
-    double p_access = 0.25;
-    double p_insert = 0.25;
 
     double p_sum = p_remove + p_modify + p_access + p_insert;
     p_remove /= p_sum;
