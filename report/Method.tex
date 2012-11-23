@@ -17,6 +17,10 @@
   \end{enumerate}
 
 \section{The Node Copying method}
+The purpose of the Node Copying method is to enable partial persistence in a
+node-based data structure with bounded in-degree with a constant factor overhead
+on space and time consumption and transparent navigation of the data structure.
+
 Node Copying is a method described in \cite{Driscoll198986} by which a data
 structure may be made partially persistent through the systematic expansion of
 the nodes of the data structure. An auxillary data structure maintaining entry
@@ -40,13 +44,16 @@ arrays; one for ``back pointers'' and one for ``modifications''.
   $x$ it previously pointed to has the corresponding back pointer cleared, and
   the node $z$ it now points to has its corresponding back pointer set to point
   to $y_i$.
+  
+  For example, each node of a linked list would have a back pointer to the
+  previous node.
 
   \item[Modifications] store updates made to any of the fields of the node,
   including non-pointer fields, made since the node was created -- that is, the
   original field values from the time of construction remain unchanged. A
-  modification record consist of a version number a field identifier and a
+  modification record consist of a version number, a field identifier and a
   value.
-
+  
   When a field is to be modified on a node whose modifications array is already
   full, a copy of the node is constructed using the latest version of each field
   (including the one which is to be changed), thus resulting in a new node with
@@ -58,6 +65,79 @@ arrays; one for ``back pointers'' and one for ``modifications''.
   cost of $O(1)$.
 \end{description}
 
+\subsection{Navigation of the Node Copying data structure}
+To navigate any node based data structure, an entry point is required. In a
+linked list the entry point is the head of the list, and in a binary search tree
+it is the root node. Some data structures have several entry points, e.g. the
+first and last elements of a doubly linked list.
+
+In the Node Copying method, it is necessary to keep track of which node is the
+entry point for each version. A simple approach is to maintain a direct lookup
+table with an entry for each version. If one is especially concerned about the
+space cost of such a table, one could instead use an efficient predecessor data
+structure such as a Y-fast trie.
+
+Once the entry point for the desired version is obtained, the value of a field
+$f$ in version $v$ is found by the method described in algorithm
+\ref{alg:node-copying-get-field-value}. The essence is that if the modifications
+array contains any values for $f$, the most recent one with a version less than
+or equal to $v$ is returned --- otherwise, the original value of $f$ is
+returned.
+
+\begin{algorithm}[!ht]
+  \caption{Algorithm for retrieving the value of a field at a given version.}
+  \label{alg:node-copying-get-field-value}
+  \begin{algorithmic}[1]
+    \Require{$M$, size of modifications array}
+    \Function{FieldAtVersion}{field $f$, node $n$}
+      \State $v \gets n.f$
+      \For {$i \in \left\{0, \ldots, M-1\right\}$}
+        \If {$n.\textsc{mods}[i].\textsc{version} > v$}
+          \State break \textbf{for} loop
+        \ElsIf {$n.\textsc{mods}[i].\textsc{field} = f$}
+          \If {$n.\textsc{mods}[i].\textsc{version} = v$}
+            \State \Return $n.\textsc{mods}[i].\textsc{value}$
+          \Else
+            \State $v \gets n.\textsc{mods}[i].\textsc{value}$
+          \EndIf
+        \EndIf
+      \EndFor
+      \State \Return $v$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{figure}[!ht]
+  \includegraphics[width=.9\textwidth]{figures/node-copying-example.pdf}
+
+  \caption{To the left is the structure of a node from a doubly linked list.
+  Applying the Node Copying method, the node structure is transformed to the one
+  on the right. The modifications array is of size two due to there being two
+  pointer fields \textsc{prev} and \textsc{next}.}
+
+  \label{fig:node-copying-example}
+\end{figure}
+
+If, for instance, one wanted to calculate the sum of the data fields of all
+nodes in a linked list at a specific version $v$, one would follow this
+procedure:
+
+\begin{enumerate}
+
+  \item Initialize a result variable $s$ to 0 and a node pointer variable $n$ to
+  the head at version $v$.
+
+  \item If $n$ is $\textsc{nil}$, return $s$.\label{proc:check-n-return-s}
+  
+  \item Otherwise, look up the value for its \textsc{data} field according to
+  algorithm \ref{alg:node-copying-get-field-value} and add it to $s$.
+  
+  \item Then set $n$ to the value for its own \textsc{next} field according to
+  algorithm \ref{alg:node-copying-get-field-value} and go to step
+  \ref{proc:check-n-return-s}.
+
+\end{enumerate}
+
 \subsubsection{Amortized cost of Node Copying}
 \todo[inline]{Write up proof of amortized time cost of node copying}
 
@@ -65,6 +145,7 @@ arrays; one for ``back pointers'' and one for ``modifications''.
 Rollback is an approach to persistence based on the techniques described in
 \cite{Tsotras1995237}, namely the combination of the na\"ive ``copy'' and
 ``log'' methods.
+
 \subsection{The na\"ive approaches}
 The ``copy'' approach makes a full copy of every version of the data structure
 and makes it available by direct indexing to achieve $O(1)$ access overhead

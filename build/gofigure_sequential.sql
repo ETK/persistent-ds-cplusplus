@@ -11,7 +11,7 @@ select
   count(*) as 'rows'
 from results
 where
-  start_time >= 1353524545032260577
+  start_time between 1353616265959869788 and 1353617242303705709
 group by
   operation,
   implementation,

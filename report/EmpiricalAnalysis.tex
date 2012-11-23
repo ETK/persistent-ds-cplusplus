@@ -1,7 +1,6 @@
 \chapter{Empirical Analysis}
 
 \begin{enumerate}
-  \item Execution environment
   \item Execution parameters
   \item Specific application profiles
   \item Result statistics (min/max/avg/stddev)
@@ -14,13 +13,66 @@ compare the performance of the Node Copying and Rollback approaches.
 
 \begin{itemize}
 
-  \item Pseudo-random choice between the following four operations: insert,
-  modify, remove, access.
+  \item Pseudo-random choice uniformly distributed between the following four
+  operations: insert, modify, remove, access.
+  
+  This scenario represents varied use of the data structure over time.
 
   \item Sequential bulk application of operations in the following order:
-  insert, modify, remove, access
+  insert, modify, remove, access.
+  
+  This scenario represents bulk usage of the data structure when access only
+  happens after all the other operation types.
 
 \end{itemize}
+
+The above scenarios have been implemented in the program \texttt{msc} which has
+the following parameters:
+
+\begin{description}
+
+  \item[\texttt{-\@{}-count}/\texttt{-c \{num\}}] Total number of operations to carry
+  out (default: 1000).
+
+  \item[\texttt{-\@{}-randomize-operations}] If passed, applies the operations
+  chosen at random between the four types. Otherwise, insertions are applied
+  first, then modifications, then removals, then access operations (default:
+  off).
+
+  \item[\texttt{-\@{}-rollback-reorder-lazy}/\texttt{-l}] Will use the Rollback
+  implementation for applying the operations (default).
+
+  \item[\texttt{-\@{}-partiallypersistent}/\texttt{-p}] Will use the Node
+  Copying implementation for applying the operations.
+
+  \item[\texttt{-\@{}-max-snapshot-dist}/\texttt{-d \{num\}}] Maximum number of
+  operations between snapshots (default: 65, applies only to the Rollback
+  implementation).
+
+  \item[\texttt{-\@{}-max-num-snapshots}/\texttt{-m \{num\}}] Maximum number of
+  snapshots before adaptive fallback is carried out (default: 2000, applies only to the Rollback
+  implementation).
+
+  \item[\texttt{-\@{}-store-results}/\texttt{-s}] If set, will store results in
+  an SQLite database file ``sqlite.db''.
+
+\end{description}
+
+\begin{figure}[!ht]
+  \center
+  \includegraphics[width=.8\textwidth]%
+  {figures/graphs/access-duration-vs-count-avg.pdf}
+  \includegraphics[width=.8\textwidth]%
+  {figures/graphs/access-duration-per-op-vs-count-avg.pdf}
+
+  \caption{Comparison of implementations and scenarious for various operation
+  counts. Note how the Node Copying method keeps an approximately constant
+  overhead factor per operation, whereas the Rollback method eventually hits the
+  upper limit for full copies, and access time increases. It is reached faster
+  in the sequential scenario since the full copies are larger.}
+
+  \label{fig:access-duration-vs-count-avg}
+\end{figure}
 
 \section{Execution environment}
 The empirical analysis is based on the output of executing different
@@ -38,33 +90,3 @@ Memory & Hynix/Hyundai 2048 MB DDR3 RAM @ 1333 MHz $\times$ 2 \\
 %\end{table}
 
 \section{Plausible usage profiles}
-
-
-\section{Parameter value effects on performance}
-\begin{figure}[!hbp]
-    \includegraphics[width=\textwidth]{figures/rollback_naive_results_plot.png}
-    \caption{Na\"ive rollback implementation: Plot of average time in ms per
-    access operation for combinations of the two parameters: minimum distance
-    between snapshots ranging from 50 to 250 and maximum allowed number of
-    snapshots ranging from 1000 to 10000.}
-    \label{fig:rollback_naive_results_plot.png}
-\end{figure}
-
-\begin{figure}[!hbp]
-    \includegraphics[width=\textwidth]{figures/rollback_reorder_results_plot.png}
-    \caption{Rollback implementation with operations optimization: Plot of
-    average time in ms per access operation for combinations of the two
-    parameters: minimum distance between snapshots ranging from 50 to 250 and
-    maximum allowed number of snapshots ranging from 1000 to 10000.}
-    \label{fig:rollback_reorder_results_plot.png}
-\end{figure}
-
-\begin{figure}[!hbp]
-    \includegraphics[width=\textwidth]{figures/rollback_results_count_var_plot.png}
-    \caption{All implementations compared: When comparing all the
-    implementations with the optimal parameters chosen for the rollback
-    implementations, it is clear that the Node Copying method is far more
-    efficient at accessing previous versions than either of the rollback
-    implementations.}
-    \label{fig:rollback_results_count_var_plot.png}
-\end{figure}
