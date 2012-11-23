@@ -9,6 +9,19 @@
   \item Practical (not theoretical) conclusions
 \end{enumerate}
 
+Different plausible usage scenarios have been implemented in order to test and
+compare the performance of the Node Copying and Rollback approaches.
+
+\begin{itemize}
+
+  \item Pseudo-random choice between the following four operations: insert,
+  modify, remove, access.
+
+  \item Sequential bulk application of operations in the following order:
+  insert, modify, remove, access
+
+\end{itemize}
+
 \section{Execution environment}
 The empirical analysis is based on the output of executing different
 implementations on a machine with the following specifications:
@@ -23,6 +36,9 @@ Memory & Hynix/Hyundai 2048 MB DDR3 RAM @ 1333 MHz $\times$ 2 \\
 \hline
 \end{tabular}
 %\end{table}
+
+\section{Plausible usage profiles}
+
 
 \section{Parameter value effects on performance}
 \begin{figure}[!hbp]
