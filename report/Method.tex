@@ -1,21 +1,5 @@
 \chapter{Method}
 
-\begin{enumerate}   \item Description of Node Copying as a method
-  \begin{enumerate}     \item Node structure expansion
-    \begin{enumerate}       \item Back pointers
-      \item Modifications \item Bounds on numbers of the above \item How it
-      works \item Why it works     \end{enumerate}
-    \item Surrounding structure (collection of version information)
-    \begin{enumerate}       \item Considerations about effecient storage and
-    retrieval of version info     \end{enumerate}
-  \end{enumerate}
-  \item Description of ``Rollback'' as a method \begin{enumerate}     \item
-  Description of reordering and optimization of operations (see algorithm
-  \ref{alg:opsort} on page \pageref{alg:opsort})
-  \end{enumerate}
-  \item Definitions of various application profiles (how the DS is used)
-  \end{enumerate}
-
 \section{The Node Copying method}
 The purpose of the Node Copying method is to enable partial persistence in a
 node-based data structure with bounded in-degree with a constant factor overhead
@@ -128,11 +112,10 @@ procedure:
   the head at version $v$.
 
   \item If $n$ is $\textsc{nil}$, return $s$.\label{proc:check-n-return-s}
-  
-  \item Otherwise, look up the value for its \textsc{data} field according to
-  algorithm \ref{alg:node-copying-get-field-value} and add it to $s$.
-  
-  \item Then set $n$ to the value for its own \textsc{next} field according to
+  Otherwise, look up the value for its \textsc{data} field using algorithm
+  \ref{alg:node-copying-get-field-value} and add it to $s$.
+
+  \item Then set $n$ to the value for its own \textsc{next} field using
   algorithm \ref{alg:node-copying-get-field-value} and go to step
   \ref{proc:check-n-return-s}.
 
@@ -511,9 +494,9 @@ also works on a greater index than $o_b$.
 \label{lemma:reorder-swap}
 
 Any operation $o_b$ may be swapped with the immediately preceeding operation
-$o_a$ if $o_a$ has a greater index of application. When $o_a$ is duly
-compensated, the result will be the same.
-
+$o_a$ if $o_a$ has a greater index of application. When $o_a$ is replaced by
+$o_a1$, which has been compensated as described above, the result will be the
+same.
 \end{lemma}
 
 If $o_{min_i}$ is swapped with each operation in $L_i$ -- which is possible by
@@ -565,3 +548,21 @@ which is $O\left(\left(l+n\right)^2\right)$ for $n$ operations on an existing
 list of length $l$, it is worth noting that only in the case of an empty list
 and a long sequence of operations, the reordering algorithm is asymptotically as
 slow. In all other cases, it is \emph{asymptotically} faster.
+
+\section{Comparison}
+The two approaches have different asymptotic time and space bounds.
+
+\begin{itemize}
+
+  \item Node Copying should have constant factor overhead per operation
+
+  \item Rollback should have constant factor overhead per operation, but
+  expected to be much greater to avoid making too many full copies. Also, the
+  factor will eventually jump when limit is reached, and is as such not
+  constant.
+
+  \item Once the head node for version has been retrieved, Node Copying should
+  be slower than Rollback since getting the next node involves reading (a
+  constant factor) more data.
+
+\end{itemize}

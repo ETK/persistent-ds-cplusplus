@@ -1,12 +1,45 @@
 \chapter{Empirical Analysis}
 
-\begin{enumerate}
-  \item Execution parameters
-  \item Specific application profiles
-  \item Result statistics (min/max/avg/stddev)
-  \item Graphs with captions
-  \item Practical (not theoretical) conclusions
-\end{enumerate}
+Both approaches support the following operations:
+
+\begin{description}
+
+  \item[$\textsc{insert}(i,d)$] Inserts an element with data $d$ at index $i$.
+
+  \item[$\textsc{modify}(i,d)$] Modifies the data of the element at index $i$ to
+  $d$.
+
+  \item[$\textsc{remove}(i)$] Removes the element at index $i$.
+
+  \item[$\textsc{access}(v,i)$] Returns the value of the element at index $i$ in
+  version $v$.
+
+%   \item[$\textsc{num\_versions}()$] Returns the total number of versions.
+% 
+%   \item[$\textsc{head\_at}(v)$] Returns the head node of the list at version
+%   $v$.
+% 
+%   \item[$\textsc{size\_at}(v)$] Returns the size of the list at version $v$.
+
+\end{description}
+
+In testing the performance of the approaches in practice, we will look at how
+they perform under various usage scenarios.
+
+When either of the two approaches are to be used in practice, one can imagine
+different usage scenarios:
+
+\begin{description}
+
+  \item[Uniformly random] The operations are executed in random order with no
+  particular pattern. They may be weighted such that there is different
+  probability for choosing different operations.
+
+  \item[Sequential] The different types of operations are executed in sequences,
+  e.g. first a number of \textsc{insert} operations, then a number of
+  \textsc{access} operations. 
+
+\end{description}
 
 Different plausible usage scenarios have been implemented in order to test and
 compare the performance of the Node Copying and Rollback approaches.
@@ -26,8 +59,8 @@ compare the performance of the Node Copying and Rollback approaches.
 
 \end{itemize}
 
-The above scenarios have been implemented in the program \texttt{msc} which has
-the following parameters:
+The above scenarios have been implemented in the program \texttt{msc}, which
+accepts the following parameters:
 
 \begin{description}
 
