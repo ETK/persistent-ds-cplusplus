@@ -35,7 +35,6 @@ namespace partiallypersistent {
 
   public:
     struct version_info_t {
-      size_t version;
       Node *head;
       size_t size;
     };
@@ -87,7 +86,6 @@ namespace partiallypersistent {
                          partiallypersistent::Node * &head);
 
       std::vector < version_info_t > versions;
-    size_t modifications;
   };
 }
 #endif                          // PARTIALLYPERSISTENT_DOUBLYLINKEDLIST_H

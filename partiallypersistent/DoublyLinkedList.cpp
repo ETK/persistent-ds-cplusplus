@@ -38,19 +38,22 @@ using namespace std;
 
 namespace partiallypersistent {
 
-  DoublyLinkedList::DoublyLinkedList () {
+  DoublyLinkedList::DoublyLinkedList () : AbstractDoublyLinkedList() {
     versions = vector < version_info_t > ();
     version = 0UL;
-    modifications = 0UL;
+    version_info_t v;
+    v.head = 0x0;
+    v.size = 0;
+    versions.push_back(v);
   };
   
   const std::size_t DoublyLinkedList::a_access (const std::size_t version,
                                                 const std::size_t index) {
-    Node* node = head_at(version + 1);
+    Node* node = head_at(version);
     for (size_t i = 0; i < index; ++i) {
-      node = node->next_at(version + 1);
+      node = node->next_at(version);
     }
-    return node->data_at(version + 1);
+    return node->data_at(version);
   }
 
   void DoublyLinkedList::a_insert (const std::size_t index,
@@ -88,7 +91,7 @@ namespace partiallypersistent {
   }
 
   void DoublyLinkedList::a_print_at (std::size_t version) {
-    print_at_version(version + 1);
+    print_at_version(version);
   }
 
 #ifdef EXTRA_ASSERTS
@@ -105,20 +108,19 @@ namespace partiallypersistent {
 
   pair < size_t, Node * >DoublyLinkedList::insert (size_t data, size_t index) {
 #ifdef LOGGING
-    cout << "v" << version + 1 << ": insert (" << data << ", " <<
+    cout << "v" << version << ": insert (" << data << ", " <<
       index << ")" << endl;
 #endif
 
     version_info_t new_version;
-    modifications = 1;
-    new_version.version = ++version;
+    ++version;
 
     Node *new_node = new Node ();
     new_node->data_val = data;
 
     if (versions.size () > 0 && head ()) {
       Node* new_head = head();
-      // skip through list until correct position is found, or insert at end if index + 1 > size
+      // skip through list until correct position is found, or insert at end if index > size
       Node *current_head = head ();
       Node *to_be_next = current_head;
       Node *to_be_prev;
@@ -195,8 +197,7 @@ namespace partiallypersistent {
 
     version_info_t new_version;
     new_version.size = versions.back ().size - 1;
-    new_version.version = ++version;
-    modifications = 1;
+    ++version;
 
     Node *before = to_remove->prev ();
     Node *after = to_remove->next ();
@@ -284,10 +285,6 @@ namespace partiallypersistent {
       field_name_s << ", " << value_s << ")" << endl;
 #endif
 
-
-
-    modifications++;
-
     if (node->n_mods < MAX_MODS) {
       Node::mod_t mod;
       mod.version = version;
@@ -319,8 +316,7 @@ namespace partiallypersistent {
 #endif
 
     version_info_t new_version;
-    modifications = 1;
-    new_version.version = ++version;
+    ++version;
     new_version.size = versions.back ().size;
     Node* current_head = head ();
 
@@ -341,8 +337,6 @@ namespace partiallypersistent {
 #ifdef LOGGING
     cout << "  COPY (";
 #endif
-    modifications++;
-
 
     // copy latest version of each field (data and forward pointers) to the static field section.
     copy->data_val = node->data ();
@@ -440,21 +434,13 @@ namespace partiallypersistent {
 
   Node *DoublyLinkedList::head_at (std::size_t v) const {
     return versions[v].head;
-//     Node *head = versions.front ().head;
-//     for (vector < pair < size_t, Node * > >::size_type i = 0;
-//          i < versions.size (); ++i) {
-//       if (versions[i].version <= v) {
-//         head = versions[i].head;
-//       } else {
-//         break;
-//       }
-//     }
-//     return head;
   }
 
   size_t DoublyLinkedList::size_at (size_t v) const {
     return versions[v].size;
-  } size_t DoublyLinkedList::size () const {
+  };
+
+  size_t DoublyLinkedList::size () const {
     if (versions.size() > 0) {
       return versions.back ().size;
     } else {
@@ -527,7 +513,7 @@ namespace partiallypersistent {
       to_print.push_back (n->prev_ptr);
       out << "    struct" << n << ":prev -> struct" << n->prev_ptr <<
         ":id [color=blue, ";
-      if (n->prev_ptr != prev) {
+      if (live_set.find(n) == live_set.end() || n->prev_ptr != prev) {
         out << "style=dashed";
       }
       out << "];" << endl;
@@ -536,7 +522,7 @@ namespace partiallypersistent {
       to_print.push_back (n->next_ptr);
       out << "    struct" << n << ":next -> struct" << n->next_ptr <<
         ":id [color=green, ";
-      if (next != 0x0 && n->next_ptr != next) {
+      if (live_set.find(n) == live_set.end() || next != 0x0 && n->next_ptr != next) {
         out << "style=dashed";
       }
       out << "];" << endl;
@@ -552,7 +538,7 @@ namespace partiallypersistent {
           to_print.push_back (n->mods[i].value);
           out << "    struct" << n << ":prev" << i << " -> struct" <<
             n->mods[i].value << ":id [color=blue, ";
-          if (prev != 0x0 && n->mods[i].value != prev) {
+          if (live_set.find(n) == live_set.end() || prev != 0x0 && n->mods[i].value != prev) {
             out << "style=dashed";
           }
           out << "];" << endl;
@@ -561,7 +547,7 @@ namespace partiallypersistent {
           to_print.push_back (n->mods[i].value);
           out << "    struct" << n << ":next" << i << " -> struct" <<
             n->mods[i].value << ":id [color=green, ";
-          if (n->mods[i].value != next) {
+          if (live_set.find(n) == live_set.end() || n->mods[i].value != next) {
             out << "style=dashed";
           }
           out << "];" << endl;
@@ -608,37 +594,60 @@ namespace partiallypersistent {
     if (visited.find (n) != visited.end ()) {
       return;
     }
+
+    bool is_live = live_set.find(n) != live_set.end();
+    
     Node *prev = n->prev_at (v);
     Node *next = n->next_at (v);
     visited.insert (n);
-    if (n->prev_ptr) {
-      if (n->prev_ptr == prev) {
-        live_set.insert (n->prev_ptr);
-      }
-      prepare_live_set_helper (n->prev_ptr, live_set, v, visited);
-    }
-    if (n->next_ptr) {
-      if (n->next_ptr == next) {
-        live_set.insert (n->next_ptr);
-      }
-      prepare_live_set_helper (n->next_ptr, live_set, v, visited);
-    }
-    for (size_t i = 0; i < n->n_mods; ++i) {
+
+    for (size_t i = n->n_mods - 1; i != -1; --i) {
       switch (n->mods[i].field_name) {
       case PREV:
-        if (n->mods[i].value == prev) {
-          live_set.insert (n->mods[i].value);
+        if (is_live && n->mods[i].value == prev) {
+          live_set.insert (prev);
         }
-        prepare_live_set_helper (n->mods[i].value, live_set, v, visited);
         break;
       case NEXT:
-        if (n->mods[i].value == next) {
-          live_set.insert (n->mods[i].value);
+        if (is_live && n->mods[i].value == next) {
+          live_set.insert (next);
         }
-        prepare_live_set_helper (n->mods[i].value, live_set, v, visited);
+        break;
       default:
         continue;
       }
+    }
+    if (n->prev_ptr) {
+      if (is_live && n->prev_ptr == prev) {
+        live_set.insert (n->prev_ptr);
+      }
+    }
+    if (n->next_ptr) {
+      if (is_live && n->next_ptr == next) {
+        live_set.insert (n->next_ptr);
+      }
+    }
+    
+    for (size_t i = n->n_mods - 1; i != -1; --i) {
+      if (n->mods[i].version > v) {
+        continue;
+      }
+      switch (n->mods[i].field_name) {
+      case PREV:
+        prepare_live_set_helper (n->mods[i].value, live_set, v, visited);
+        break;
+      case NEXT:
+        prepare_live_set_helper (n->mods[i].value, live_set, v, visited);
+        break;
+      default:
+        continue;
+      }
+    }
+    if (n->prev_ptr) {
+      prepare_live_set_helper (n->prev_ptr, live_set, v, visited);
+    }
+    if (n->next_ptr) {
+      prepare_live_set_helper (n->next_ptr, live_set, v, visited);
     }
   }
 
@@ -650,15 +659,18 @@ namespace partiallypersistent {
   void DoublyLinkedList::print_dot_graph (size_t v, ofstream & out) {
     set < Node * >printed = set < Node * >();
     set < Node * >live_set = set < Node * >();
+    Node *head = head_at (v);
+    if (head == 0x0) {
+      return;
+    }
 
     out << "digraph G {" << endl;
     out << "    label=\"List at version " << v << "\";" << endl;
     out << "    rankdir=LR;" << endl;
     out << "    node [shape=record];" << endl;
     out << endl;
-    Node *head = head_at (v);
-    prepare_live_set (head, live_set, v);
     live_set.insert (head);
+    prepare_live_set (head, live_set, v);
     print_dot_graph_helper (head, v, printed, live_set, out);
     out << "    structhead [label=\"<a> head\"];" << endl;
     out << "    structhead:a -> struct" << head << ":id;" << endl;
