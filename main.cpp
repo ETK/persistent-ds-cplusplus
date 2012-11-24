@@ -13,38 +13,41 @@
 using namespace std;
 
 
-double rand01() {
-  return (double) rand()/RAND_MAX;
+double
+rand01 () {
+  return (double) rand () / RAND_MAX;
 }
 
-static void hdl (int sig, siginfo_t *siginfo, void *context) {
+static void
+hdl (int sig, siginfo_t * siginfo, void *context) {
   if (sig == SIGUSR1) {
-    cout.setf(ios::showpoint);
-    cout << "Progress: " << setprecision(15) << main_ns::current_op_no << " / " << main_ns::count
-         << " (" << setprecision(4)
-         << (100.0 * main_ns::current_op_no) / main_ns::count << "%)"
-         << endl;
+    cout.setf (ios::showpoint);
+    cout << "Progress: " << setprecision (15) << main_ns::current_op_no <<
+      " / " << main_ns::count << " (" << setprecision (4)
+      << (100.0 * main_ns::current_op_no) / main_ns::count << "%)" << endl;
   }
 }
 
 int
 main (int argc, char **argv) {
-  main_ns::start_time = main_ns::nano_time();
+  main_ns::start_time = main_ns::nano_time ();
 
   using namespace main_ns;
 
   main_ns::mode_t mode = main_ns::rollback_reorder_lazy;
+  bool only_measure_time_to_head = false;
+
   double p_remove = 0.25;
   double p_modify = 0.25;
   double p_access = 0.25;
   double p_insert = 0.25;
 
   struct sigaction act;
-  memset (&act, '\0', sizeof(act));
+  memset (&act, '\0', sizeof (act));
   act.sa_sigaction = &hdl;
   act.sa_flags = SA_SIGINFO;
-  if (sigaction(SIGUSR1, &act, NULL) < 0) {
-    perror("sigaction");
+  if (sigaction (SIGUSR1, &act, NULL) < 0) {
+    perror ("sigaction");
     return 1;
   }
 
@@ -85,6 +88,8 @@ main (int argc, char **argv) {
         store_results = true;
       } else if ("--randomize-operations" == arg) {
         randomize_operations = true;
+      } else if ("-h" == arg || "--head-only" == arg) {
+        only_measure_time_to_head = true;
       }
     }
 
@@ -100,7 +105,6 @@ main (int argc, char **argv) {
       sqlite3_close (db);
       return 1;
     }
-
 //     rc =
 //       sqlite3_exec (db,
 //                     "drop table if exists results", callback, 0, &zErrMsg);
@@ -116,18 +120,22 @@ main (int argc, char **argv) {
       sqlite3_free (zErrMsg);
     }
 
-    srand(0);
-    AbstractDoublyLinkedList* list = 0x0;
+    srand (0);
+    AbstractDoublyLinkedList *list = 0x0;
     switch (mode) {
-      case main_ns::partiallypersistent:
-        list = new partiallypersistent::DoublyLinkedList();
-        break;
-      case main_ns::rollback_reorder:
-        list = new rollback_reorder::DoublyLinkedList(max_no_snapshots, max_snapshot_dist);
-        break;
-      case main_ns::rollback_reorder_lazy:
-        list = new rollback_reorder_lazy::DoublyLinkedList(max_no_snapshots, max_snapshot_dist);
-        break;
+    case main_ns::partiallypersistent:
+      list = new partiallypersistent::DoublyLinkedList ();
+      break;
+    case main_ns::rollback_reorder:
+      list =
+        new rollback_reorder::DoublyLinkedList (max_no_snapshots,
+                                                max_snapshot_dist);
+      break;
+    case main_ns::rollback_reorder_lazy:
+      list =
+        new rollback_reorder_lazy::DoublyLinkedList (max_no_snapshots,
+                                                     max_snapshot_dist);
+      break;
     }
     size_t insert_count = 0;
     long long insert_duration = 0;
@@ -148,7 +156,7 @@ main (int argc, char **argv) {
     for (size_t i = 0; i < main_ns::count; ++i) {
       operation_type_t op;
       if (randomize_operations) {
-        double r = rand01();
+        double r = rand01 ();
         if (r < p_remove) {
           op = main_ns::remove;
         } else if (r < p_remove + p_modify) {
@@ -159,7 +167,7 @@ main (int argc, char **argv) {
           op = insert;
         }
       } else {
-        double progress = ((double)i) / main_ns::count;
+        double progress = ((double) i) / main_ns::count;
         if (progress < p_insert) {
           op = insert;
         } else if (progress < p_insert + p_modify) {
@@ -170,35 +178,47 @@ main (int argc, char **argv) {
           op = main_ns::access;
         }
       }
-      begin_operation = nano_time();
-      size_t list_size = list->a_size();
-      size_t index = (size_t) (rand01() * list_size);
-      size_t version = list->a_num_versions();
+      begin_operation = nano_time ();
+      size_t list_size = list->a_size ();
+      size_t index = 0;
+      if (!only_measure_time_to_head) {
+        index = (size_t) (rand01 () * list_size);
+      }
+      size_t version = list->a_num_versions ();
       if (op == main_ns::remove && list_size > 0) {
         ++remove_count;
-        list->a_remove(index);
-        remove_duration += (long long) (nano_time() - begin_operation);
+        list->a_remove (index);
+        remove_duration += (long long) (nano_time () - begin_operation);
       } else if (op == modify && list_size > 0) {
         ++modify_count;
-        list->a_modify(index, i);
-        modify_duration += (long long) (nano_time() - begin_operation);
-      } else if (op == main_ns::access && list->a_size_at(version = rand01() * list->a_num_versions()) > 0) {
+        list->a_modify (index, i);
+        modify_duration += (long long) (nano_time () - begin_operation);
+      } else if (op == main_ns::access
+                 && list->a_size_at (version =
+                                     rand01 () * list->a_num_versions ()) >
+                 0) {
         ++access_count;
-        index = rand01() * list->a_size_at(version);
-        access_duration += (long long) (nano_time() - begin_operation);
+        if (!only_measure_time_to_head) {
+          index = rand01 () * list->a_size_at (version);
+        }
+        access_duration += (long long) (nano_time () - begin_operation);
       } else {
         ++insert_count;
-        list->a_insert(index, i);
-        insert_duration += (long long) (nano_time() - begin_operation);
+        list->a_insert (index, i);
+        insert_duration += (long long) (nano_time () - begin_operation);
       }
       ++current_op_no;
     }
 
     if (store_results) {
-      log_operation_to_db(mode, insert_count, "insert", max_no_snapshots, max_snapshot_dist, 0, insert_duration);
-      log_operation_to_db(mode, modify_count, "modify", max_no_snapshots, max_snapshot_dist, 0, modify_duration);
-      log_operation_to_db(mode, remove_count, "remove", max_no_snapshots, max_snapshot_dist, 0, remove_duration);
-      log_operation_to_db(mode, access_count, "access", max_no_snapshots, max_snapshot_dist, 0, access_duration);
+      log_operation_to_db (mode, insert_count, "insert", max_no_snapshots,
+                           max_snapshot_dist, 0, insert_duration);
+      log_operation_to_db (mode, modify_count, "modify", max_no_snapshots,
+                           max_snapshot_dist, 0, modify_duration);
+      log_operation_to_db (mode, remove_count, "remove", max_no_snapshots,
+                           max_snapshot_dist, 0, remove_duration);
+      log_operation_to_db (mode, access_count, "access", max_no_snapshots,
+                           max_snapshot_dist, 0, access_duration);
     }
 
     sqlite3_close (db);
@@ -210,4 +230,4 @@ main (int argc, char **argv) {
   }
 }
 
-// kate: indent-mode cstyle; indent-width 1; replace-tabs on; ;
+// kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
