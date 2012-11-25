@@ -135,10 +135,9 @@ and a mutable copy of the data structure at that version is made. Then, using
 the log of the versions from $v_s$ to $v_x$, the data structure corresponding to
 $v_x$ is produced and returned.
 
-To reach the full copy nearest to version $v$, the following expression is used:
-$$
-\left\lfloor \frac{v + \frac{d}{2}}{d} \right\rfloor
-$$
+To reach the full copy nearest to version number $v$, the following expression
+is used:
+$$ \left\lfloor \frac{v + \frac{d}{2}}{d} \right\rfloor $$
 
 Naturally, $d$ is a user parameter. If there are $n$ versions, there will be
 $\left\lfloor \frac{n}{d} \right\rfloor$ full copies, and the maximum number of

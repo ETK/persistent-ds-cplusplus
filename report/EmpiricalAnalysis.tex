@@ -1,6 +1,7 @@
 \chapter{Empirical Analysis}
 
-Both approaches support the following operations:
+I have implemented Node Copying and Rollback for a doubly linked list. Both
+implementations support the following operations:
 
 \begin{description}
 
@@ -11,20 +12,43 @@ Both approaches support the following operations:
 
   \item[$\textsc{remove}(i)$] Removes the element at index $i$.
 
-  \item[$\textsc{access}(v,i)$] Returns the value of the element at index $i$ in
-  version $v$.
+\end{description}
 
-%   \item[$\textsc{num\_versions}()$] Returns the total number of versions.
-% 
-%   \item[$\textsc{head\_at}(v)$] Returns the head node of the list at version
-%   $v$.
-% 
-%   \item[$\textsc{size\_at}(v)$] Returns the size of the list at version $v$.
+These first three represent the usual operations available on a linked list,
+with bulk operation friendly parameters (conventional linked list
+implementations take a pointer to a node instead of an index). The difference is
+that they create a new version of the data structure.
+
+\begin{description}
+
+  \item[$\textsc{head}(v)$] Returns the head node of the list at version
+  $v$.
+
+  \item[$\textsc{size}(v)$] Returns the size of the list at version $v$.
 
 \end{description}
 
-In testing the performance of the approaches in practice, we will look at how
-they perform under various usage scenarios.
+These next two are also usually available in a linked list implementation, but
+these variants take the number of a version $v$ from which to return the
+information.
+
+\begin{description}
+
+  \item[$\textsc{access}(v,i)$] Returns the value of the element at index $i$ in
+  version $v$.
+
+  \item[$\textsc{num\_versions}()$] Returns the total number of versions.
+
+\end{description}
+
+These last two are implemented for the convenience of testing bulk usage of the
+data structure.
+
+Let the operations $\textsc{insert}(i,d)$, $\textsc{modify}(i,d)$,
+$\textsc{remove}(i)$ and $\textsc{access}(v,i)$ be the ones benchmarked.
+
+In bemchmarking the performance of the approaches in practice, we will look at
+how they perform under various usage scenarios.
 
 When either of the two approaches are to be used in practice, one can imagine
 different usage scenarios:
@@ -37,27 +61,12 @@ different usage scenarios:
 
   \item[Sequential] The different types of operations are executed in sequences,
   e.g. first a number of \textsc{insert} operations, then a number of
-  \textsc{access} operations. 
+  \textsc{access} operations.
+
+  \item[Worst-case] With certain usage patterns, one implementation may perform
+  significantly worse than average.
 
 \end{description}
-
-Different plausible usage scenarios have been implemented in order to test and
-compare the performance of the Node Copying and Rollback approaches.
-
-\begin{itemize}
-
-  \item Pseudo-random choice uniformly distributed between the following four
-  operations: insert, modify, remove, access.
-  
-  This scenario represents varied use of the data structure over time.
-
-  \item Sequential bulk application of operations in the following order:
-  insert, modify, remove, access.
-  
-  This scenario represents bulk usage of the data structure when access only
-  happens after all the other operation types.
-
-\end{itemize}
 
 The above scenarios have been implemented in the program \texttt{msc}, which
 accepts the following parameters:
