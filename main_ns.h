@@ -10,7 +10,7 @@ namespace main_ns {
   using namespace std;
 
   enum mode_t {
-    rollback_reorder,
+    rollback_lazy,
     rollback_reorder_lazy,
     partiallypersistent
   };
@@ -33,8 +33,8 @@ namespace main_ns {
   string
   mode_to_string (mode_t mode) {
     switch (mode) {
-    case rollback_reorder:
-      return "rollback_reorder";
+    case rollback_lazy:
+      return "rollback_lazy";
     case rollback_reorder_lazy:
       return "rollback_reorder_lazy";
     case partiallypersistent:

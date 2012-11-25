@@ -119,25 +119,36 @@ DoublyLinkedList::DoublyLinkedList (DoublyLinkedList && other):head (std::move (
   }
 
   void DoublyLinkedList::insert (Node & new_node, std::size_t index) {
-    if (index == 0 || !head) {
-      insert (new_node);
-    } else {
-      Node *before = head;
-      for (size_t i = 0; i < index; ++i) {
-        if (before->next) {
-          before = before->next;
-        } else {
-          break;
-        }
+    bool already_done = false;
+    Node* node = head;
+    for (size_t i = 0; i < index; ++i) {
+      if (node->next) {
+        node = node->next;
+      } else {
+        node->next = &new_node;
+        new_node.prev = node;
+        node = &new_node;
+        ++size;
+        already_done = true;
+        break;
       }
-      new_node.prev = before;
-      new_node.next = before->next;
-      if (before->next) {
-        before->next->prev = &new_node;
-      }
-      before->next = &new_node;
-      ++size;
     }
+    if (already_done) {
+      return;
+    }
+
+    if (node && node->prev) {
+      node->prev->next = &new_node;
+      new_node.prev = node->prev;
+    } else {
+      head = &new_node;
+    }
+    if (node) {
+      node->prev = &new_node;
+    }
+    new_node.next = node;
+    ++size;
+          
 #ifdef VERIFY_STRICT
     assert (real_size () == size);
 #endif

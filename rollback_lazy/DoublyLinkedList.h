@@ -17,29 +17,24 @@
 */
 
 
-#ifndef ROLLBACK_NAIVE_DOUBLYLINKEDLIST_H
-#define ROLLBACK_NAIVE_DOUBLYLINKEDLIST_H
+#ifndef ROLLBACK_LAZY_DOUBLYLINKEDLIST_H
+#define ROLLBACK_LAZY_DOUBLYLINKEDLIST_H
 
 #include <cstdlib>
 #include <vector>
 
 #include "../ephemeral/DoublyLinkedList.h"
 #include "../ephemeral/Node.h"
-
-// #define DEBUG_SNAPSHOT_FEATURE
-#undef DEBUG_SNAPSHOT_FEATURE
-#ifdef DEBUG_SNAPSHOT_FEATURE
-#include <iostream>
-#endif
+#include "../AbstractDoublyLinkedList.h"
 
 #define INIT_MAX_SNAPSHOT_DIST 100UL
 #define MAX_NO_SNAPSHOTS 1200UL
 
-namespace rollback_naive {
+namespace rollback_lazy {
   enum operation_t {
     INSERT,
+    MODIFY,
     REMOVE,
-    MODIFY
   };
 
   enum action_t {
@@ -52,10 +47,14 @@ namespace rollback_naive {
       std::size_t index;
       std::size_t old_data;
       std::size_t data;
-      std::size_t size;
+      std::size_t size = 0;
+
+    bool operator < (const record_t & other) const {
+      return index < other.index;
+    }
   };
 
-  class DoublyLinkedList {
+  class DoublyLinkedList:public AbstractDoublyLinkedList {
 
   public:
     DoublyLinkedList ();
@@ -76,21 +75,34 @@ namespace rollback_naive {
       std::size_t size ();
       std::size_t size_at (std::size_t v);
 
+    const std::size_t a_access (const std::size_t version,
+                                const std::size_t index);
+    void a_insert (const std::size_t index, const std::size_t value);
+    void a_modify (const std::size_t index, const std::size_t value);
+    void a_remove (const std::size_t index);
+    const std::size_t a_size ();
+    const std::size_t a_size_at (const std::size_t version);
+    const std::size_t a_num_versions ();
+    void a_print_at (std::size_t version);
+
   private:
-      ephemeral::DoublyLinkedList ephemeral_current;
+      ephemeral::DoublyLinkedList * ephemeral_current;
 
       std::vector < record_t > records;
       std::vector < std::pair < std::size_t,
-      ephemeral::DoublyLinkedList > >snapshots;
+      ephemeral::DoublyLinkedList * >>snapshots;
       std::size_t max_snapshot_dist;
       std::size_t max_no_snapshots;
 
-    void rollback ();
     void rollforward ();
-    void jump_to_snapshot (size_t v);
+    void rollback ();
+    void jump_to_snapshot (std::size_t v);
+    void ensure_version (std::size_t v);
 
       std::size_t next_record_index;
+
+      std::size_t get_snapshot_index (std::size_t v);
   };
 }
-#endif                          // ROLLBACK_NAIVE_DOUBLYLINKEDLIST_H
+#endif                          // ROLLBACK_LAZY_DOUBLYLINKEDLIST_H
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;

@@ -523,6 +523,7 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
           if (index == 0) {
             ephemeral_current->head = node->next;
           }
+          ephemeral::Node* tmp = node;
           if (node->next) {
             node = node->next;
           } else {
@@ -532,9 +533,9 @@ DoublyLinkedList::DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot
             }
           }
 
-//           node->next = 0x0;
-//           node->prev = 0x0;
-//           delete node;
+          tmp->next = 0x0;
+          tmp->prev = 0x0;
+          delete tmp;
 
           --ephemeral_current->size;
         } else if (ri.operation == INSERT) {

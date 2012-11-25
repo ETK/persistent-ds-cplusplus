@@ -6,7 +6,7 @@
 #include <cstring>
 
 #include "partiallypersistent/DoublyLinkedList.h"
-#include "rollback_reorder/DoublyLinkedList.h"
+#include "rollback_lazy/DoublyLinkedList.h"
 #include "rollback_reorder_lazy/DoublyLinkedList.h"
 
 using namespace std;
@@ -44,8 +44,8 @@ main (int argc, char **argv) {
   try {
     for (int i = 1; i < argc; ++i) {
       string arg = argv[i];
-      if ("-o" == arg || "--rollback-reorder" == arg) {
-        mode = main_ns::rollback_reorder;
+      if ("-r" == arg || "--rollback-lazy" == arg) {
+        mode = main_ns::rollback_lazy;
       } else if ("-l" == arg || "--rollback-reorder-lazy" == arg) {
         mode = main_ns::rollback_reorder_lazy;
       } else if ("-p" == arg || "--partially-persistent" == arg) {
@@ -76,9 +76,9 @@ main (int argc, char **argv) {
     case main_ns::partiallypersistent:
       list = new partiallypersistent::DoublyLinkedList ();
       break;
-    case main_ns::rollback_reorder:
+    case main_ns::rollback_lazy:
       list =
-        new rollback_reorder::DoublyLinkedList (max_no_snapshots,
+        new rollback_lazy::DoublyLinkedList (max_no_snapshots,
                                                 max_snapshot_dist);
       break;
     case main_ns::rollback_reorder_lazy:

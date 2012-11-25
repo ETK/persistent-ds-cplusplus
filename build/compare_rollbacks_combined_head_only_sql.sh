@@ -1,9 +1,9 @@
 #!/bin/bash
 
-begin_seq=$(<begin_log10_sequential_head_only)
-end_seq=$(<end_log10_sequential_head_only)
-begin_rnd=$(<begin_log10_head_only)
-end_rnd=$(<end_log10_head_only)
+begin_seq=$(<begin_compare_rollbacks_sequential_head_only)
+end_seq=$(<end_compare_rollbacks_sequential_head_only)
+begin_rnd=$(<begin_compare_rollbacks_head_only)
+end_rnd=$(<end_compare_rollbacks_head_only)
 
 sqlite3 -header -csv -separator ';' sqlite.db \
 "select load_extension('${HOME}/lib/libsqlitefunctions.so');
@@ -32,5 +32,5 @@ order by
   \`usage pattern\` desc,
   implementation,
   count
-;" | tr '.' ',' > 'gofigure_combined_head_only.csv'
+;" | tr '.' ',' > 'compare_rollbacks_combined_head_only.csv'
 

@@ -6,8 +6,8 @@
 
 #include <cstring>
 
+#include "rollback_lazy/DoublyLinkedList.h"
 #include "partiallypersistent/DoublyLinkedList.h"
-#include "rollback_reorder/DoublyLinkedList.h"
 #include "rollback_reorder_lazy/DoublyLinkedList.h"
 
 using namespace std;
@@ -78,8 +78,8 @@ main (int argc, char **argv) {
           ss << "No argument given to " << arg;
           throw ss.str ();
         }
-      } else if ("-o" == arg || "--rollback-reorder" == arg) {
-        mode = main_ns::rollback_reorder;
+      } else if ("-r" == arg || "--rollback-lazy" == arg) {
+        mode = main_ns::rollback_lazy;
       } else if ("-l" == arg || "--rollback-reorder-lazy" == arg) {
         mode = main_ns::rollback_reorder_lazy;
       } else if ("-p" == arg || "--partially-persistent" == arg) {
@@ -126,10 +126,10 @@ main (int argc, char **argv) {
     case main_ns::partiallypersistent:
       list = new partiallypersistent::DoublyLinkedList ();
       break;
-    case main_ns::rollback_reorder:
+    case main_ns::rollback_lazy:
       list =
-        new rollback_reorder::DoublyLinkedList (max_no_snapshots,
-                                                max_snapshot_dist);
+        new rollback_lazy::DoublyLinkedList (max_no_snapshots,
+                                             max_snapshot_dist);
       break;
     case main_ns::rollback_reorder_lazy:
       list =
@@ -179,33 +179,36 @@ main (int argc, char **argv) {
         }
       }
       begin_operation = nano_time ();
-      size_t list_size = list->a_size ();
       size_t index = 0;
-      if (!only_measure_time_to_head) {
-        index = (size_t) (rand01 () * list_size);
-      }
-      size_t version = list->a_num_versions ();
-      if (op == main_ns::remove && list_size > 0) {
-        ++remove_count;
-        list->a_remove (index);
-        remove_duration += (long long) (nano_time () - begin_operation);
-      } else if (op == modify && list_size > 0) {
-        ++modify_count;
-        list->a_modify (index, i);
-        modify_duration += (long long) (nano_time () - begin_operation);
-      } else if (op == main_ns::access
-                 && list->a_size_at (version =
-                                     rand01 () * list->a_num_versions ()) >
-                 0) {
+      size_t version;
+      if (op == main_ns::access
+          && list->a_size_at (version =
+                              rand01 () * list->a_num_versions ()) > 0) {
         ++access_count;
         if (!only_measure_time_to_head) {
           index = rand01 () * list->a_size_at (version);
         }
+        list->a_access(version, index);
         access_duration += (long long) (nano_time () - begin_operation);
       } else {
-        ++insert_count;
-        list->a_insert (index, i);
-        insert_duration += (long long) (nano_time () - begin_operation);
+        version = list->a_num_versions ();
+        size_t list_size = list->a_size ();
+        if (!only_measure_time_to_head) {
+          index = (size_t) (rand01 () * list_size);
+        }
+        if (op == main_ns::remove && list_size > 0) {
+          ++remove_count;
+          list->a_remove (index);
+          remove_duration += (long long) (nano_time () - begin_operation);
+        } else if (op == modify && list_size > 0) {
+          ++modify_count;
+          list->a_modify (index, i);
+          modify_duration += (long long) (nano_time () - begin_operation);
+        } else {
+          ++insert_count;
+          list->a_insert (index, i);
+          insert_duration += (long long) (nano_time () - begin_operation);
+        }
       }
       ++current_op_no;
     }
