@@ -2,127 +2,106 @@
 
 \section{The Node Copying method}
 The purpose of the Node Copying method is to enable partial persistence in a
-node-based data structure with bounded in-degree with a constant factor overhead
-on space and time consumption and transparent navigation of the data structure.
+node-based data structure with bounded in-degree $p$ with a constant factor
+overhead on space and time consumption and transparent navigation of the data
+structure.
 
 Node Copying is a method described in \cite{Driscoll198986} by which a data
 structure may be made partially persistent through the systematic expansion of
 the nodes of the data structure. An auxillary data structure maintaining entry
 points into the data structure, such as which node is the head of a linked list,
 is also introduced. These two modifications of the data structure enable queries
-to be made with $O(1)$ factor running time overhead and $O(1)$ space
-consumption, given that the original data structure has an upper bounded
+to be made with $O(1)$ factor amortized running time overhead and $O(1)$ factor
+space consumption, given that the original data structure has an upper bounded
 in-degree. In the following, I will describe in detail the general procedure as
 well as giving the concrete example of the linked list.
 
 \subsection{Node structure expansion}
 As part of the Node Copying method, the node structure is expanded by adding two
-arrays; one for ``back pointers'' and one for ``modifications''.
+arrays; one for ``modifications'' and one for ``back pointers''.
 
-\begin{description}
-  \item[Back pointers] 
+The modifications array records changes made to any of the fields of the
+node, including non-pointer fields, since the node was created --- the original
+field values from the time of construction remain unchanged. A modification
+record consist of a version number, a field identifier and a value.
 
-  point back from a node $x$ to every node $y_i$ which points to $x$. When the
-  in-degree has an upper bound, it is possible to restrict the size of the back
-  pointers array. Whenever a node $y_i$ changes one of its pointers, the node
-  $x$ it previously pointed to has the corresponding back pointer cleared, and
-  the node $z$ it now points to has its corresponding back pointer set to point
-  to $y_i$.
-  
-  For example, each node of a linked list would have a back pointer to the
-  previous node.
+To find the value of a field at a given version $v$, the modifications array is
+looked through, and the most recent change before or at $v$ is returned. If no
+modification is found, the original field value is returned.
 
-  \item[Modifications] store updates made to any of the fields of the node,
-  including non-pointer fields, made since the node was created -- that is, the
-  original field values from the time of construction remain unchanged. A
-  modification record consist of a version number, a field identifier and a
-  value.
-  
-  When a field is to be modified on a node whose modifications array is already
-  full, a copy of the node is constructed using the latest version of each field
-  (including the one which is to be changed), thus resulting in a new node with
-  an empty modifications array. The back pointers are also copied from the
-  original node, and if the field being updated is a pointer field, the
-  corresponding back pointer is updated in the destination node. This procedure
-  is why the overall method is called Node Copying. A constant maximum number of
-  modifications records is chosen such that node copying will have an amortized
-  cost of $O(1)$.
-\end{description}
+In the Fat Node method described in \cite{Driscoll198986}, there is no upper
+bound on the size of the modifications array. Therefore, the worst-case time to
+retrieve a field value is linearly proportional with the number of
+modifications.
 
-\subsection{Navigation of the Node Copying data structure}
-To navigate any node based data structure, an entry point is required. In a
-linked list the entry point is the head of the list, and in a binary search tree
-it is the root node. Some data structures have several entry points, e.g. the
-first and last elements of a doubly linked list.
+To get constant factor amortized overhead for field access, the size of the
+modifications array is bounded to the in-degree bound $p$. The time to retrieve
+the field value is then at most $c \cdot p + k = O(1)$ where $c$ is the time it
+takes to read each modification record and field identifiers and version
+numbers, and $k$ is the time it takes to read the original field if neccessary.
 
-In the Node Copying method, it is necessary to keep track of which node is the
-entry point for each version. A simple approach is to maintain a direct lookup
-table with an entry for each version. If one is especially concerned about the
-space cost of such a table, one could instead use an efficient predecessor data
-structure such as a Y-fast trie.
+If the modifications array is already occupied with previous changes when a new
+change is required, a copy $n'$ of the original node $n$ is made. The fields of
+$n'$ are set to the most recent versions of the fields in $n$, except that the
+field which was to be changed is instead set to the required value. Note that
+the modifications array of $n'$ is empty.
 
-Once the entry point for the desired version is obtained, the value of a field
-$f$ in version $v$ is found by the method described in algorithm
-\ref{alg:node-copying-get-field-value}. The essence is that if the modifications
-array contains any values for $f$, the most recent one with a version less than
-or equal to $v$ is returned --- otherwise, the original value of $f$ is
-returned.
+But if any nodes were -- in the most recent version -- pointing to $n$ prior to
+the change, they will need to be updated to point to $n'$. To be able to know
+which nodes were pointing to $n$, a ``back pointers'' array is maintained. Its
+size must of course be equal to the in-degree bound $p$ to be able to contain
+pointers to all nodes pointing to $n$. Whenever a pointer field in a node $y$ is
+updated to point to another node $x$ (either when $y$ is constructed or when the
+field is modified as described above), the corresponding back pointer in $x$ is
+updated to point to $y$.
 
-\begin{algorithm}[!ht]
-  \caption{Algorithm for retrieving the value of a field at a given version.}
-  \label{alg:node-copying-get-field-value}
-  \begin{algorithmic}[1]
-    \Require{$M$, size of modifications array}
-    \Function{FieldAtVersion}{field $f$, node $n$}
-      \State $v \gets n.f$
-      \For {$i \in \left\{0, \ldots, M-1\right\}$}
-        \If {$n.\textsc{mods}[i].\textsc{version} > v$}
-          \State break \textbf{for} loop
-        \ElsIf {$n.\textsc{mods}[i].\textsc{field} = f$}
-          \If {$n.\textsc{mods}[i].\textsc{version} = v$}
-            \State \Return $n.\textsc{mods}[i].\textsc{value}$
-          \Else
-            \State $v \gets n.\textsc{mods}[i].\textsc{value}$
-          \EndIf
-        \EndIf
-      \EndFor
-      \State \Return $v$
-    \EndFunction
-  \end{algorithmic}
-\end{algorithm}
+When $n'$ is created, the back pointers of $n$ are followed, and each of the
+nodes which pointed to $n$ will have a modification added referring to the
+relevant field, and pointing to $n'$. But if the modifications array is already
+full in one of these nodes, a copy of \emph{that} node will need to be made as
+described above. This cascading effect can repeat.
 
-\begin{figure}[!ht]
-  \includegraphics[width=.9\textwidth]{figures/node-copying-example.pdf}
+For example, when an element $y$ is inserted at the head of a singly linked
+list, its \textsc{next} pointer will point to the element $x$ which used to be
+the head of the list. The ``\textsc{next}-back'' pointer in $x$ is then set to
+point to $y$. If the modifications array of $x$ gets full and a copy $x'$ needs
+to be made to allow a new modification, the ``\textsc{next}-back'' pointer is
+followed to make a modification record in $y$ that in the new version, it should
+point to $x'$ instead of $x$. But if a modification was already made to $y$,
+e.g. its data field was updated, it will itself need to be copied according to
+the same scheme --- i.e. there may be a cascading effect.
 
-  \caption{To the left is the structure of a node from a doubly linked list.
-  Applying the Node Copying method, the node structure is transformed to the one
-  on the right. The modifications array is of size two due to there being two
-  pointer fields \textsc{prev} and \textsc{next}.}
+To prove that -- even with cascading effects -- there is still a constant factor
+amortized overhead per field change, we shall employ the potential technique.
 
-  \label{fig:node-copying-example}
-\end{figure}
+We define a \emph{live node} as a node which can be reached in the most recent
+version of the data structure, and a \emph{full} live node as a live node with a
+full modifications array. Let the potential function $\Phi(v)$ be the number of
+full live nodes at version $v$. Then the potential at the initial version
+$\Phi(0)$ is zero.
 
-If, for instance, one wanted to calculate the sum of the data fields of all
-nodes in a linked list at a specific version $v$, one would follow this
-procedure:
+The actual cost of an update to a full live node which causes a total of $k$
+copies to be made (both due to the node itself being copied and due to any
+cascading effects) is $O(k) + O(1)$ since each copy costs $O(1)$ both in space
+and time, and modifying a field costs $O(1)$. For each of the copies created,
+the original node is no longer live (since nodes pointing to it are updated to
+point to the copy), and the modifications array of the copy is empty. Thus, each
+copy decreases the potential by 1, and the total change in potential
+$\Delta\Phi$ is $O(-k)$ plus $O(1)$ in case the last update made via a back
+pointer fills the modifications array of that node. Therefore, the amortized
+time and space cost for the entire update operation is $O(k) + O(1) + (O(-k) +
+O(1)) = O(1)$.
 
-\begin{enumerate}
-
-  \item Initialize a result variable $s$ to 0 and a node pointer variable $n$ to
-  the head at version $v$.
-
-  \item If $n$ is $\textsc{nil}$, return $s$.\label{proc:check-n-return-s}
-  Otherwise, look up the value for its \textsc{data} field using algorithm
-  \ref{alg:node-copying-get-field-value} and add it to $s$.
-
-  \item Then set $n$ to the value for its own \textsc{next} field using
-  algorithm \ref{alg:node-copying-get-field-value} and go to step
-  \ref{proc:check-n-return-s}.
-
-\end{enumerate}
-
-\subsubsection{Amortized cost of Node Copying}
-\todo[inline]{Write up proof of amortized time cost of node copying}
+% \begin{figure}[!ht]
+%   \includegraphics[width=.9\textwidth]{figures/node-copying-example.pdf}
+% 
+%   \caption{To the left is the structure of a node from a doubly linked list.
+%   Applying the Node Copying method, the node structure is transformed to the one
+%   on the right. The modifications array is of size two due to there being two
+%   pointer fields \textsc{prev} and \textsc{next}.}
+% 
+%   \label{fig:node-copying-example}
+% \end{figure}
 
 \section{Rollback}
 Rollback is an approach to persistence based on the techniques described in
@@ -150,20 +129,25 @@ $v_0$ and $v_x$ is $v_n$, or opposite.
 \subsection{The hybrid approach}
 An obvious hybrid of the two na\"ive approaches is to keep the records of each
 operation like in the ``log'' approach, and storing a full copy like in the
-``copy'' approach only at certain intervals. To access version $v_x$, the
-nearest version to $v_x$ of which there exists a full copy, $v_s$, is retrieved.
-Then, using the log of the versions from $v_s$ to $v_x$, the data structure
-corresponding to $v_x$ is produced and returned.
+``copy'' approach only once every $d$ versions. To access version $v_x$, the
+nearest version to $v_x$ of which there exists a full copy, $v_s$, is retrieved
+and a mutable copy of the data structure at that version is made. Then, using
+the log of the versions from $v_s$ to $v_x$, the data structure corresponding to
+$v_x$ is produced and returned.
 
-Naturally, a user parameter is necessary to control the intervals at which full
-copies are made. Let this parameter be $d$ and the number of versions $n$. There
-will then be $\left\lfloor \frac{n}{d} \right\rfloor$ full copies, and the
-maximum number of undos or redos to reach a specific version is then
-$O(k+\frac{d}{2})$, where $k$ is the time required to retrieve the full copy. It
-is now easy to see that the greater $d$ is, the fewer full copies will be made,
-and thus the space cost is reduced accordingly. Likewise, the distance to the
-version in the middle between two full copies increases with $d$, inducing a
-higher cost for producing that version.
+To reach the full copy nearest to version $v$, the following expression is used:
+$$
+\left\lfloor \frac{v + \frac{d}{2}}{d} \right\rfloor
+$$
+
+Naturally, $d$ is a user parameter. If there are $n$ versions, there will be
+$\left\lfloor \frac{n}{d} \right\rfloor$ full copies, and the maximum number of
+operations to reach a specific version is then $O(k+\frac{d}{2})$, where $k$ is
+the time required to retrieve the full copy. It is now easy to see that the
+greater $d$ is, the fewer full copies will be made, and thus the space cost is
+reduced accordingly. Likewise, the distance to the version in the middle between
+two full copies increases with $d$, inducing a higher cost for producing that
+version.
 
 As an alternative to making a mutable copy of a full copy when a nearby version
 is requested, one could instead allow the full copies to be mutable and moved
@@ -172,15 +156,17 @@ maximum number of operations between a full copy and the desired version to $d$,
 but will reduce greatly the time cost of making a working copy of the full copy.
 If the full copies are originially uniformly distributed, direct lookup is still
 possible, but it is then needed for each full copy to annotate which version it
-represents.
+represents. If $d$ is constant, this approach allows constant time access to any
+version of the data structure.
 
-\subsubsection{Adaptive copy interval increase}
-It might be preferrable to be able to specify a space usage limit rather than a
-fixed interval distance. When the space limit is near, $d$ is increased by a
-factor $c$, and the existing full copies are discarded except from every $c$
-copy, thus freeing up space for additional full copies.
-
-\todo[inline]{Insert figure illustrating adaptive copy interval increase.}
+For large enough data sets, physical memory limits may restrict the ability to
+make new full copies. A way to avoid this is to increase $d$ by a factor $c$
+when near the limit and discard all but every $c$ full copy that exists. This
+will free some memory for creating new full copies, but will increase the
+distance between them to $d' = c \cdot d$. Therefore, the claim no longer holds
+that the time to access any version of the data structure is constant. Also, the
+time spent previously on creating the full copies which are now discarded is no
+longer valuable.
 
 \subsection{Operations sequence optimization}
 For certain underlying data structures, it may prove to be feasible to
@@ -337,11 +323,11 @@ operation and $o_j$ is a \textsc{remove} operation works as follows:
   greater index, $o_k$ will itself have the index it works on reduced by 1,
   since its original index depended on the element of $o_i$ being inserted
   before it.
-  
+
   \item When all operations between $o_i$ and $o_j$ have been examined thusly,
   $o_j$ and $o_i$ are removed from the sequence and the backwards iteration is
   resumed.
-  
+
 \end{itemize}
 
 When the backwards iteration is finished examining the first operation in the
@@ -550,7 +536,8 @@ and a long sequence of operations, the reordering algorithm is asymptotically as
 slow. In all other cases, it is \emph{asymptotically} faster.
 
 \section{Comparison}
-The two approaches have different asymptotic time and space bounds.
+As described in the previous sections, the two approaches have different
+asymptotic time and space bounds. 
 
 \begin{itemize}
 
