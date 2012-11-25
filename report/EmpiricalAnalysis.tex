@@ -100,7 +100,40 @@ accepts the following parameters:
 
 \end{description}
 
-\begin{figure}[!ht]
+\section{Results}
+
+I have run a series of experiments with various combinations of program
+arguments in order to determine the performance of each implementation.
+
+The sequential scenario is tested by first running a bulk of \textsc{insert}
+operations, then a bulk of \textsc{modify} operations, then a bulk of
+\textsc{remove} operations and finally a bulk of \textsc{access} operations. The
+bulks are of the same size, i.e. an equal fraction of the \texttt{count}
+argument. If the \texttt{-\@{}-head-only} argument is given, the index passed to
+the operations is 0. Otherwise, the index is randomly selected from the range
+$[0..N[$ where $N$ is the number of elements in the list. As for the
+\textsc{access} operations, the version is randomly chosen between the versions
+which exist when the operation is run.
+
+\subsection{Execution environment}
+The empirical analysis is based on the output of executing different
+implementations on a machine with the following specifications:
+
+%\begin{table}[!ht]
+\begin{tabular}{|l|l|}
+\hline
+CPU & Intel\textregistered Core\texttrademark i5-2400 CPU @ 3.10GHz $\times$ 4
+\\
+\hline
+Memory & Hynix/Hyundai 2048 MB DDR3 RAM @ 1333 MHz $\times$ 2 \\
+\hline
+Operating System & Ubuntu 12.10 64-bit \\
+\hline
+\end{tabular}
+%\end{table}
+
+
+\begin{figure}[!htb]
   \center
   \includegraphics[width=.8\textwidth]%
   {figures/graphs/access-duration-vs-count-avg.pdf}
@@ -115,20 +148,3 @@ accepts the following parameters:
 
   \label{fig:access-duration-vs-count-avg}
 \end{figure}
-
-\section{Execution environment}
-The empirical analysis is based on the output of executing different
-implementations on a machine with the following specifications:
-
-%\begin{table}[!ht]
-\begin{tabular}{|l|l|}
-\hline
-CPU & Intel\textregistered Core\texttrademark i5-2400 CPU @ 3.10GHz $\times$ 4
-\\
-\hline
-Memory & Hynix/Hyundai 2048 MB DDR3 RAM @ 1333 MHz $\times$ 2 \\
-\hline
-\end{tabular}
-%\end{table}
-
-\section{Plausible usage profiles}

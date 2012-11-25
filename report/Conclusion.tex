@@ -1,1 +1,33 @@
 \chapter{Conclusion}
+
+\begin{itemize}
+
+  \item Main points:
+
+  \begin{itemize}
+
+    \item Node Copying is up to two orders of magnitude faster than Rollback
+    when it comes to accessing the head of a version --- regardless of usage
+    scenario.
+
+    \item Rollback is not significantly faster at insertions at the head of a
+    list --- even in the sequential usage scenario. In fact, in the
+    pseudo-random usage scenario, it gets increasingly slower per e.g.
+    \textsc{insert} operation.
+
+    \item When inserting at a random index in the list, however, Rollback is
+    about half an order of magnitude faster than Node Copying at insertions in
+    the sequential usage scenario. In the randomized scenario, it is less than
+    half an order of magnitude faster.
+
+    \item Accessing a random element from the list is still much faster with
+    Node Copying than with Rollback.
+
+  \end{itemize}
+
+  \item Rollback without elimination of superfluous operations or reordering is
+  X orders of magnitude slower than the optimized implementation. 
+
+\end{itemize}
+
+
