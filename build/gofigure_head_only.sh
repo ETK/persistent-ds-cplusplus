@@ -3,7 +3,7 @@ date +%s%N > begin_log10_head_only
 for c in 1000 2327  5415  12599 29317 68219 158740 369375  859506  2000000
 do
   echo "Count: ${c}"
-  for i in -p -l
+  for i in -p -r
   do
     echo "Implementation ${i}"
     for k in 1 2 3 4 5 6 7 8 9 10
