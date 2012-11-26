@@ -9,6 +9,7 @@
 #include "rollback_lazy/DoublyLinkedList.h"
 #include "partiallypersistent/DoublyLinkedList.h"
 #include "rollback_reorder_lazy/DoublyLinkedList.h"
+#include "rollback_reorder_only_lazy/DoublyLinkedList.h"
 
 using namespace std;
 
@@ -82,6 +83,8 @@ main (int argc, char **argv) {
         mode = main_ns::rollback_lazy;
       } else if ("-l" == arg || "--rollback-reorder-lazy" == arg) {
         mode = main_ns::rollback_reorder_lazy;
+      } else if ("-o" == arg || "--rollback-reorder-only-lazy" == arg) {
+        mode = main_ns::rollback_reorder_only_lazy;
       } else if ("-p" == arg || "--partially-persistent" == arg) {
         mode = main_ns::partiallypersistent;
       } else if ("-s" == arg || "--store-results" == arg) {
@@ -131,6 +134,9 @@ main (int argc, char **argv) {
         new rollback_lazy::DoublyLinkedList (max_no_snapshots,
                                              max_snapshot_dist);
       break;
+    case main_ns::rollback_reorder_only_lazy:
+      list = new rollback_reorder_only_lazy::DoublyLinkedList (max_no_snapshots,
+                                                               max_snapshot_dist);
     case main_ns::rollback_reorder_lazy:
       list =
         new rollback_reorder_lazy::DoublyLinkedList (max_no_snapshots,

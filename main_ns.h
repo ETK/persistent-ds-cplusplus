@@ -12,6 +12,7 @@ namespace main_ns {
   enum mode_t {
     rollback_lazy,
     rollback_reorder_lazy,
+    rollback_reorder_only_lazy,
     partiallypersistent
   };
 
@@ -37,6 +38,8 @@ namespace main_ns {
       return "rollback_lazy";
     case rollback_reorder_lazy:
       return "rollback_reorder_lazy";
+    case rollback_reorder_only_lazy:
+      return "rollback_reorder_only_lazy";
     case partiallypersistent:
       return "partiallypersistent";
     default:
