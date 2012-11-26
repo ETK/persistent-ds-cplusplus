@@ -16,3 +16,4 @@ do
   done
 done
 date +%s%N > end_compare_rollbacks_sequential_head_only
+

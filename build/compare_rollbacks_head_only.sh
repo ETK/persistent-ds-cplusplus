@@ -1,6 +1,6 @@
 #!/bin/bash
 
-date +%s%N > compare_rollbacks_sequential_head_only
+date +%s%N > begin_compare_rollbacks_head_only
 { while kill -0 $(pidof msc); do sleep 0.25; kill -USR1 $(pidof msc); sleep 0.25; done } &
 for c in 1000 2327  5415  12599 29317 68219 158740 369375  859506  2000000
 do
