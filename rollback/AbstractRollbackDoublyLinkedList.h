@@ -17,24 +17,21 @@
 */
 
 
-#ifndef ROLLBACK_REORDER_ONLY_LAZY_DOUBLYLINKEDLIST_H
-#define ROLLBACK_REORDER_ONLY_LAZY_DOUBLYLINKEDLIST_H
+#ifndef ROLLBACKDOUBLYLINKEDLIST_H
+#define ROLLBACKDOUBLYLINKEDLIST_H
 
-#include <cstdlib>
 #include <vector>
+
+#include "../AbstractDoublyLinkedList.h"
 
 #include "../ephemeral/DoublyLinkedList.h"
 #include "../ephemeral/Node.h"
-#include "../AbstractDoublyLinkedList.h"
 
-#define INIT_MAX_SNAPSHOT_DIST 100UL
-#define MAX_NO_SNAPSHOTS 1200UL
+#define INIT_MAX_SNAPSHOT_DIST 65UL
+#define MAX_NO_SNAPSHOTS 4000UL
 
-// #define DEBUG_SNAPSHOT_FEATURE
-// #define DEBUG_ELIMINATE_OPS
-// #define DEBUG_REORDER_OPS
-
-  namespace rollback_reorder_only_lazy {
+namespace rollback
+{
   enum operation_t {
     INSERT,
     MODIFY,
@@ -48,21 +45,23 @@
 
   struct record_t {
     operation_t operation;
-      std::size_t index;
-      std::size_t old_data;
-      std::size_t data;
-      std::size_t size = 0;
+    std::size_t index;
+    std::size_t old_data;
+    std::size_t data;
+    std::size_t size = 0;
 
-    bool operator < (const record_t & other) const {
+    bool operator < (const record_t& other) const {
       return index < other.index;
     }
   };
 
-  class DoublyLinkedList : public AbstractDoublyLinkedList {
-
+  class AbstractRollbackDoublyLinkedList : public AbstractDoublyLinkedList
+  {
   public:
-    DoublyLinkedList ();
-    DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot_dist);
+    AbstractRollbackDoublyLinkedList ();
+    AbstractRollbackDoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot_dist);
+    
+    virtual ~AbstractRollbackDoublyLinkedList () {}
 
     void insert (size_t node_data, std::size_t index);
 
@@ -71,16 +70,16 @@
 
     void modify_data (std::size_t index, std::size_t value);
 
-      std::size_t print_at_version (std::size_t v);
+    std::size_t print_at_version (std::size_t v);
 
-      std::size_t num_records ();
-      ephemeral::Node * head ();
-      ephemeral::Node * head_at (std::size_t v);
-      std::size_t size ();
-      std::size_t size_at (std::size_t v);
+    std::size_t num_records ();
+    ephemeral::Node* head ();
+    ephemeral::Node* head_at (std::size_t v);
+    std::size_t size ();
+    std::size_t size_at (std::size_t v);
 
     const std::size_t a_access (const std::size_t version,
-                                        const std::size_t index);
+                                const std::size_t index);
     void a_insert (const std::size_t index, const std::size_t value);
     void a_modify (const std::size_t index, const std::size_t value);
     void a_remove (const std::size_t index);
@@ -88,24 +87,26 @@
     const std::size_t a_size_at (const std::size_t version);
     const std::size_t a_num_versions ();
     void a_print_at (std::size_t version);
+    const std::vector < std::pair < std::size_t,
+          ephemeral::DoublyLinkedList* >> & get_snapshots() const;
+  protected:
+    std::size_t max_snapshot_dist;
+    std::size_t max_no_snapshots;
 
-  private:
-      ephemeral::DoublyLinkedList* ephemeral_current;
+    std::size_t next_record_index;
+    
+    ephemeral::DoublyLinkedList* ephemeral_current;
+    std::vector < record_t > records;
+    std::vector < std::pair < std::size_t,
+        ephemeral::DoublyLinkedList* >> snapshots;
 
-      std::vector < record_t > records;
-      std::vector < std::pair < std::size_t,
-      ephemeral::DoublyLinkedList* > >snapshots;
-      std::size_t max_snapshot_dist;
-      std::size_t max_no_snapshots;
-
-    void rollforward ();
     void jump_to_snapshot (std::size_t v);
-    void ensure_version (std::size_t v);
 
-      std::size_t next_record_index;
+    virtual void rollforward ();
+    virtual void ensure_version (std::size_t v) = 0;
 
-      std::size_t get_snapshot_index (std::size_t v);
+    std::size_t get_snapshot_index (std::size_t v);
   };
 }
-#endif                          // ROLLBACK_REORDER_ONLY_LAZY_DOUBLYLINKEDLIST_H
-// kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+#endif // ROLLBACKDOUBLYLINKEDLIST_H
+// kate: indent-mode cstyle; indent-width 2; replace-tabs on; 

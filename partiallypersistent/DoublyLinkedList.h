@@ -27,40 +27,47 @@
 #include <cstdlib>
 #include <ostream>
 
+#define MEASURE_SPACE
 // #define EXTRA_ASSERTS
 
-namespace partiallypersistent {
+namespace partiallypersistent
+{
 
-  class DoublyLinkedList:public AbstractDoublyLinkedList {
+  class DoublyLinkedList: public AbstractDoublyLinkedList
+  {
 
   public:
+#ifdef MEASURE_SPACE
+    std::size_t space = 0UL;
+#endif
+
     struct version_info_t {
-      Node *head;
+      Node* head;
       size_t size;
     };
 
-      std::size_t version;
+    std::size_t version;
 
-      DoublyLinkedList ();
+    DoublyLinkedList ();
 
-      std::pair < std::size_t, Node * >insert (std::size_t data,
-                                               std::size_t index);
+    std::pair < std::size_t, Node* >insert (std::size_t data,
+                                            std::size_t index);
 
     /// removes the specified node from the next version
-    version_info_t remove (Node * to_remove);
+    version_info_t remove (Node* to_remove);
 
-      std::pair < std::size_t, Node * >set_data (Node * node, size_t value);
+    std::pair < std::size_t, Node* >set_data (Node* node, size_t value);
 
     const std::vector < version_info_t > &get_versions ();
 
-    Node *head () const;
-    Node *head_at (std::size_t v) const;
+    Node* head () const;
+    Node* head_at (std::size_t v) const;
 
-      std::size_t size () const;
-      std::size_t size_at (std::size_t v) const;
+    std::size_t size () const;
+    std::size_t size_at (std::size_t v) const;
 
-      std::size_t print_at_version (std::size_t v);
-    void print_dot_graph (std::size_t v, std::ofstream & out);
+    std::size_t print_at_version (std::size_t v);
+    void print_dot_graph (std::size_t v, std::ofstream& out);
 
     const std::size_t a_access (const std::size_t version,
                                 const std::size_t index);
@@ -73,20 +80,24 @@ namespace partiallypersistent {
     void a_print_at (std::size_t version);
 
   private:
-      Node * modify_field (partiallypersistent::Node * node,
-                           field_name_t field_name,
-                           partiallypersistent::Node * value);
-      Node * modify_field (partiallypersistent::Node * node,
-                           field_name_t field_name,
-                           partiallypersistent::Node * value,
-                           partiallypersistent::Node * &head);
-    void copy_live_node (partiallypersistent::Node * node,
-                         partiallypersistent::Node * copy,
-                         field_name_t field_name, Node * value,
+    Node* modify_field (partiallypersistent::Node* node,
+                        field_name_t field_name,
+                        partiallypersistent::Node* value);
+    Node* modify_field (partiallypersistent::Node* node,
+                        field_name_t field_name,
+                        partiallypersistent::Node* value,
+                        partiallypersistent::Node * &head);
+    void copy_live_node (partiallypersistent::Node* node,
+                         partiallypersistent::Node* copy,
+                         field_name_t field_name, Node* value,
                          partiallypersistent::Node * &head);
 
-      std::vector < version_info_t > versions;
+    std::vector < version_info_t > versions;
   };
 }
 #endif                          // PARTIALLYPERSISTENT_DOUBLYLINKEDLIST_H
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+
+
+
+

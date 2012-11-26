@@ -4,7 +4,7 @@
 #include <random>
 #include <ctime>
 
-#include "rollback_lazy/DoublyLinkedList.h"
+#include "blackbox/DoublyLinkedList.h"
 
 using namespace std;
 
@@ -13,7 +13,7 @@ double rand01() {
 }
 
 void test_rollback_reorder () {
-  rollback_lazy::DoublyLinkedList list = rollback_lazy::DoublyLinkedList(4000, 65);
+  blackbox::DoublyLinkedList list = blackbox::DoublyLinkedList(4000, 65);
   vector<size_t> versions = vector<size_t>();
   size_t i = 0;
   cout << i << ":";

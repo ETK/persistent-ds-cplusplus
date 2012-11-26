@@ -24,6 +24,8 @@
 
 class AbstractDoublyLinkedList {
 public:
+  virtual ~AbstractDoublyLinkedList() {}
+  
   virtual void a_insert(const std::size_t index, const std::size_t value) = 0;
   virtual void a_modify(const std::size_t index, const std::size_t value) = 0;
   virtual void a_remove(const std::size_t index) = 0;

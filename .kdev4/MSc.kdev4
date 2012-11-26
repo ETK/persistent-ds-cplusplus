@@ -4,7 +4,7 @@ BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x
 [CMake]
 Build Directory Count=2
 CMakeDir=/usr/share/cmake-2.8/Modules
-Current Build Directory Index=1
+Current Build Directory Index=0
 ProjectRootRelative=./
 
 [CMake][CMake Build Directory 0]
@@ -33,7 +33,7 @@ Name=msc
 Type=Native Application
 
 [Launch][Launch Configuration 0][Data]
-Arguments=-r -c 94
+Arguments=-r
 Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x02\x00\x00\x00.\x00p\x00e\x00r\x00s\x00i\x00s\x00t\x00e\x00n\x00t\x00-\x00d\x00s\x00-\x00c\x00p\x00l\x00u\x00s\x00p\x00l\x00u\x00s\x00\x00\x00\x06\x00m\x00s\x00c)
 Dependency Action=Build
 EnvironmentGroup=default
