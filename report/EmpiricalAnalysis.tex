@@ -1,5 +1,26 @@
 \chapter{Empirical Analysis}
 
+\section{Implementation}
+
+\subsection{Execution environment}
+The empirical analysis is based on the output of executing different
+implementations on a machine with the following specifications:
+
+%\begin{table}[!ht]
+\begin{tabular}{|l|l|}
+\hline
+CPU & Intel\textregistered Core\texttrademark i5-2400 CPU @ 3.10GHz $\times$ 4
+\\
+\hline
+Memory & Hynix/Hyundai 2048 MB DDR3 RAM @ 1333 MHz $\times$ 2 \\
+\hline
+Operating System & Ubuntu 12.10 64-bit \\
+\hline
+\end{tabular}
+%\end{table}
+
+\subsection{Implemented operations}
+
 I have implemented Node Copying and Rollback for a doubly linked list. Both
 implementations support the following operations:
 
@@ -47,6 +68,8 @@ data structure.
 Let the operations $\textsc{insert}(i,d)$, $\textsc{modify}(i,d)$,
 $\textsc{remove}(i)$ and $\textsc{access}(v,i)$ be the ones benchmarked.
 
+\subsection{Implemented usage scenarios}
+
 In bemchmarking the performance of the approaches in practice, we will look at
 how they perform under various usage scenarios.
 
@@ -63,10 +86,13 @@ different usage scenarios:
   e.g. first a number of \textsc{insert} operations, then a number of
   \textsc{access} operations.
 
-  \item[Worst-case] With certain usage patterns, one implementation may perform
-  significantly worse than average.
+%   \item[Worst-case] With certain usage patterns, one implementation may perform
+%   significantly worse than average.
 
 \end{description}
+
+
+\subsection{Program executable}
 
 The above scenarios have been implemented in the program \texttt{msc}, which
 accepts the following parameters:
@@ -82,7 +108,11 @@ accepts the following parameters:
   off).
 
   \item[\texttt{-\@{}-rollback-reorder-lazy}/\texttt{-l}] Will use the Rollback
-  implementation for applying the operations (default).
+  implementation with elimination of superfluous operations and operations
+  reordering for applying the operations (default).
+
+  \item[\texttt{-\@{}-rollback-lazy}/\texttt{-r}] Will use the black-box
+  Rollback implementation for applying the operations (default).
 
   \item[\texttt{-\@{}-partiallypersistent}/\texttt{-p}] Will use the Node
   Copying implementation for applying the operations.
@@ -105,40 +135,65 @@ accepts the following parameters:
 I have run a series of experiments with various combinations of program
 arguments in order to determine the performance of each implementation.
 
-The sequential scenario is tested by first running a bulk of \textsc{insert}
-operations, then a bulk of \textsc{modify} operations, then a bulk of
-\textsc{remove} operations and finally a bulk of \textsc{access} operations. The
-bulks are of the same size, i.e. an equal fraction of the \texttt{count}
-argument. If the \texttt{-\@{}-head-only} argument is given, the index passed to
+If the \texttt{-\@{}-head-only} argument is given, the index passed to
 the operations is 0. Otherwise, the index is randomly selected from the range
 $[0..N[$ where $N$ is the number of elements in the list. As for the
 \textsc{access} operations, the version is randomly chosen between the versions
 which exist when the operation is run.
 
-\subsection{Execution environment}
-The empirical analysis is based on the output of executing different
-implementations on a machine with the following specifications:
+The sequential scenario is tested by first running a bulk of \textsc{insert}
+operations, then a bulk of \textsc{modify} operations, then a bulk of
+\textsc{remove} operations and finally a bulk of \textsc{access} operations. The
+bulks are of the same size, i.e. an equal fraction of the \texttt{count}
+argument.
 
-%\begin{table}[!ht]
-\begin{tabular}{|l|l|}
-\hline
-CPU & Intel\textregistered Core\texttrademark i5-2400 CPU @ 3.10GHz $\times$ 4
-\\
-\hline
-Memory & Hynix/Hyundai 2048 MB DDR3 RAM @ 1333 MHz $\times$ 2 \\
-\hline
-Operating System & Ubuntu 12.10 64-bit \\
-\hline
-\end{tabular}
-%\end{table}
+The randomized scenario is simulated by running a pseudo-randomly selected
+operation with equal probability, except if the operation is illegal (such as
+modifying or removing from an empty list) or is irrelevant (accessing an element
+from a version where the list is empty).
+
+\subsection{Graphs}
+
+In the following graphs, all data points are averages over 10 runs with
+identical parameters, each representing the duration spent on the respective
+operations. The Y error bars indicate 1.96 times SE, i.e. a 95\% confidence
+interval.
+
+The following findings are based on inspecting the results of the experiments by
+analyzing the graphs and the underlying data:
+
+\begin{itemize}
+  \item Node Copying is up to an order of magnitude faster than Rollback
+  when it comes to accessing the head of a version --- regardless of usage
+  scenario. See figure \ref{fig:access-duration}.
+
+  \item Rollback is not significantly faster at insertions at the head of a list
+  --- even in the sequential usage scenario. In fact, in the pseudo-random usage
+  scenario, it gets increasingly slower per changing operation (insert, modify,
+  remove) operation. See figure \ref{fig:insert-duration}.
+
+  \item When inserting at a random index in the list, however, Rollback is about
+  half an order of magnitude faster than Node Copying at insertions in the
+  sequential usage scenario. In the randomized scenario, it is less than half an
+  order of magnitude faster. See figure \ref{fig:insert-duration}.
+
+  \item Accessing a random element from the list is still much faster with Node
+  Copying than with Rollback. See figure \ref{fig:access-duration}.
+
+  \item Rollback \emph{without} elimination of superfluous operations or
+  reordering is, surprisingly, an order of magnitude \emph{faster}, even with
+  large data sets in the sequential usage scenario. See figure
+  \ref{fig:rollback-comparison}.
+
+\end{itemize}
 
 
 \begin{figure}[!htb]
   \center
   \includegraphics[width=.8\textwidth]%
-  {figures/graphs/access-duration-vs-count-avg.pdf}
+  {figures/graphs/access-duration-vs-count-head-only.pdf}
   \includegraphics[width=.8\textwidth]%
-  {figures/graphs/access-duration-per-op-vs-count-avg.pdf}
+  {figures/graphs/access-duration-per-op-vs-count-head-only.pdf}
 
   \caption{Comparison of implementations and scenarious for various operation
   counts. Note how the Node Copying method keeps an approximately constant
@@ -146,5 +201,37 @@ Operating System & Ubuntu 12.10 64-bit \\
   upper limit for full copies, and access time increases. It is reached faster
   in the sequential scenario since the full copies are larger.}
 
-  \label{fig:access-duration-vs-count-avg}
+  \label{fig:access-duration}
 \end{figure}
+
+\begin{figure}[!htb]
+  \center
+  \includegraphics[width=.8\textwidth]%
+  {figures/graphs/insert-duration-vs-count-head-only.pdf}
+  \includegraphics[width=.8\textwidth]%
+  {figures/graphs/insert-duration-per-op-vs-count-head-only.pdf}
+
+  \caption{Comparison of implementations and scenarious for various operation
+  counts. Note how the Node Copying method keeps an approximately constant
+  overhead factor per operation, whereas the Rollback method eventually hits the
+  upper limit for full copies, and access time increases. It is reached faster
+  in the sequential scenario since the full copies are larger.}
+
+  \label{fig:insert-duration}
+\end{figure}
+
+\begin{figure}[!htb]
+  \center
+  \includegraphics[width=.8\textwidth]%
+  {figures/graphs/rollbacks-access-duration-vs-count.pdf}
+  \includegraphics[width=.8\textwidth]%
+  {figures/graphs/rollbacks-access-duration-per-op-vs-count.pdf}
+
+  \caption{Comparison of rollback implementations. Notice how the black-box
+  Rollback implementation is almost an order of magnitude faster than the
+  implementation with elimination of superfluous operations and operations
+  reordering.}
+
+  \label{fig:rollback-comparison}
+\end{figure}
+
