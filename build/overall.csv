@@ -1,0 +1,48 @@
+"load_extension('/home/s062372/lib/libsqlitefunctions,so')"
+
+implementation;"usage pattern";"case
+    when count <    500 then    250
+    when count <   1300 then    584
+    when count <   3100 then   1354
+    when count <   7300 then   3150
+    when count <  17000 then   7330
+    when count <  39600 then  17055
+    when count <  92000 then  39685
+    when count < 214000 then  92344
+    when count < 499600 then 214877
+    else                     500000
+  end";"sum dur (ms)";"sum dur (ms)/sum count";rows
+partiallypersistent;sequential;250;3,99232;0,000399232;40
+partiallypersistent;sequential;584;8,302848;0,000356804813064031;40
+partiallypersistent;sequential;1354;17,1904;0,00031745891043398;40
+partiallypersistent;sequential;3150;44,661504;0,000354484514644019;40
+partiallypersistent;sequential;7330;114,682624;0,000391181307773647;40
+partiallypersistent;sequential;17055;218,44864;0,000320216713818731;40
+partiallypersistent;sequential;39685;472,591616;0,000297714259795893;40
+rollback_lazy;sequential;250;9,175808;0,0009175808;40
+rollback_lazy;sequential;584;25,654784;0,00110248319724968;40
+rollback_lazy;sequential;1354;66,794752;0,00123351342566944;40
+rollback_lazy;sequential;3150;245,14048;0,00194571378680848;40
+rollback_lazy;sequential;7330;942,012928;0,00321319687553297;40
+rollback_lazy;sequential;17055;4437,230336;0,00650439076503613;40
+rollback_lazy;sequential;39685;22686,443008;0,0142915730175129;40
+partiallypersistent;randomized;250;4,577024;0,0004577024;40
+partiallypersistent;randomized;584;9,45024;0,000406112591319295;40
+partiallypersistent;randomized;1354;20,253952;0,000374034201292705;40
+partiallypersistent;randomized;3150;92,531968;0,000341887929059671;60
+partiallypersistent;randomized;7330;93,44256;0,000294557765658986;30
+partiallypersistent;randomized;17055;242,61376;0,000266769761944032;40
+partiallypersistent;randomized;39685;388,706048;0,000326254425811217;30
+partiallypersistent;randomized;92344;1072,221952;0,000290280054686971;40
+partiallypersistent;randomized;214877;2500,69248;0,00029094531975344;40
+partiallypersistent;randomized;500000;5812,541184;0,0002906270592;40
+rollback_lazy;randomized;250;9,80736;0,000980736;40
+rollback_lazy;randomized;584;23,4048;0,00100579286635153;40
+rollback_lazy;randomized;1354;43,613696;0,000805423748845799;40
+rollback_lazy;randomized;3150;228,680704;0,000844931476076113;60
+rollback_lazy;randomized;7330;274,22336;0,000864430728493522;30
+rollback_lazy;randomized;17055;724,438784;0,000796568018032877;40
+rollback_lazy;randomized;39685;485,363712;0,000407382545198167;30
+rollback_lazy;randomized;92344;3205,03296;0,000867690818274112;40
+rollback_lazy;randomized;214877;11810,302464;0,001374080281464;40
+rollback_lazy;randomized;500000;52192,526336;0,0026096263168;40

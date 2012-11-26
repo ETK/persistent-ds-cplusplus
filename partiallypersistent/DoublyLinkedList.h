@@ -27,7 +27,6 @@
 #include <cstdlib>
 #include <ostream>
 
-#define MEASURE_SPACE
 // #define EXTRA_ASSERTS
 
 namespace partiallypersistent

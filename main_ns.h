@@ -6,7 +6,7 @@
 
 #include <sqlite3.h>
 
-#define MEASURE_SPACE
+//#define MEASURE_SPACE
 
 namespace main_ns
 {
