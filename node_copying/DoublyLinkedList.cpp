@@ -36,7 +36,7 @@
 
 using namespace std;
 
-namespace partiallypersistent
+namespace node_copying
 {
 
   DoublyLinkedList::DoublyLinkedList () : AbstractDoublyLinkedList()
@@ -207,7 +207,7 @@ namespace partiallypersistent
   }
 
   DoublyLinkedList::
-  version_info_t DoublyLinkedList::remove (partiallypersistent::Node *
+  version_info_t DoublyLinkedList::remove (node_copying::Node *
       to_remove)
   {
 #ifdef LOGGING
@@ -368,7 +368,7 @@ namespace partiallypersistent
     versions.push_back (new_version);
   }
 
-  void DoublyLinkedList::copy_live_node (partiallypersistent::Node* node,
+  void DoublyLinkedList::copy_live_node (node_copying::Node* node,
                                          Node* copy,
                                          field_name_t field_name,
                                          Node* value, Node *& head)

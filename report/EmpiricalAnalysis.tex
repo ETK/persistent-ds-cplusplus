@@ -95,7 +95,7 @@ different usage scenarios:
 \subsection{Program executable}
 
 The above scenarios have been implemented in the program \texttt{msc}, which
-accepts the following parameters:
+accepts the following arguments:
 
 \begin{description}
 
@@ -107,14 +107,14 @@ accepts the following parameters:
   first, then modifications, then removals, then access operations (default:
   off).
 
-  \item[\texttt{-\@{}-rollback-reorder-lazy}/\texttt{-l}] Will use the Rollback
+  \item[\texttt{-\@{}-rollback-eliminate-reorder}/\texttt{-l}] Will use the Rollback
   implementation with elimination of superfluous operations and operations
   reordering for applying the operations (default).
 
-  \item[\texttt{-\@{}-rollback-lazy}/\texttt{-r}] Will use the black-box
+  \item[\texttt{-\@{}-rollback-blackbox}/\texttt{-r}] Will use the black-box
   Rollback implementation for applying the operations (default).
 
-  \item[\texttt{-\@{}-partiallypersistent}/\texttt{-p}] Will use the Node
+  \item[\texttt{-\@{}-node-copying}/\texttt{-p}] Will use the Node
   Copying implementation for applying the operations.
 
   \item[\texttt{-\@{}-max-snapshot-dist}/\texttt{-d \{num\}}] Maximum number of
@@ -156,8 +156,12 @@ from a version where the list is empty).
 
 In the following graphs, all data points are averages over 10 runs with
 identical parameters, each representing the duration spent on the respective
-operations. The Y error bars indicate 1.96 times SE, i.e. a 95\% confidence
-interval.
+operations. The Y error bars indicate $\pm 1.96$ times the standard deviation,
+i.e. a 95\% confidence interval.
+% This is useful especially with smaller operation counts, as the data points
+% tend to be farther from each other when plotted on logarithmic axes. With the
+% visible overlap of the confidence intervals, such differences in data point Y
+% values can be better explained.
 
 The following findings are based on inspecting the results of the experiments by
 analyzing the graphs and the underlying data:
@@ -180,10 +184,9 @@ analyzing the graphs and the underlying data:
   \item Accessing a random element from the list is still much faster with Node
   Copying than with Rollback. See figure \ref{fig:access-duration}.
 
-  \item Rollback \emph{without} elimination of superfluous operations or
-  reordering is, surprisingly, an order of magnitude \emph{faster}, even with
-  large data sets in the sequential usage scenario. See figure
-  \ref{fig:rollback-comparison}.
+  \item Rollback \emph{without} elimination of superfluous operations and
+  reordering is faster at smaller operation counts, but becomes more costly
+  after about X operations.
 
 \end{itemize}
 

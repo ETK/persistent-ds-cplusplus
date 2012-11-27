@@ -20,6 +20,8 @@ well as giving the concrete example of the linked list.
 As part of the Node Copying method, the node structure is expanded by adding two
 arrays; one for ``modifications'' and one for ``back pointers''.
 
+\paragraph{Persisting fields.}
+
 The modifications array records changes made to any of the fields of the
 node, including non-pointer fields, since the node was created --- the original
 field values from the time of construction remain unchanged. A modification
@@ -33,6 +35,8 @@ In the Fat Node method described in \cite{Driscoll198986}, there is no upper
 bound on the size of the modifications array. Therefore, the worst-case time to
 retrieve a field value is linearly proportional with the number of
 modifications.
+
+\paragraph{Limited node size.}
 
 To get constant factor amortized overhead for field access, the size of the
 modifications array is bounded to the in-degree bound $p$. The time to retrieve
@@ -55,6 +59,8 @@ updated to point to another node $x$ (either when $y$ is constructed or when the
 field is modified as described above), the corresponding back pointer in $x$ is
 updated to point to $y$.
 
+\paragraph{Cascading effects.}
+
 When $n'$ is created, the back pointers of $n$ are followed, and each of the
 nodes which pointed to $n$ will have a modification added referring to the
 relevant field, and pointing to $n'$. But if the modifications array is already
@@ -71,6 +77,7 @@ point to $x'$ instead of $x$. But if a modification was already made to $y$,
 e.g. its data field was updated, it will itself need to be copied according to
 the same scheme --- i.e. there may be a cascading effect.
 
+\paragraph{Amortized constant factor overhead.}
 To prove that -- even with cascading effects -- there is still a constant factor
 amortized overhead per field change, we shall employ the potential technique.
 

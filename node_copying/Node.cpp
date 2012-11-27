@@ -21,7 +21,7 @@
 
 using namespace std;
 
-namespace partiallypersistent {
+namespace node_copying {
 
   Node::Node () {
     n_mods = 0UL;

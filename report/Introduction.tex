@@ -1,8 +1,8 @@
 \chapter{Introduction}
-Persistence is the topic covering the general availability of previous versions
-of a data structure for various purposes. The antonym to ``persistent'' is in
-this context called ``ephemeral'', which means that no previous version of a
-data structure is available. In the 1989 article by Driscoll et al.
+Persistence is the topic dealing with the general availability of previous
+versions of a data structure for various purposes. The antonym to ``persistent''
+is in this context called ``ephemeral'', which means that no previous version of
+a data structure is available. In the 1989 article by Driscoll et al.
 \cite{Driscoll198986}, it is described how a data structure may be made
 persistent in two different ways: partially or fully.
 
@@ -17,8 +17,9 @@ the `history' of the data structure.
 Partially persistent data structures can be compared with ``rollback'' databases
 as defined in \cite{10.1109/AFIPS.1987.11}. Driscoll et al. describe a method
 for making any bounded in-degree data structure partially persistent with $O(1)$
-space and time overhead per version and $O(1)$ overhead for access of any
-version. This method is called Node copying.
+amortized space and time overhead per version and $O(1)$ overhead for access of
+any version and operations on the most recent version. This method is called
+Node Copying.
 
 \section{Scope}
 

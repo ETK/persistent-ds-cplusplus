@@ -29,7 +29,7 @@
 
 // #define EXTRA_ASSERTS
 
-namespace partiallypersistent
+namespace node_copying
 {
 
   class DoublyLinkedList: public AbstractDoublyLinkedList
@@ -79,17 +79,17 @@ namespace partiallypersistent
     void a_print_at (std::size_t version);
 
   private:
-    Node* modify_field (partiallypersistent::Node* node,
+    Node* modify_field (node_copying::Node* node,
                         field_name_t field_name,
-                        partiallypersistent::Node* value);
-    Node* modify_field (partiallypersistent::Node* node,
+                        node_copying::Node* value);
+    Node* modify_field (node_copying::Node* node,
                         field_name_t field_name,
-                        partiallypersistent::Node* value,
-                        partiallypersistent::Node * &head);
-    void copy_live_node (partiallypersistent::Node* node,
-                         partiallypersistent::Node* copy,
+                        node_copying::Node* value,
+                        node_copying::Node * &head);
+    void copy_live_node (node_copying::Node* node,
+                         node_copying::Node* copy,
                          field_name_t field_name, Node* value,
-                         partiallypersistent::Node * &head);
+                         node_copying::Node * &head);
 
     std::vector < version_info_t > versions;
   };

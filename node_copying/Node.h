@@ -33,7 +33,7 @@ enum field_name_t {
 };
 #pragma pack(pop)
 
-namespace partiallypersistent {
+namespace node_copying {
 
 #pragma pack(push, 1)
   class Node {

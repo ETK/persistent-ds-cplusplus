@@ -16,7 +16,7 @@ namespace main_ns
     blackbox,
     eliminate_reorder,
     reorder,
-    partiallypersistent
+    node_copying
   };
 
   enum operation_type_t {
@@ -44,8 +44,8 @@ namespace main_ns
       return "eliminate_reorder";
     case reorder:
       return "reorder";
-    case partiallypersistent:
-      return "partiallypersistent";
+    case node_copying:
+      return "node_copying";
     default:
       return "unknown";
     }
