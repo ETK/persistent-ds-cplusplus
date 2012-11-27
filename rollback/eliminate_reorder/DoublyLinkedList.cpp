@@ -26,103 +26,6 @@ namespace rollback
 {
   namespace eliminate_reorder
   {
-/*    void DoublyLinkedList::rollforward ()
-    {
-      record_t& record = records[next_record_index];
-
-      next_record_index++;
-
-      if (next_record_index > max_snapshot_dist * snapshots.size () - 1) {
-
-        if (snapshots.size () == max_no_snapshots - 1) {
-
-          size_t exponent = 2;
-
-          max_snapshot_dist *= exponent;
-
-          vector < pair < size_t,
-                 ephemeral::DoublyLinkedList* > > new_snapshots;
-          size_t index = 0;
-          for (size_t i = 0; i < snapshots.size (); ++i) {
-            if (i % exponent == 0) {
-              new_snapshots.push_back (snapshots[i]);
-            }
-            else {
-              delete snapshots[i].second;
-            }
-          }
-          snapshots = new_snapshots;
-        }
-
-        ephemeral_current = new ephemeral::DoublyLinkedList
-        (*ephemeral_current);
-        snapshots.push_back (std::make_pair (next_record_index,
-                                             ephemeral_current));
-
-#ifdef DEBUG_SNAPSHOT_FEATURE
-        cout << "Snapshot no. " << snapshots.size () << " made" << endl;
-#endif
-      }
-
-
-      ephemeral::Node* node = ephemeral_current->head;
-      for (size_t i = 0; i < record.index; ++i) {
-        if (node->next) {
-          node = node->next;
-        }
-        else {
-          throw "fuck off you moron";
-        }
-      }
-
-      switch (record.operation) {
-      case INSERT: {
-        ephemeral::Node* new_node = new ephemeral::Node ();
-        new_node->data = record.data;
-        new_node->next = node;
-        if (node) {
-          new_node->prev = node->prev;
-          if (node->prev) {
-            node->prev->next = new_node;
-          }
-          node->prev = new_node;
-        }
-        if (node == 0x0 || node == ephemeral_current->head) {
-          ephemeral_current->head = new_node;
-        }
-        ++ephemeral_current->size;
-        break;
-      }
-      case REMOVE:
-        record.data = node->data;
-        record.old_data = node->data;
-        if (ephemeral_current->head == node) {
-          ephemeral_current->head = node->next;
-        }
-        if (node) {
-          if (node->prev) {
-            node->prev->next = node->next;
-          }
-          if (node->next) {
-            node->next->prev = node->prev;
-          }
-        }
-        --ephemeral_current->size;
-//       ephemeral_current.remove (*node);
-        node->prev = 0x0;
-        node->next = 0x0;
-        delete node;
-        break;
-      case MODIFY:
-        node->data = record.data;
-        break;
-      }
-
-      snapshots[get_snapshot_index (next_record_index)].first =
-        next_record_index;
-    }
-    */
-
     bool remove_insert_index (const pair < record_t, int64_t > &a,
                               const pair < record_t, int64_t > &b)
     {
@@ -471,4 +374,5 @@ namespace rollback
   }
 }
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+
 
