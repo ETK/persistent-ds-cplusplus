@@ -243,7 +243,8 @@ main (int argc, char** argv)
     }
 
 #ifdef MEASURE_SPACE
-    cout << "Space for " << main_ns::count << " ops in " << (randomize_operations ? "randomized" : "sequential") << " scenario: ";
+    cout << main_ns::count << ";" << mode_to_string (mode) << ";" <<
+         (randomize_operations ? "randomized" : "sequential") << ";";
     switch (mode) {
     case main_ns::node_copying :
       cout << ( (node_copying::DoublyLinkedList*) list)->space + sizeof (*list) + sizeof (node_copying::DoublyLinkedList::version_info_t) * list->a_num_versions();
@@ -267,7 +268,7 @@ main (int argc, char** argv)
       break;
     }
     }
-    cout << " bytes" << endl;
+    cout << "" << endl;
 #endif
 
 #ifndef MEASURE_SPACE
@@ -292,5 +293,6 @@ main (int argc, char** argv)
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+
 
 
