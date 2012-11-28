@@ -145,6 +145,7 @@ main (int argc, char** argv)
     case main_ns::reorder:
       list = new rollback::reorder::DoublyLinkedList (max_no_snapshots,
           max_snapshot_dist);
+      break;
     case main_ns::eliminate_reorder:
       list =
         new rollback::eliminate_reorder::DoublyLinkedList (max_no_snapshots,

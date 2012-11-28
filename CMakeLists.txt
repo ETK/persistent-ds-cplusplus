@@ -9,7 +9,11 @@ target_link_libraries(msc rt sqlite3)
 #add_executable(rollback_reorder_lazy_worstcase AbstractDoublyLinkedList.cpp rollback_reorder_lazy/DoublyLinkedList.cpp rollback/blackbox/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp node_copying/DoublyLinkedList.cpp node_copying/Node.cpp rollback_reorder_lazy_worstcase.cpp)
 #target_link_libraries(rollback_reorder_lazy_worstcase rt sqlite3)
 
-#add_executable(test_rollback_reorder rollback/blackbox/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_reorder.cpp)
+add_executable(test_rollback_blackbox AbstractDoublyLinkedList.cpp rollback/AbstractRollbackDoublyLinkedList.cpp rollback/blackbox/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_blackbox.cpp)
+
+add_executable(test_rollback_reorder AbstractDoublyLinkedList.cpp rollback/AbstractRollbackDoublyLinkedList.cpp rollback/reorder/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_reorder.cpp)
+
+add_executable(test_rollback_eliminate_reorder AbstractDoublyLinkedList.cpp rollback/AbstractRollbackDoublyLinkedList.cpp rollback/eliminate_reorder/DoublyLinkedList.cpp ephemeral/Node.cpp ephemeral/DoublyLinkedList.cpp test_rollback_eliminate_reorder.cpp)
 
 #add_subdirectory(node_copying)
 #add_subdirectory(ephemeral)

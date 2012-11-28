@@ -99,17 +99,6 @@ pointer fills the modifications array of that node. Therefore, the amortized
 time and space cost for the entire update operation is $O(k) + O(1) + (O(-k) +
 O(1)) = O(1)$.
 
-% \begin{figure}[!ht]
-%   \includegraphics[width=.9\textwidth]{figures/node-copying-example.pdf}
-% 
-%   \caption{To the left is the structure of a node from a doubly linked list.
-%   Applying the Node Copying method, the node structure is transformed to the one
-%   on the right. The modifications array is of size two due to there being two
-%   pointer fields \textsc{prev} and \textsc{next}.}
-% 
-%   \label{fig:node-copying-example}
-% \end{figure}
-
 \section{Rollback}
 Rollback is an approach to persistence based on the techniques described in
 \cite{Tsotras1995237}, namely the combination of the na\"ive ``copy'' and
@@ -555,6 +544,6 @@ asymptotic time and space bounds.
   constant.
 
   \item Once the head node for version has been retrieved, Node Copying should
-  be slower than Rollback since getting the next node involves reading (a
+  be slower than Rollback since getting the next node involves reading (by a
   constant factor) more data.
 \end{itemize}

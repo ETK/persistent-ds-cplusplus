@@ -4,7 +4,7 @@
 #include <random>
 #include <ctime>
 
-#include "rollback/reorder/DoublyLinkedList.h"
+#include "rollback/eliminate_reorder/DoublyLinkedList.h"
 
 using namespace std;
 
@@ -15,7 +15,7 @@ double rand01()
 
 void test_rollback_reorder ()
 {
-  rollback::reorder::DoublyLinkedList list = rollback::reorder::DoublyLinkedList (4000, 65);
+  rollback::eliminate_reorder::DoublyLinkedList list = rollback::eliminate_reorder::DoublyLinkedList (4000, 65);
   vector<size_t> versions = vector<size_t>();
   size_t i = 0;
   cout << i << ":";
@@ -63,4 +63,3 @@ int main (int argc, char** argv)
   return 0;
 }
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; 
-
