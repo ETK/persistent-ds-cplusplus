@@ -15,11 +15,12 @@ previous version of the data structure, thus creating an alternative branch in
 the `history' of the data structure.
 
 Partially persistent data structures can be compared with ``rollback'' databases
-as defined in \cite{10.1109/AFIPS.1987.11}. Driscoll et al. describe a method
-for making any bounded in-degree data structure partially persistent with $O(1)$
-amortized space and time overhead per version and $O(1)$ overhead for access of
-any version and operations on the most recent version. This method is called
-Node Copying.
+as defined in \cite{10.1109/AFIPS.1987.11}. It allows reading from any previous
+version of the data structure, but only allows changing the most recent version.
+Driscoll et al. describe a method for making any bounded in-degree data
+structure partially persistent with $O(1)$ amortized space and time overhead per
+version and $O(1)$ overhead for access of any version and operations on the most
+recent version. This method is called Node Copying.
 
 \section{Scope}
 
