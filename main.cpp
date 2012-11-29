@@ -216,9 +216,9 @@ main (int argc, char** argv)
       } else {
         version = list->a_num_versions ();
         size_t list_size = list->a_size ();
-        if (!only_measure_time_to_head) {
+//         if (!only_measure_time_to_head) {
           index = (size_t) (rand01 () * list_size);
-        }
+//         }
         if (op == main_ns::remove && list_size > 0) {
           list->a_remove (index);
 #ifndef MEASURE_SPACE
