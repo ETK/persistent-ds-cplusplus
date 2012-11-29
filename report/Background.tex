@@ -1,30 +1,14 @@
-\chapter{Background}
-
-\begin{enumerate}
-  \item Description of the term persistence
-  \item Description of temporal access
-  \item Establising that the two above can be reasonably compared
-  \item Description of the distinction between partial and full persistence
-  \item Details of theory between the two approaches to be compared
-  \begin{enumerate}
-    \item More detailed description of Node Copying
-    \item A description of ``rollback'' (hybrid of ``log'' and ``copy'')
-  \end{enumerate}
-\end{enumerate}
-
-Tsotras and Kangelaris \cite{Tsotras1995237} define as the database state $s(t)$
-the collection of objects that exist at t in the real-world system modeled by
-the database. The ability to access $s(t)$ is here referred to as ``temporal
-access''. In my comparison of different approaches in practice, the cost of
-retrieving $s(t)$ will be the metric by which the approaches are measured.
-
-I will cover the following two approaches to partial persistence:
-\begin{description}
-  \item[Rollback] which requires functional extensions of the underlying data
-  structure in order to record the necessary information about the context in
-  which an operation is carried out in order to be able to reproduce or revert
-  it at a later time; and
-  \item[Node copying] which requires structural extensions of the underlying
-  data structure in order to store modification records and other necessary
-  information within the nodes of the data structure.
-\end{description}
+% \chapter{Background}
+% 
+% \begin{enumerate}
+%   \item Description of the term persistence
+%   \item Description of temporal access
+%   \item Establising that the two above can be reasonably compared
+%   \item Description of the distinction between partial and full persistence
+%   \item Details of theory between the two approaches to be compared
+%   \begin{enumerate}
+%     \item More detailed description of Node Copying
+%     \item A description of ``rollback'' (hybrid of ``log'' and ``copy'')
+%   \end{enumerate}
+% \end{enumerate}
+% 
