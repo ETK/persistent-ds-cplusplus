@@ -30,7 +30,11 @@ group by
 order by
   operation,
   \`usage pattern\` desc,
-  implementation,
+  case
+    when implementation like 'node%' then 1
+    when implementation like 'black%' then 2
+    when implementation like 'elim%' then 3
+    else 4
+  end,
   count
 ;" | tr '.' ',' > 'compare_rollbacks_combined_head_only.csv'
-
