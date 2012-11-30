@@ -1,5 +1,19 @@
 \chapter{Summary}
 
-The goal of the thesis is to theoretically compare two approaches to making a
-data structure persistent, and to evaluate in practice which of them is more
-suited for certain usage scenarios.
+The goal of the thesis is to theoretically analyse and compare Node Copying and
+Rollback, two approaches to making a data structure partially persistent
+(allowing the access of any previous version), and to evaluate in practice which
+of them is more suited for use in two different usage scenarios: a sequential
+one, where operations are applied in long sequences generating versions with
+large data structures; and a randomized one, where operations are executed in a
+random order. A doubly linked list is used as the example data structure.
+
+It is found that Node Copying performs significantly better than Rollback in
+terms of space complexity regardless of the usage scenario. It also performs
+better in accessing a desired version in the randomized scenario independently
+of the data set size.
+
+In the sequential scenario, the smaller time complexity related to navigating
+the data structure at a given version makes an optimized implementation of
+Rollback faster at reaching a given index inside a desired version, when the
+data set is large enough.

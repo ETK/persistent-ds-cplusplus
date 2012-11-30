@@ -1,23 +1,41 @@
 \chapter{Conclusion}
+\label{chapter:conclusion}
 
-\begin{itemize}
+\section{Recommendations}
+If sufficient programming time is available for implementing an optimized
+Rollback approach, it is the recommended option when dealing with large numbers
+of operations in a manner similar to the Sequential scenario --- provided that
+sufficient system memory is available. This is especially the case if many
+\textsc{access} operations are expected to be made which are followed by
+navigation far into the produced version.
 
-  \item Main points:
+If on the other hand a data structure is to be made partially persistent, which
+is not suitable for optimizations --- such as those which went into the
+Elimination-Reorder variant of the Rollback implementation of the partially
+persistent doubly linked list.
 
-  \begin{itemize}
+If the effective sizes of the data structure in the various versions do not
+become too large, it is recommended to apply the Node Copying approach, unless
+very few \textsc{access} operations are expected.
 
-    \item Node Copying is significantly faster at access, as expected.
+\section{Future work}
+It could be investigated whether compression techinques could be applied when
+storing the full copies and/or the operations log in the Rollback
+implementations. If the benefit in terms of lower memory usage is great enough,
+it would allow working with larger data sets than with the implementations used
+in this thesis.
 
-    \item Rollback is faster at changing operations (insert, modify, remove) in
-    the randomized usage scenario, as expected.
+More advanced data structures, such as binary search trees, could be implemented
+to see whether the same general conclusions apply, or if they are specific to a
+doubly linked list. Notably, it would be interesting to see if eliminating
+superfluous operations or optimizing the order of the operations sequence or
+other such optimizations are possible and/or feasible for more advanced data
+structures.
 
-    \item Rollback suffers from memory limits in the sequential usage scenario.
+More elaborate usage scenarios could be implemented and tested using the
+existing framework. E.g. version access patterns showing how well-known
+algorithms would perform, such as planar point location.
 
-    \item It actually does not pay off to reorder operations or eliminate
-    superfluous ones.
-
-  \end{itemize}
-
-\end{itemize}
-
-
+It could also be investigated whether approaches from different paradigms could
+effectively provide partial persistence and be compared to the existing
+implementations.

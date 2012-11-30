@@ -1,21 +1,33 @@
 \chapter{Method}
+\label{chapter:method}
+
+In this chapter I will describe two approaches to partial persistence. I will
+analyse the asymptotic time and space complexities related to creating new
+versions to the data structure and to retrieving an element in a desired
+existing version.
+
+\section{Background}
 
 Tsotras and Kangelaris \cite{Tsotras1995237} define as the database state $s(t)$
-the collection of objects that exist at t in the real-world system modeled by
+the collection of objects that exist at $t$ in the real-world system modeled by
 the database. The ability to access $s(t)$ is here referred to as ``temporal
-access''. In my comparison of different approaches in practice, the cost of
-retrieving and navigating $s(t)$ will be the metric by which the approaches are
-measured.
+access'', and is essentially the same as partial persistence in that it allows
+read-only access to all versions and read/write access only to the newest
+version. I will define the metric by which the approaches are measured as the
+cost of producing $s(t)$ and navigating to an element within it.
 
-I will cover the following two approaches to partial persistence:
+I will analyse the following two approaches to obtaining partial persistence:
 \begin{description}
+
+  \item[Node copying] which requires structural extensions of the underlying
+  data structure in order to store modification records and other necessary
+  information within the nodes of the data structure; and
+
   \item[Rollback] which requires functional extensions of the underlying data
   structure in order to record the necessary information about the context in
   which an operation is carried out in order to be able to reproduce or revert
-  it at a later time; and
-  \item[Node copying] which requires structural extensions of the underlying
-  data structure in order to store modification records and other necessary
-  information within the nodes of the data structure.
+  it at a later time.
+
 \end{description}
 
 \section{The Node Copying method}
@@ -431,7 +443,7 @@ reaching version $v_x$ is:
 \begin{eqnarray*}
 \textsc{CheckIfUnordered}&+\textsc{ReorderOperations}&+\textsc{ApplyOperations}=\\
 O(n) &+ O(n^2) &+ O(l+n)=\\
-&&O((l+n) + n^2)
+&&O(l + n^2)
 \end{eqnarray*}
 }
 
@@ -518,8 +530,8 @@ Let
 \begin{equation*}
   t_i = 
   \begin{cases}
-      1, & \text{if $\textsc{type}(o_{min_i}) = \textsc{insert}$}.\\
-      0, & \text{if $\textsc{type}(o_{min_i}) = \textsc{modify}$}.\\
+      \hphantom{-}1, & \text{if $\textsc{type}(o_{min_i}) = \textsc{insert}$}.\\
+      \hphantom{-}0, & \text{if $\textsc{type}(o_{min_i}) = \textsc{modify}$}.\\
       -1, & \text{if $\textsc{type}(o_{min_i}) = \textsc{remove}$}.
   \end{cases}
 \end{equation*}
@@ -557,7 +569,7 @@ which is $O\left(\left(l+n\right)^2\right)$ for $n$ operations on an existing
 list of length $l$ --- it is worth noting that only in the case of an empty list
 and a long sequence of operations, the reordering algorithm is asymptotically as
 slow. In all other cases, it is \emph{asymptotically} faster with its
-$O\left((l+n)+n^2\right)$ time cost.
+$O\left(l+n^2\right)$ time complexity.
 
 It is shown in Section \ref{sec:time-results} that it is practically slower than
 applying operations indvidually for short enough lists.
@@ -566,16 +578,28 @@ applying operations indvidually for short enough lists.
 As described in the previous sections, the two approaches have different
 asymptotic time and space bounds.
 
+The following general findings and expectations are made from the preceeding
+analyses:
+
 \begin{itemize}
 
-  \item Node Copying should have constant factor overhead per operation
+  \item Node Copying should have constant factor overhead per operation.
 
-  \item Rollback should have constant factor overhead per operation, but
-  expected to be much greater to avoid making too many full copies. Also, the
-  factor will eventually jump when limit is reached, and is as such not
-  constant.
+  \item Recalling that Node Copying spends $O(1)$ at retrieving the head node of
+  a version, and Rollback spends $O(d)$, Node Copying is expected to be faster
+  when $d$ is large enough.
 
-  \item Once the head node for version has been retrieved, Node Copying should
-  be slower than Rollback at getting to a specific index, since getting the next
-  node involves reading (by a constant factor) more data.
+  \item Once the head node has been retrieved, Node Copying has a more time
+  consuming way of navigating to a given index, because it must look through the
+  modifications array of each node along the way, whereas Rollback just needs to
+  follow the $next$ pointer field.
+
+  \item The farther Node Copying has to navigate within a single version, the
+  smaller becomes the advantage of fast retrieval of the head node of that
+  version, when compared to the Rollback approach.
+
+  \item Rollback should have constant factor overhead per access operation until
+  a large enough number of versions are created. The factor will eventually
+  increase when limit is reached, and as such it is not constant.
+
 \end{itemize}

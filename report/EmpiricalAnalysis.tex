@@ -1,7 +1,26 @@
 \chapter{Empirical Analysis}
+\label{chapter:empirical-analysis}
+
+In this chapter I will analyse and discuss the experiments I have implemented
+and run to examine the performance of the different approaches in practice. The
+purpose of the empirical analysis is to make qualified recommendations as to
+which of the approaches to use in different usage scenarios.
 
 \section{Implementation}
+The implementations are made in C++ and conform to the C++11 standard. For
+compiling the program, the CMake system is used.
 
+The source code of the experiment program should be available together with this
+document. It should also be obtainable from the following URL:
+
+{\small\url{https://github.com/sirlatrom/persistent-ds-cplusplus/archive/master.zip}}
+
+In the abstract class defined in ``\texttt{AbstractDoublyLinkedList.h}'' are
+declared the common functions that the different implementations should provide
+to the main experiment program, which is defined in ``\texttt{main.cpp}''.
+
+Compiling is done by changing into the ``\texttt{build}'' directory, running
+``\texttt{cmake ..}'' and then ``\texttt{make}''.
 
 \subsection{Execution environment}
 The empirical analysis is based on the output of executing different
@@ -33,7 +52,7 @@ Rollback implementation exists in two variants:
 
   \item[Blackbox] Uses a simple, ephemeral doubly linked list for applying each
    operation between full copy and destination version separately.
-  
+
   \item[Eliminate-Reorder] Eliminates superfluous operations using Algorithm
   \ref{alg:eliminate-ops} and then reorders the remaining ones using Algorithm
   \ref{alg:opsort} before applying them in a single iteration through the
@@ -108,14 +127,14 @@ different usage scenarios:
   pattern, except that if an operation is illegal (such as removing when the
   list is empty), an \textsc{insert} operation is chosen. They may be weighted
   such that there is different probability for choosing different operations.
-  
+
   In my experiments, the probability is equal (25\%) for \textsc{insert},
   \textsc{modify}, \textsc{remove} and \textsc{access} operations. Thus, the
   number of operations of each type will be close to $\frac{1}{4}$ of the total
   number of operations.
 
   \item[Sequential] The different types of operations are executed in sequences.
-  
+
   In my experiments, equally many \textsc{insert}, \textsc{modify},
   \textsc{remove} and \textsc{access} operations are made, and in that order.
   Thus, the number of operations of each type will be exactly a quarter of the
@@ -124,6 +143,11 @@ different usage scenarios:
 
 \end{description}
 
+Other usage scenarios could be imagined, including specially tailored worst-case
+scenarios designed to stress the implementations to their fullest, and scenarios
+simulating how specific algorithms solving well-known problems, such as planar
+point location, would behave. However, due to time constraints, such scenarios
+have been left out.
 
 \subsection{Program executable}
 
@@ -180,10 +204,10 @@ total operation counts, which are exponentially spaced between 1000 and 2000000:
 \hline
 \end{tabular}
 
-Please note that experiments are not run for the last three counts, since with
-the Rollback implementations they would exceed the available memory of the
-execution environment, and with the Node Copying implementation they would take
-exceedingly long to complete.
+Experiments simulating the Sequential scenario are not run for the last three
+counts, since with the Rollback implementations they would exceed the available
+memory of the execution environment, and with the Node Copying implementation
+they would take exceedingly long to complete.
 
 If the \texttt{-\@{}-head-only} argument is given, the index passed to the
 operations is 0. Otherwise, the index is randomly selected from the range
@@ -195,15 +219,11 @@ operations work on index 0.
 For \textsc{access} operations, the version is randomly chosen between the
 versions which exist when the operation is run.
 
-%\subsection{Graphs}
-
 In the following graphs, all data points are averages over 10 runs with
 identical parameters, each representing the duration spent on the respective
 operations. The Y error bars indicate $\pm 1.96$ times the standard deviation,
 i.e. a 95\% confidence interval. Data points for the Sequential scenario are
 marked by boxes, while those for the Random scenario are marked by diamonds.
-
-It is noted in the captions if the \texttt{-\@{}-head-only} argument is given.
 
 The following findings are based on inspecting the results of the experiments by
 analyzing the graphs and the underlying data. Please note that, unless otherwise
@@ -220,35 +240,29 @@ The following conclusions regarding the Random scenario are evident when
 examining the diamond-shaped data points plotted in Figure
 \ref{fig:access-duration-per-op-vs-count.pdf}:
 
-\begin{itemize}
 
-  \item Node Copying is faster than either of the Rollback implementations
-  regardless of \texttt{count}.
-  
-  This is most likely due to the constants being lower for Node Copying than for
-  Rollback when accessing the head of a version, and the cost eventually
-  increasing for the Rollback variants.
-  
-  \item The Blackbox variant of the Rollback implementation shows to be faster
-  than the Elimination-Reorder variant.
-  
-  This is most likely due to the list never growing very large, owing to the
-  \textsc{remove} operations occurring with 25\% probability mixed between other
-  operations, shrinking the list. When the list is not very long, it is cheaper
-  to iterate the list from the head to carry out the operations rather than
-  running $O(n^2)$ time algorithms on the operation sequences.
-  
-  \item The Rollback implementations both show an trend to increase toward the
-  higher end of the count axis, which can be explained by the fact that the
-  distance between full copies will double after operation no.
-  $4000\times65 = 2.6\times10^5$ and again after operation no.
-  $2.6\times10^5+130\times2000=5.2\times10^5$ changing operations.
-  
-  When these events occur, some time is spent on discarding full copies, and
-  afterwards it will take twice as long in expectation to reach a uniformly
-  randomly chosen version.
+\textit{Node Copying is faster than either of the Rollback implementations
+regardless of \texttt{count}.} This is most likely due to the constants being
+lower for Node Copying than for Rollback when accessing the head of a version,
+and the cost eventually increasing for the Rollback variants.
 
-\end{itemize}
+\textit{The Blackbox variant of the Rollback implementation shows to be faster
+than the Elimination-Reorder variant.} This is most likely due to the list never
+growing very large, owing to the \textsc{remove} operations occurring with 25\%
+probability mixed between other operations, shrinking the list. When the list is
+not very long, it is cheaper to iterate the list from the head to carry out the
+operations rather than running $O(n^2)$ time algorithms on the operation
+sequences.
+
+\textit{The Rollback implementations both show an trend to increase toward the
+higher end of the count axis}, which can be explained by the fact that the
+distance between full copies will double after operation no.
+$4000\times65 = 2.6\times10^5$ and again after operation no.
+$2.6\times10^5+130\times2000=5.2\times10^5$ changing operations.
+
+When these events occur, some time is spent on discarding full copies, and
+afterwards it will take twice as long in expectation to reach a uniformly
+randomly chosen version.
 
 \begin{figure}[!htb]
   \center
@@ -261,46 +275,39 @@ examining the diamond-shaped data points plotted in Figure
 \end{figure}
 
 \subsubsection{Sequential scenario}
+The following conclusions regarding the Sequential scenario are evident when
+examining the box-shaped data points plotted in Figure
+\ref{fig:access-duration-per-op-vs-count.pdf}. Note that prior to the
+\texttt{count} \textsc{access} operations, equally many \textsc{insert},
+\textsc{modify} and \textsc{remove} operations have been executed, and thus a
+total of $1+\frac{3}{4}$\texttt{count} versions exist.
 
-The following conclusions are evident when examining the box-shaped data points
-plotted in Figure \ref{fig:access-duration-per-op-vs-count.pdf}. Please note
-that prior to the \texttt{count} \textsc{access} operations, equally many
-\textsc{insert}, \textsc{modify} and \textsc{remove} operations have been
-executed, and thus a total of $1+\frac{3}{4}$\texttt{count} versions exist.
+\textit{Up to total operation counts of about 5415 corresponding to approx.
+$\frac{3}{4}5415 \approx 4061$ versions, Node Copying is faster than Rollback.}
+But since longer sequences of \textsc{insert} operations are carried out with
+higher total operation counts, the average length of the list at a randomly
+chosen version increases.
 
-\begin{itemize}
+Once the head of a given version has been obtained, Node Copying is slower at
+iterating through the list than Rollback. With large enough data sets, the list
+will be so long that the cost of iterating the list becomes greater, when
+compared to Rollback, than the benefit of being faster at getting the head node.
 
-  \item Up to total operation counts of about 5415 corresponding to approx.
-  $\frac{3}{4}5415 \approx 4061$ versions, Node Copying is faster than Rollback.
-  But since longer sequences of \textsc{insert} operations are carried out with
-  higher total operation counts, the average length of the list at a randomly
-  chosen version increases.
-  
-  Once the head of a given version has been obtained, Node Copying is slower at
-  iterating through the list than Rollback. With large enough data sets, the
-  list will be so long that the cost of iterating the list becomes greater, when
-  compared to Rollback, than the benefit of being faster at getting the head
-  node.
-  
-  If the Blackbox variant of Rollback could allocate enough memory to complete a
-  greater number of operations, it would likely surpass Node Copying in speed
-  per \textsc{access} operation around $10^5$.
+If the Blackbox variant of Rollback could allocate enough memory to complete a
+greater number of operations, it would likely surpass Node Copying in speed per
+\textsc{access} operation around the $10^5$ mark.
 
-  \item The time spent on optimizing the operations sequence in the
-  Elimination-Reorder variant makes it perform worse at \textsc{access}
-  operations than the Blackbox variant with low operation counts.
-  
-  Once enough elements are inserted, it pays off to reorder the operations for a
-  single iteration through the list instead of $n$ potentially full iterations
-  for $n$ operations.
-  
-  This is the case already at a total operations count of 2327, which
-  corresponds to a list length of at least 582 elements, where
-  Elimination-Reorder becomes faster than Blackbox. With slightly more than 5415
-  total operations, corresponding to a list length of at least 1354, it is also
-  faster than Node Copying.
+\textit{The time spent on optimizing the operations sequence in the
+Elimination-Reorder variant makes it perform worse at \textsc{access} operations
+than the Blackbox variant with low operation counts.} Once enough elements are
+inserted, it pays off to reorder the operations for a single iteration through
+the list instead of $n$ potentially full iterations for $n$ operations.
 
-\end{itemize}
+This is the case already at a total operations count of 2327, which corresponds
+to a list length of at least 582 elements, where Elimination-Reorder becomes
+faster than Blackbox. With slightly more than 5415 total operations,
+corresponding to a list length of at least 1354, it is also faster than Node
+Copying.
 
 \subsection{Insert}
 For this operation, the time which is measured is that which it takes to insert
@@ -311,21 +318,17 @@ The following conclusions regarding the Random scenario are evident when
 examining the diamond-shaped data points plotted in Figure
 \ref{fig:insert-duration-per-op-vs-count.pdf}:
 
-\begin{itemize}
+\textit{The Blackbox variant of Rollback dominates the other implementations
+with any operation count.} Elimination-Reorder starts out the slowest, but after
+5415 total operations, corresponding to at least 1354 \textsc{insert}
+operations, it becomes faster than Node Copying. Eventually, Elimination-Reorder
+and Blackbox are very nearly equally fast.
 
-  \item The Blackbox variant of Rollback dominates the other implementations
-  with any operation count. Elimination-Reorder starts out the slowest, but
-  after 5415 total operations, corresponding to at least 1354 \textsc{insert}
-  operations, it becomes faster than Node Copying. Eventually,
-  Elimination-Reorder and Blackbox are very nearly equally fast.
-  
-  The simple explanation to this result is that Node Copying is slower than the
-  Rollback implementations at iterating through the list to find the point of
-  insertion. Once enough versions exist with long enough lists, this deficiency
-  will cost Node Copying more than it gains from its fast retrieval of the head
-  node.
-
-\end{itemize}
+The simple explanation to this result is that Node Copying is slower than the
+Rollback implementations at iterating through the list to find the point of
+insertion. Once enough versions exist with long enough lists, this deficiency
+will cost Node Copying more than it gains from its fast retrieval of the head
+node.
 
 \begin{figure}[!htbp]
   \center
@@ -338,26 +341,24 @@ examining the diamond-shaped data points plotted in Figure
 \end{figure}
 
 \subsubsection{Sequential scenario}
-The following conclusions are evident when examining the box-shaped data points
-plotted in Figure \ref{fig:insert-duration-per-op-vs-count.pdf}. Please note
-that prior to the \texttt{count} \textsc{access} operations, equally many
-\textsc{insert}, \textsc{modify} and \textsc{remove} operations have been
-executed, and thus a total of $1+\frac{3}{4}$\texttt{count} versions exist.
+The following conclusions regarding the Sequential scenario are evident when
+examining the box-shaped data points plotted in Figure
+\ref{fig:insert-duration-per-op-vs-count.pdf}. Note that prior to the
+\texttt{count} \textsc{access} operations, equally many \textsc{insert},
+\textsc{modify} and \textsc{remove} operations have been executed, and thus a
+total of $1+\frac{3}{4}$\texttt{count} versions exist.
 
-\begin{itemize}
-  
-  \item The Rollback variants are virtually equally fast. This is because, in
-  contrast to the Random scenario, the most recent version is already available
-  when the \textsc{insert} operation is to be applied, and thus that version
-  does not need to be retrieved before the operation can be applied.
-  
-  \item Node Copying is slower than both Rollback variants, and increasingly
-  more so as more \textsc{insert} operations are carried out.
-  
-  This result shows most clearly how, as pointed out before, Node Copying is
-  slower at iterating through the list to the point where the changing operation
-  is supposed to take place.
-\end{itemize}
+\textit{The Rollback variants are virtually equally fast.}
+
+This is because, in contrast to the Random scenario, the most recent version is
+already available when the \textsc{insert} operation is to be applied, and thus
+that version does not need to be retrieved before the operation can be applied.
+
+\textit{Node Copying is slower than both Rollback variants, and increasingly
+more so as more \textsc{insert} operations are carried out.} This result shows
+most clearly how, as pointed out before, Node Copying is slower at iterating
+through the list to the point where the changing operation is supposed to take
+place.
 
 \subsubsection{Other operations}
 The \textsc{modify} and \textsc{remove} operations show virtually the same
@@ -365,9 +366,8 @@ results as the \textsc{insert} operation, since the outcomes mostly depend on
 how long the list gets in the versions created --- a figure which depends
 primarily on the number of \textsc{insert} operations.
 
-The graphs are included in Figure
-\ref{fig:modify-remove-duration-per-op-vs-count.pdf} nevertheless for
-comparison.
+The graphs are nevertheless included in Figure
+\ref{fig:modify-remove-duration-per-op-vs-count.pdf} for comparison.
 
 \begin{figure}[!htbp]
   \center
@@ -384,7 +384,7 @@ comparison.
 \subsubsection{Total duration}
 When looking at the total duration, i.e. the time from start to finish of the
 entire scenario, it turns out that Node Copying is the fastest --- see Figure
-\ref{fig:total-remove-duration-per-op-vs-count.pdf}.
+\ref{fig:total-duration-per-op-vs-count.pdf}.
 
 \begin{figure}[!htbp]
   \center
@@ -396,7 +396,7 @@ entire scenario, it turns out that Node Copying is the fastest --- see Figure
   \caption{Total duration and duration per operation across all the operations
   of one experiment for each batch size.}
 
-  \label{fig:total-remove-duration-per-op-vs-count.pdf}
+  \label{fig:total-duration-per-op-vs-count.pdf}
 \end{figure}
 
 \section{Space results}
@@ -412,16 +412,15 @@ copies and $N$ total operations is estimated according to the following formula:
 \textnormal{total\_space} &=& \textsc{size\_of}(\textnormal{ephemeral node})
 \times
 \sum_{i=1}^F {\textsc{size}(\textnormal{full copy}_i)}\\
-&&+
-\textsc{size\_of}(\textnormal{operation record})\times N\\
-&&+ \textsc{size\_of}(\textnormal{full copy record}) \times F\\
+&&+N\times\textsc{size\_of}(\textnormal{operation record})\\
+&&+F\times\textsc{size\_of}(\textnormal{full copy record})\\
 &&+ \textsc{size\_of}(\textnormal{auxillary DS})
 \end{eqnarray*}
 
-Please note that the total memory reserved by the program when using
-Elimination-Reorder for large data sets is measurably smaller than when using
-Blackbox. This is because fewer nodes are allocated which would be deleted again
-as part of getting form version $v_current$ to version $v_x$.
+The total memory reserved by the program when using Elimination-Reorder for
+large data sets is measurably smaller when observed with OS utilites, than when
+using Blackbox. This is because fewer nodes are allocated which would be deleted
+again as part of getting form version $v_current$ to version $v_x$.
 
 For Node Copying, the estimation is more accurate, given that every time a new
 persistent node is created, either due to an \textsc{insert} operation or due to
