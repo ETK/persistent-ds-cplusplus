@@ -13,7 +13,7 @@ terms of space complexity regardless of the usage scenario. It also performs
 better in accessing a desired version in the randomized scenario independently
 of the data set size.
 
-In the sequential scenario, the smaller time complexity related to navigating
-the data structure at a given version makes an optimized implementation of
-Rollback faster at reaching a given index inside a desired version, when the
-data set is large enough.
+In the sequential scenario, when the data set is large enough, the smaller time
+complexity related to navigating the data structure at a given version makes an
+optimized implementation of Rollback faster than Node Copying at reaching a
+given index inside a desired version.

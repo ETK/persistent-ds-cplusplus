@@ -1,7 +1,13 @@
 \chapter{Conclusion}
 \label{chapter:conclusion}
+I have analysed and compared two approaches to making a data structure partially
+persistent.
 
-\section{Recommendations}
+The two approaches have their strengths and weaknesses. As identified in the
+Method chapter and shown in the Empirical Analysis chapter, they yield different
+results under different usage scenarios.
+
+% \section{Recommendations}
 If sufficient programming time is available for implementing an optimized
 Rollback approach, it is the recommended option when dealing with large numbers
 of operations in a manner similar to the Sequential scenario --- provided that
@@ -9,10 +15,10 @@ sufficient system memory is available. This is especially the case if many
 \textsc{access} operations are expected to be made which are followed by
 navigation far into the produced version.
 
-If on the other hand a data structure is to be made partially persistent, which
-is not suitable for optimizations --- such as those which went into the
-Elimination-Reorder variant of the Rollback implementation of the partially
-persistent doubly linked list.
+On the other hand, a data structure which is not suitable for optimizations such
+as those which went into Eliminate-Reorder, could still be made partially
+persistent with reasonable effort using Node Copying, and the results would be
+better than when using Blackbox Rollback.
 
 If the effective sizes of the data structure in the various versions do not
 become too large, it is recommended to apply the Node Copying approach, unless
@@ -32,10 +38,19 @@ superfluous operations or optimizing the order of the operations sequence or
 other such optimizations are possible and/or feasible for more advanced data
 structures.
 
+Caching techniques or other optimizations could be employed to secure faster
+navigation of the underlying data structure with Node Copying.
+
 More elaborate usage scenarios could be implemented and tested using the
 existing framework. E.g. version access patterns showing how well-known
-algorithms would perform, such as planar point location.
+algorithms would perform, such as planar point location. Different probabilities
+in the Random and Sequential scenarios could also simulate different usage
+patterns.
 
-It could also be investigated whether approaches from different paradigms could
+It could be investigated whether approaches from different paradigms could
 effectively provide partial persistence and be compared to the existing
 implementations.
+
+It might also be worthwhile to find efficient ways of converting between the two
+approaches such that if conditions change, the one which is most efficient can
+be used.

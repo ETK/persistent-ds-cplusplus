@@ -9,12 +9,12 @@ existing version.
 \section{Background}
 
 Tsotras and Kangelaris \cite{Tsotras1995237} define as the database state $s(t)$
-the collection of objects that exist at $t$ in the real-world system modeled by
-the database. The ability to access $s(t)$ is here referred to as ``temporal
-access'', and is essentially the same as partial persistence in that it allows
-read-only access to all versions and read/write access only to the newest
-version. I will define the metric by which the approaches are measured as the
-cost of producing $s(t)$ and navigating to an element within it.
+the collection of objects that exist at time $t$ in the real-world system
+modeled by the database. The ability to access $s(t)$ is here referred to as
+``temporal access'', and is essentially the same as partial persistence in that
+it allows read-only access to all versions and read/write access only to the
+newest version. I will define the metric by which the approaches are measured as
+the cost of producing $s(t)$ and navigating to an element within it.
 
 I will analyse the following two approaches to obtaining partial persistence:
 \begin{description}
@@ -32,31 +32,34 @@ I will analyse the following two approaches to obtaining partial persistence:
 
 \section{The Node Copying method}
 The purpose of the Node Copying method is to enable partial persistence in a
-node-based data structure with bounded in-degree $p$ with a constant factor
-overhead on space and time consumption and transparent navigation of the data
-structure.
+node-based data structure with bounded in-degree $p$ with an amortized constant
+factor overhead on space and time complexity and providing transparent
+navigation of the data structure.
 
 Node Copying is a method described in \cite{Driscoll198986} by which a data
 structure may be made partially persistent through the systematic expansion of
-the nodes of the data structure. An auxillary data structure maintaining entry
-points into the data structure, such as which node is the head of a linked list,
-is also introduced. These two modifications of the data structure enable queries
-to be made with $O(1)$ factor amortized running time overhead and $O(1)$ factor
-space consumption, given that the original data structure has an upper bounded
-in-degree. In the following, I will describe in detail the general procedure as
-well as giving the concrete example of the linked list.
+the node structure. An auxillary data structure maintaining entry points into
+the data structure, such as which node is the head of a linked list, is also
+introduced. These two modifications of the data structure enable queries to be
+made with $O(1)$ factor amortized overhead and $O(1)$ factor space per change,
+given that the original data structure has a bounded in-degree. In the
+following, I will describe in detail the general procedure as well as giving the
+concrete example of the linked list.
 
 \subsection{Node structure expansion}
 \label{subsec:node-structure-expansion}
-As part of the Node Copying method, the node structure is expanded by adding two
-arrays; one for ``modifications'' and one for ``back pointers''.
+In the Node Copying method, the node structure is expanded by adding two arrays;
+one for ``modifications'' and one for ``back pointers''.
 
 \paragraph{Persisting fields.}
 
-The modifications array records changes made to any of the fields of the
-node, including non-pointer fields, since the node was created --- the original
-field values from the time of construction remain unchanged. A modification
-record consist of a version number, a field identifier and a value.
+The modifications array records changes made to any of the fields of the node,
+including non-pointer fields, since the time when node was created --- the
+original field values from the time of construction remain unchanged. A
+modification record consist of a version number, a field identifier and a value.
+When a fields is to be modified, a record is inserted in an empty slot of the
+array.
+
 
 To find the value of a field at a given version $v$, the modifications array is
 looked through, and the most recent change before or at $v$ is returned. If no
@@ -106,33 +109,47 @@ to be made to allow a new modification, the ``\textsc{next}-back'' pointer is
 followed to make a modification record in $y$ that in the new version, it should
 point to $x'$ instead of $x$. But if a modification was already made to $y$,
 e.g. its data field was updated, it will itself need to be copied according to
-the same scheme --- i.e. there may be a cascading effect.
+the same scheme --- i.e. there may be a cascading effect. In this example, where
+$y$ was the head of the list, its copy $y'$ should be indicated as the new head
+in the new version in the auxillary data structure.
 
 \paragraph{Amortized constant factor overhead.}
 To prove that -- even with cascading effects -- there is still a constant factor
 amortized overhead per field change, we shall employ the potential technique.
 
+The intuition is that for every time we copy a node $n$, the copy $n'$ will have
+an empty modifications array, and thus it will take $p$ modifications to $n'$
+before a new copy must be made. A node of which a copy has already been made
+cannot be the target of yet another modification, and thus the available cheap
+modifications to $n'$ account for the time spent on creating $n'$.
+
+The following proof outline is based on the proof made in the original paper
+\cite{Driscoll198986}, but a notable difference here is the absence of a copy
+pointer, and the specification that the modifications are stored in a fixed-size
+array.
+
 We define a \emph{live node} as a node which can be reached in the most recent
 version of the data structure, and a \emph{full} live node as a live node with a
 full modifications array. Let the potential function $\Phi(v)$ be the number of
 full live nodes at version $v$. Then the potential at the initial version
-$\Phi(0)$ is zero.
+$\Phi(0)$ is zero, and since there cannot be a negative number of full live
+nodes, the potential is always greater than or equal to zero.
 
-The actual cost of an update to a full live node which causes a total of $k$
-copies to be made (both due to the node itself being copied and due to any
+The \emph{actual cost} of an update to a full live node which causes a total of
+$k$ copies to be made (both due to the node itself being copied and due to any
 cascading effects) is $O(k) + O(1)$ since each copy costs $O(1)$ both in space
 and time, and modifying a field costs $O(1)$. For each of the copies created,
 the original node is no longer live (since nodes pointing to it are updated to
 point to the copy), and the modifications array of the copy is empty. Thus, each
-copy decreases the potential by 1, and the total change in potential
+copy decreases the potential by 1, and the \emph{total change in potential}
 $\Delta\Phi$ is $O(-k)$ plus $O(1)$ in case the last update made via a back
 pointer fills the modifications array of that node. Therefore, the amortized
 time and space cost for the entire update operation is $O(k) + O(1) + (O(-k) +
 O(1)) = O(1)$.
 
-\section{Rollback}
-Rollback is an approach to persistence based on the techniques described in
-\cite{Tsotras1995237}, namely the combination of the na\"ive ``copy'' and
+\section{The Rollback method}
+Rollback is an approach to partial persistence based on the techniques described
+in \cite{Tsotras1995237}, namely the combination of the na\"ive ``copy'' and
 ``log'' methods.
 
 \subsection{The na\"ive approaches}
@@ -154,6 +171,7 @@ costly. In the worst case, the overhead factor is $O(n)$ when $v_{current}$ is
 $v_0$ and $v_x$ is $v_n$, or opposite.
 
 \subsection{The hybrid approach}
+\label{subsec:the-hybrid-approach}
 An obvious hybrid of the two na\"ive approaches is to keep the records of each
 operation like in the ``log'' approach, and storing a full copy like in the
 ``copy'' approach only once every $d$ versions. To access version $v_x$, the
@@ -162,9 +180,13 @@ and a mutable copy of the data structure at that version is made. Then, using
 the log of the versions from $v_s$ to $v_x$, the data structure corresponding to
 $v_x$ is produced and returned.
 
+In the rest of this document, the term Rollback refers to the hybrid approach.
+
 To reach the full copy nearest to version number $v$, the following expression
 is used:
-$$ \left\lfloor \frac{v + \frac{d}{2}}{d} \right\rfloor $$
+$$ \left\lfloor \frac{v + \frac{d}{2}}{d} \right\rfloor $$ With this indexing
+expression, full copies will be selected for all operations which are within
+$\pm \frac{d}{2}$ versions.
 
 Naturally, $d$ is a user parameter. If there are $n$ versions, there will be
 $\left\lfloor \frac{n}{d} \right\rfloor$ full copies, and the maximum number of
@@ -186,7 +208,7 @@ represents. If $d$ is constant, this approach allows constant time access to any
 version of the data structure.
 
 For large enough data sets, physical memory limits may restrict the ability to
-make new full copies. A way to avoid this is to increase $d$ by a factor $c$
+make new full copies. A way to defer this is to increase $d$ by a factor $c$
 when near the limit and discard all but every $c$ full copy that exists. This
 will free some memory for creating new full copies, but will increase the
 distance between them to $d' = c \cdot d$. Therefore, the claim no longer holds
@@ -194,41 +216,60 @@ that the time to access any version of the data structure is constant. Also, the
 time spent previously on creating the full copies which are now discarded is no
 longer valuable.
 
-\subsection{Operations sequence optimization}
-For certain underlying data structures, it may prove to be feasible to
-pre-process the sequence of operations between a full copy $v_s$ and the
-requested version $v_x$ in order to reduce the actual work necessary to reach
-$v_x$.
+The time required to make a changing operation to the latest version equals the
+time required to produce $v_{latest}$, plus the time required to carry it out
+using the underlying data structure, plus the time required to adding an
+operation record to the log. Carrying out the operation depends on the operation
+in question, but recording the operation in the log potentially requires extra
+information, e.g. a \textsc{remove} operation needs to store information in the
+log allowing the reproduction of the removed element. Thus, the time complexity
+depends both on the operation in question and on the inverse operation, which
+may have different time complexity bounds.
 
-Two different types of pre-processing can be made to reduce work: Eliminating
-superfluous operations and reordering operations. It is worth noting that both
-of these require knowledge of the underlying data structure, and thus requires
-more work to implement.
+It is obvious that with a doubly linked list, the overhead factor for making a
+change to the latest version is $O(1)$.
+
+On the other hand, creating the full copy becomes more expensive the more
+elements are inserted in the preceeding versions. Thus it is intuitively not
+possible to show $O(1)$ factor amortized time overhead for a sequence of
+\textsc{insert} operations long enough to cause a full copy to be made.
+
+\subsection{Operations sequence optimization}
+For certain underlying data structures, it may prove feasible to pre-process the
+sequence of operations between a full copy $v_s$ and the requested version $v_x$
+in order to reduce the actual work necessary to reach $v_x$.
+
+Two different types of pre-processing to reduce work when dealing with a linked
+list are presented here: Eliminating superfluous operations and reordering
+operations. It is worth noting that both of these require knowledge of the
+underlying data structure, and thus require more programming time to implement.
 
 \subsubsection{Eliminating operations}
 The sequence of operations between $v_s$ and $v_x$ may contain some operations
-which will not need to be explicitly applied. The cases are:
+which will not need to be explicitly applied. The cases are, in the context of a
+linked list:
+
 \begin{enumerate}
   \item An \textsc{insert} operation followed by a \textsc{remove} operation at
-  the same effective index -- both can be removed from the sequence since they
+  the same effective index --- both can be removed from the sequence since they
   cancel each other out.
   \label{item:elop-insert-remove}
 
   \item An \textsc{insert} or a \textsc{modify} operation followed by a
-  \textsc{modify} operation at the same effective index -- the former can have
+  \textsc{modify} operation at the same effective index --- the former can have
   its associated data value changed to that of the latter, and the latter can be
   removed from the sequence.
   \label{item:elop-insert-modify}
 
-  \item A \textsc{modify} operation followed by a \textsc{remove} operation at
-  the same effective index -- the former can be removed from the sequence.
+  \item A \textsc{modify} operation followed by zero or more \textsc{modify}
+  operations and a \textsc{remove} operation at the same effective index --- the
+  former can be removed from the sequence.
   \label{item:elop-modify-remove}
 \end{enumerate}
 
 Cases \ref{item:elop-insert-remove} and \ref{item:elop-insert-modify} may of
 course be combined in the sequence of one \textsc{insert} operation, one or more
 \textsc{modify} operations and finally a \textsc{remove} operataion.
-
 
 \paragraph{Algorithm.}
 Pseudo code for an algorithm handling those cases is found in Algorithm
@@ -259,9 +300,9 @@ Pseudo code for an algorithm handling those cases is found in Algorithm
                 \If {$\textsc{index}(o_j) < c$}
                   \State $c \gets c-1$
                 \ElsIf {$\textsc{index}(o_j) = c$}
-                  \State $c \gets \textsc{index}(o_i)$
                   \Switch {$\textsc{type}(o_i)$}
                     \Case {\textsc{insert}}
+                      \State $c \gets \textsc{index}(o_i)$
                       \For {each operation $o_k \in \left\{S|i<k<j\right\}$}
                         \If {$\textsc{index}(o_k) > c$}
                           \State $\textsc{index}(o_k) \gets \textsc{index}(o_k) - 1$
@@ -273,7 +314,7 @@ Pseudo code for an algorithm handling those cases is found in Algorithm
                               \EndIf
                             \EndCase
                             \Case {\textsc{remove}}
-                              \If {$\textsc{index}(o_k) \le c$}
+                              \If {$\textsc{index}(o_k) < c$}
                                 \State $c \gets c-1$
                               \EndIf
                             \EndCase
@@ -344,7 +385,7 @@ operation and $o_j$ is a \textsc{remove} operation works as follows:
 
   \item Since no operation prior to $o_j$ matches $o_i$, it is safe to assume
   that all operations between them have either greater or smaller indices than
-  $c$. If the operation $o_k$ between $o_i$ and $o_j$ works on a smaller index,
+  $c$. If an operation $o_k$ between $o_i$ and $o_j$ works on a smaller index,
   it will compensate the maintained index $c$ by -1 or +1. If $o_k$ works on a
   greater index, $o_k$ will itself have the index it works on reduced by 1,
   since its original index depended on the element of $o_i$ being inserted
@@ -362,19 +403,19 @@ matching cases \ref{item:elop-insert-remove}, \ref{item:elop-insert-modify} or
 \ref{item:elop-modify-remove}.
 
 The space cost of the algorithm is in the order of the sequence size, i.e.
-$O(\left|S\right|)$, since a mutable copy of the relevant operations is made.
-In the worst case, when all $n$ operations are \textsc{insert} or
-\textsc{modify} operations, the time cost is $O\left(n^2\right)$, since with
-every \textsc{insert} operation, all the proceeding operations are examined when
-a matching \textsc{remove} operation is not found.
+$O(1)$, since it works directly on the sequence. In the worst case, when all $n$
+operations are \textsc{insert} or \textsc{modify} operations, the time cost is
+$O\left(n^2\right)$, since with every \textsc{insert} operation, all the
+proceeding operations are examined when a matching \textsc{remove} operation is
+not found.
 
 \subsubsection{Reordering operations}
 
 Applying each operation in the sequence separately is potentially a time
 expensive approach. Consider the case when each operation inserts an element at
-the end of a linked list; the bulk cost for $n$ insertions on a list of length
-$l$ would be $O\left(\left(l+n\right)^2\right)$ if every operation begins by
-iterating from the head of the list to the index of insertion.
+the end of a linked list; the total cost for $n$ insertions on a list of length
+$l$ would be $O\left(\left(l+n\right)^2\right)$ if every operation application
+begins by iterating from the head of the list to the index of insertion.
 
 It would indeed be more efficient to make the insertions in one straight
 iteration of the linked list, which would cost $O(l+n)$; $l$ for reaching the
@@ -394,6 +435,10 @@ operations.
 
 \paragraph{Algorithm.} Pseudocode for an algorithm implementing the above
 approach is found in Algorithm \ref{alg:opsort}.
+
+In each iteration of the algorithm, the minimum operation is identified and
+moved to the left in the sequence such that eventually the sequence will be
+non-decreasingly ordered by index of application.
 
 \begin{algorithm}[!ht]
   \caption{Algorithm for reordering a sequence of operations}
@@ -438,14 +483,18 @@ the sequence requires reordering prior to running the algorithm. That can be
 achieved in $O(n)$ time by testing whether each operation works on an index
 equal to or greater than the previous one.
 
-\vbox{ If the sequences are reordered as described, the total time cost of
+The algorithm does not require superfluous operations to be eliminated with
+Algorithm \ref{alg:eliminate-ops} in order to yield a correct result, but I
+shall suffice with proving its correctness under the assumption that no
+operation works on the same effective element of the underlying linked list.
+
+If the sequences are reordered as described, the total time cost of
 reaching version $v_x$ is:
 \begin{eqnarray*}
 \textsc{CheckIfUnordered}&+\textsc{ReorderOperations}&+\textsc{ApplyOperations}=\\
 O(n) &+ O(n^2) &+ O(l+n)=\\
 &&O(l + n^2)
 \end{eqnarray*}
-}
 
 An example of the reordering of 10 operations by the algorithm is found in
 figure \ref{fig:reorder-example}.
@@ -467,7 +516,8 @@ figure \ref{fig:reorder-example}.
 \paragraph {Proof of reorder algorithm.}
 The purpose of the algorithm is to reorder the operations in the given sequence
 $S_0$ such that they are ordered non-decreasingly by index of application, while
-yielding the same result as $S_0$.
+yielding the same result as $S_0$, allowing the application of the entire
+sequence of operations in a single iteration through the underlying list.
 \begin{definition}
 \label{def:reorder-iter}
 
@@ -516,7 +566,7 @@ also works on a greater index than $o_b$.
 
 Any operation $o_b$ may be swapped with the immediately preceeding operation
 $o_a$ if $o_a$ has a greater index of application. When $o_a$ is replaced by
-$o_a1$, which has been compensated as described above, the result will be the
+$o_{a_1}$, which has been compensated as described above, the result will be the
 same.
 \end{lemma}
 
@@ -574,11 +624,11 @@ $O\left(l+n^2\right)$ time complexity.
 It is shown in Section \ref{sec:time-results} that it is practically slower than
 applying operations indvidually for short enough lists.
 
-\section{Comparison}
-As described in the previous sections, the two approaches have different
+\section{Comparison of Node Copying and Rollback}
+As shown in the previous sections, the Node Copying and Rollback have different
 asymptotic time and space bounds.
 
-The following general findings and expectations are made from the preceeding
+The following general findings and expectations are derived from the preceeding
 analyses:
 
 \begin{itemize}
@@ -592,11 +642,10 @@ analyses:
   \item Once the head node has been retrieved, Node Copying has a more time
   consuming way of navigating to a given index, because it must look through the
   modifications array of each node along the way, whereas Rollback just needs to
-  follow the $next$ pointer field.
-
-  \item The farther Node Copying has to navigate within a single version, the
-  smaller becomes the advantage of fast retrieval of the head node of that
-  version, when compared to the Rollback approach.
+  follow the $next$ pointer field. Therefore, the farther Node Copying has to
+  navigate within a single version, the smaller becomes the advantage of fast
+  retrieval of the head node of that version, when compared to the Rollback
+  approach.
 
   \item Rollback should have constant factor overhead per access operation until
   a large enough number of versions are created. The factor will eventually

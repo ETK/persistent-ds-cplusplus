@@ -4,45 +4,45 @@ versions of a data structure for various purposes. The antonym to ``persistent''
 is in this context called ``ephemeral'', which means that no previous version of
 a data structure is available. In the 1989 article by Driscoll et al.
 \cite{Driscoll198986}, it is described how a data structure may be made
-persistent in two different ways: partially or fully.
+persistent% in two different ways: partially or fully
+.
 
 With partially persistent data structures, any previous version is accessible,
 but not modifiable, and as such changes to the data structure can only be made
 on the most recent version.
 
-With fully persistent data structures, it is possible to make changes to a
-previous version of the data structure, thus creating an alternative branch in
-the `history' of the data structure.
+% With fully persistent data structures, it is possible to make changes to a
+% previous version of the data structure, thus creating an alternative branch in
+% the `history' of the data structure.
 
 Partially persistent data structures can be compared with ``rollback'' databases
 as defined in \cite{10.1109/AFIPS.1987.11}. ``Rollback'' databases allow reading
 from any previous version of the data structure, but only allow changing the
-most recent version.
-Driscoll et al. describe a method for making any bounded in-degree data
-structure partially persistent with $O(1)$ amortized space and time overhead per
-version and $O(1)$ overhead for access of any version and operations on the most
-recent version. This method is called Node Copying.
+most recent version. Driscoll et al. describe a method for making any bounded
+in-degree data structure partially persistent with $O(1)$ amortized space
+overhead per version and $O(1)$ amortized overhead for access of any version and
+operations on the most recent version. This method is called Node Copying.
 
-My thesis will discuss Node Copying versus Rollback as two different approaches
-to obtaining partial persistence, using a doubly linked list as an example data
-structure.
+My thesis will analyse and compare Node Copying and Rollback as two different
+approaches to obtaining partial persistence, using a doubly linked list as an
+example data structure.
 
-\section{Chapter overview}
-In the \nameref{chapter:method} chapter, the theory behind the two approaches is
-analysed, and possible ways to of optimizing the performance of the Rollback
-approach are investigated. Time and space complexities are shown for retrieving
-a desired version and for adding a new version by changing the most recent one.
-
-In the \nameref{chapter:empirical-analysis} chapter, experiments run with
-implementations of the approaches are described, and findings based on their
-experiment data are discussed and explained. The experiments cover two different
-usage scenarios. The purpose of the empirical analysis is to form a practical
-foundation on which to recommend one or the other approach when partial
-persistence is needed in practice.
-
-In the \nameref{chapter:conclusion} chapter, overall conclusions and
-recommendations are made based on the theoretical and empirical analyses, and
-suggestions are given for future work.
+% \section{Chapter overview}
+% In the \nameref{chapter:method} chapter, the theory behind the two approaches is
+% analysed, and possible ways to of optimizing the performance of the Rollback
+% approach are investigated. Time and space complexities are shown for retrieving
+% a desired version and for adding a new version by changing the most recent one.
+% 
+% In the \nameref{chapter:empirical-analysis} chapter, experiments run with
+% implementations of the approaches are described, and findings based on the
+% resulting data are discussed and explained. The experiments cover two different
+% usage scenarios. The purpose of the empirical analysis is to form a practical
+% foundation based on which one or the other approach may be recommended when
+% partial persistence is needed in practice.
+% 
+% In the \nameref{chapter:conclusion} chapter, overall conclusions and
+% recommendations are made based on the theoretical and empirical analyses, and
+% suggestions are given for future work.
 
 \section{Scope}
 
@@ -53,4 +53,4 @@ The thesis is mainly concerned with making a doubly linked list partially
 persistent.
 
 When discussing time and space complexity, the RAM model will be used, and
-big-O notation is used when analysing and comparing such complexities.
+big-O notation is used when deriving and comparing such complexities.
