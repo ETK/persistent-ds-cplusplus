@@ -12,3 +12,6 @@ report/tmp
 report/Thesis.pdf
 report/Thesis.synctex.gz
 *~
+presentation/tmp
+presentation/presentation.pdf
+presentation/presentation.synctex.gz
