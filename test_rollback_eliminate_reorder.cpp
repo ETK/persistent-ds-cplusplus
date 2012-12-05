@@ -19,22 +19,22 @@ void test_rollback_reorder ()
   vector<size_t> versions = vector<size_t>();
   size_t i = 0;
   cout << i << ":";
-  list.print_at_version (i);
+  list.a_print_at (i);
   for (i = 0; i < 500; ++i) {
     double r = rand01();
-    size_t index = (size_t) (rand01() * list.size());
-    if (r < 0.1 && list.size() > 0) {
-      list.remove (index);
+    size_t index = (size_t) (rand01() * list.a_size());
+    if (r < 0.1 && list.a_size() > 0) {
+      list.a_remove (index);
       cout << "remove(" << index << ")" << endl;
-    } else if (r < 0.1 + 0.2 && list.size() > 0) {
-      list.modify_data (index, i);
+    } else if (r < 0.1 + 0.2 && list.a_size() > 0) {
+      list.a_modify (index, i);
       cout << "modify(" << i << ", " << index << ")" << endl;
     } else {
-      list.insert (i, index);
+      list.a_insert (index, i);
       cout << "insert(" << i << ", " << index << ")" << endl;
     }
     cout << i + 1 << ":";
-    list.print_at_version (i + 1);
+    list.a_print_at (i + 1);
 
     versions.push_back (i);
   }
@@ -44,7 +44,7 @@ void test_rollback_reorder ()
 
   for (vector<size_t>::iterator iter = versions.begin(); iter != versions.end(); ++iter) {
     cout << *iter << ":";
-    list.print_at_version (*iter);
+    list.a_print_at (*iter);
   }
 }
 

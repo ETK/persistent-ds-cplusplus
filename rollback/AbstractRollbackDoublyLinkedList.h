@@ -63,20 +63,15 @@ namespace rollback
     
     virtual ~AbstractRollbackDoublyLinkedList () {}
 
-    void insert (size_t node_data, std::size_t index);
-
-    /// removes the specified node from the next version
-    void remove (std::size_t index);
-
-    void modify_data (std::size_t index, std::size_t value);
-
-    std::size_t print_at_version (std::size_t v);
-
-    std::size_t num_records ();
+//     void insert (size_t node_data, std::size_t index);
+//     void remove (std::size_t index);
+//     void modify_data (std::size_t index, std::size_t value);
+//     std::size_t print_at_version (std::size_t v);
+//     std::size_t num_records ();
     ephemeral::Node* head ();
     ephemeral::Node* head_at (std::size_t v);
-    std::size_t size ();
-    std::size_t size_at (std::size_t v);
+//     std::size_t size ();
+//     std::size_t size_at (std::size_t v);
 
     const std::size_t a_access (const std::size_t version,
                                 const std::size_t index);

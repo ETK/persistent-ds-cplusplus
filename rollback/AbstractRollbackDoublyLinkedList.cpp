@@ -62,55 +62,13 @@ namespace rollback
   void AbstractRollbackDoublyLinkedList::a_insert (const std::size_t index,
       const std::size_t value)
   {
-    insert (value, index);
-  }
-
-  void AbstractRollbackDoublyLinkedList::a_modify (const std::size_t index,
-      const std::size_t value)
-  {
-    modify_data (index, value);
-  }
-
-  void AbstractRollbackDoublyLinkedList::a_remove (const std::size_t index)
-  {
-    remove (index);
-  }
-
-  const std::size_t AbstractRollbackDoublyLinkedList::a_size_at (const std::size_t version)
-  {
-    return size_at (version);
-  }
-
-  const std::size_t AbstractRollbackDoublyLinkedList::a_size ()
-  {
-    return size ();
-  }
-
-  const std::size_t AbstractRollbackDoublyLinkedList::a_num_versions ()
-  {
-    return records.size () + 1;
-  }
-
-  void AbstractRollbackDoublyLinkedList::a_print_at (std::size_t version)
-  {
-    ensure_version (version);
-    ephemeral_current->print ();
-  }
-
-  size_t AbstractRollbackDoublyLinkedList::num_records ()
-  {
-    return records.size ();
-  }
-
-  void AbstractRollbackDoublyLinkedList::insert (size_t node_data, std::size_t index)
-  {
     ensure_version (records.size ());
 
     record_t record;
     record.operation = INSERT;
     record.index = index;
-    record.old_data = node_data;
-    record.data = node_data;
+    record.old_data = value;
+    record.data = value;
     if (records.size () > 0) {
       record.size = 1 + records.back ().size;
     }
@@ -121,7 +79,8 @@ namespace rollback
     rollforward ();
   }
 
-  void AbstractRollbackDoublyLinkedList::modify_data (size_t index, size_t value)
+  void AbstractRollbackDoublyLinkedList::a_modify (const std::size_t index,
+      const std::size_t value)
   {
     ensure_version (records.size ());
 
@@ -145,7 +104,7 @@ namespace rollback
     rollforward ();
   }
 
-  void AbstractRollbackDoublyLinkedList::remove (std::size_t index)
+  void AbstractRollbackDoublyLinkedList::a_remove (const std::size_t index)
   {
     ensure_version (records.size ());
 
@@ -167,30 +126,33 @@ namespace rollback
     rollforward ();
   }
 
-  size_t AbstractRollbackDoublyLinkedList::print_at_version (size_t v)
+  const std::size_t AbstractRollbackDoublyLinkedList::a_size_at (const std::size_t version)
   {
-    ensure_version (v);
-    ephemeral_current->print ();
+    ensure_version (version);
     return ephemeral_current->size;
   }
 
-  size_t AbstractRollbackDoublyLinkedList::size ()
+  const std::size_t AbstractRollbackDoublyLinkedList::a_size ()
   {
     ensure_version (records.size ());
     return ephemeral_current->size;
+  }
+
+  const std::size_t AbstractRollbackDoublyLinkedList::a_num_versions ()
+  {
+    return records.size () + 1;
+  }
+
+  void AbstractRollbackDoublyLinkedList::a_print_at (std::size_t version)
+  {
+    ensure_version (version);
+    ephemeral_current->print ();
   }
 
   ephemeral::Node* AbstractRollbackDoublyLinkedList::head ()
   {
     ensure_version (records.size ());
     return ephemeral_current->head;
-  }
-
-  size_t AbstractRollbackDoublyLinkedList::size_at (size_t v)
-  {
-    ensure_version (v);
-    size_t size = ephemeral_current->size;
-    return size;
   }
 
   ephemeral::Node* AbstractRollbackDoublyLinkedList::head_at (size_t v)

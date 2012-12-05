@@ -62,63 +62,6 @@ namespace node_copying
   void DoublyLinkedList::a_insert (const std::size_t index,
                                    const std::size_t value)
   {
-    insert (value, index);
-  }
-
-  void DoublyLinkedList::a_modify (const std::size_t index,
-                                   const std::size_t value)
-  {
-    Node* node = head();
-    for (size_t i = 0; i < index; ++i) {
-      node = node->next();
-    }
-    set_data (node, value);
-  }
-
-  void DoublyLinkedList::a_remove (const std::size_t index)
-  {
-    Node* node = head();
-    for (size_t i = 0; i < index; ++i) {
-      node = node->next();
-    }
-    remove (node);
-  }
-
-  const std::size_t DoublyLinkedList::a_size ()
-  {
-    return size();
-  }
-
-  const std::size_t DoublyLinkedList::a_size_at (const std::size_t version)
-  {
-    return size_at (version);
-  }
-
-  const std::size_t DoublyLinkedList::a_num_versions ()
-  {
-    return versions.size();
-  }
-
-  void DoublyLinkedList::a_print_at (std::size_t version)
-  {
-    print_at_version (version);
-  }
-
-#ifdef EXTRA_ASSERTS
-  void assert_actual_size (Node* head, size_t expected_size)
-  {
-    size_t actual_size = 0;
-    Node* n = head;
-    while (n) {
-      ++actual_size;
-      n = n->next ();
-    }
-    assert (expected_size == actual_size);
-  }
-#endif
-
-  pair < size_t, Node* >DoublyLinkedList::insert (size_t data, size_t index)
-  {
 #ifdef LOGGING
     cout << "v" << version << ": insert (" << data << ", " <<
          index << ")" << endl;
@@ -131,7 +74,7 @@ namespace node_copying
 #ifdef MEASURE_SPACE
     space += sizeof (*new_node);
 #endif
-    new_node->data_val = data;
+    new_node->data_val = value;
 
     if (versions.size () > 0 && head ()) {
       Node* new_head = head();
@@ -202,9 +145,73 @@ namespace node_copying
       assert_actual_size (head (), new_version.size);
 #endif
     }
-
-    return make_pair (version, head ());
   }
+
+  void DoublyLinkedList::a_modify (const std::size_t index,
+                                   const std::size_t value)
+  {
+    Node* node = head();
+    for (size_t i = 0; i < index; ++i) {
+      node = node->next();
+    }
+    set_data (node, value);
+  }
+
+  void DoublyLinkedList::a_remove (const std::size_t index)
+  {
+    Node* node = head();
+    for (size_t i = 0; i < index; ++i) {
+      node = node->next();
+    }
+    remove (node);
+  }
+
+  const std::size_t DoublyLinkedList::a_size ()
+  {
+    if (versions.size() > 0) {
+      return versions.back ().size;
+    }
+    else {
+      return 0;
+    }
+  }
+
+  const std::size_t DoublyLinkedList::a_size_at (const std::size_t version)
+  {
+    return versions[version].size;
+  }
+
+  const std::size_t DoublyLinkedList::a_num_versions ()
+  {
+    return versions.size();
+  }
+
+  void DoublyLinkedList::a_print_at (std::size_t version)
+  {
+    size_t printed_size = 0;
+    Node* head = head_at (version);
+    Node* n = head;
+    while (n) {
+      ++printed_size;
+      cout << n->data_at (version) << " ";
+      cout.flush ();
+      n = n->next_at (version);
+    }
+    cout << endl;
+  }
+
+#ifdef EXTRA_ASSERTS
+  void assert_actual_size (Node* head, size_t expected_size)
+  {
+    size_t actual_size = 0;
+    Node* n = head;
+    while (n) {
+      ++actual_size;
+      n = n->next ();
+    }
+    assert (expected_size == actual_size);
+  }
+#endif
 
   DoublyLinkedList::
   version_info_t DoublyLinkedList::remove (node_copying::Node *
@@ -283,14 +290,6 @@ namespace node_copying
     return ss.str ();
   }
 #endif
-
-  Node* DoublyLinkedList::modify_field (Node* node,
-                                        field_name_t field_name,
-                                        Node* value)
-  {
-    Node* empty;
-    return modify_field (node, field_name, value, empty);
-  }
 
   Node* DoublyLinkedList::modify_field (Node* node,
                                         field_name_t field_name,
@@ -449,28 +448,6 @@ namespace node_copying
 #endif
   }
 
-  const vector < DoublyLinkedList::version_info_t >
-  &DoublyLinkedList::get_versions ()
-  {
-    return versions;
-  }
-
-  size_t DoublyLinkedList::print_at_version (size_t v)
-  {
-    size_t printed_size = 0;
-    Node* head = head_at (v);
-    Node* n = head;
-    while (n) {
-      ++printed_size;
-      cout << n->data_at (v) << " ";
-      cout.flush ();
-      n = n->next_at (v);
-    }
-    cout << endl;
-
-    return printed_size;
-  }
-
   Node* DoublyLinkedList::head () const
   {
     return versions.back ().head;
@@ -481,21 +458,6 @@ namespace node_copying
     return versions[v].head;
   }
 
-  size_t DoublyLinkedList::size_at (size_t v) const
-  {
-    return versions[v].size;
-  };
-
-  size_t DoublyLinkedList::size () const
-  {
-    if (versions.size() > 0) {
-      return versions.back ().size;
-    }
-    else {
-      return 0;
-    }
-  };
-
   void print_dot_graph_helper (Node* n, size_t v,
                                set < Node* >&printed,
                                const set < Node* >&live_set,
@@ -505,23 +467,29 @@ namespace node_copying
       return;
     }
 
-    out << "    // node " << n << " with data " << n->data_at (v) << endl;
+    out << "    // ";
+    if (live_set.find (n) != live_set.end ()) {
+      out << "live";
+    } else {
+      out << "dead";
+    }
+    out << " node " << n << " with data " << n->data_at (v) << endl;
 
     if (printed.empty ()) {
       out << "    struct" << n <<
-          "[style=filled,fillcolor=cyan,label=\"<id> " << n << "|{<data> " <<
-          n->data_val << "|<prev> prev|<next> next}";
+          "[style=filled,fillcolor=cyan,label=\"<id> " << n << "|{<prev> prev|<data> " <<
+          n->data_val << "|<next> next}";
     }
     else
       if (live_set.find (n) != live_set.end ()) {
         out << "    struct" << n <<
-            "[style=filled,fillcolor=cyan2,label=\"<id> " << n << "|{<data> " <<
-            n->data_val << "|<prev> prev|<next> next}";
+            "[style=filled,fillcolor=cyan2,label=\"<id> " << n << "|{<prev> prev|<data> " <<
+            n->data_val << "|<next> next}";
       }
       else {
         out << "    struct" << n <<
-            "[style=filled,fillcolor=gray,label=\"<id> " << n << "|{<data> " <<
-            n->data_val << "|<prev> prev|<next> next}";
+            "[style=filled,fillcolor=gray,label=\"<id> " << n << "|{<prev> prev|<data> " <<
+            n->data_val << "|<next> next}";
       }
     printed.insert (n);
 
@@ -567,18 +535,18 @@ namespace node_copying
     if (n->prev_ptr) {
       to_print.push_back (n->prev_ptr);
       out << "    struct" << n << ":prev -> struct" << n->prev_ptr <<
-          ":id [color=blue, ";
+          ":id [color=blue";
       if (live_set.find (n) == live_set.end() || n->prev_ptr != prev) {
-        out << "style=dashed";
+        out << ", style=dashed";
       }
       out << "];" << endl;
     }
     if (n->next_ptr) {
       to_print.push_back (n->next_ptr);
       out << "    struct" << n << ":next -> struct" << n->next_ptr <<
-          ":id [color=green, ";
+          ":id [color=green";
       if (live_set.find (n) == live_set.end() || next != 0x0 && n->next_ptr != next) {
-        out << "style=dashed";
+        out << ", style=dashed";
       }
       out << "];" << endl;
     }
@@ -592,18 +560,18 @@ namespace node_copying
         case PREV:
           to_print.push_back (n->mods[i].value);
           out << "    struct" << n << ":prev" << i << " -> struct" <<
-              n->mods[i].value << ":id [color=blue, ";
+              n->mods[i].value << ":id [color=blue";
           if (live_set.find (n) == live_set.end() || prev != 0x0 && n->mods[i].value != prev) {
-            out << "style=dashed";
+            out << ", style=dashed";
           }
           out << "];" << endl;
           break;
         case NEXT:
           to_print.push_back (n->mods[i].value);
           out << "    struct" << n << ":next" << i << " -> struct" <<
-              n->mods[i].value << ":id [color=green, ";
+              n->mods[i].value << ":id [color=green";
           if (live_set.find (n) == live_set.end() || n->mods[i].value != next) {
-            out << "style=dashed";
+            out << ", style=dashed";
           }
           out << "];" << endl;
           break;
@@ -624,24 +592,6 @@ namespace node_copying
     for (size_t i = 0; i < to_print.size (); ++i) {
       print_dot_graph_helper (to_print[i], v, printed, live_set, out);
     }
-
-//     set < Node * >same = set < Node * >();
-//     if (n->next_ptr) {
-//       same.insert (n->next_ptr);
-//     }
-//     for (size_t i = 0; i < n->n_mods; ++i) {
-//       if (n->mods[i].field_name == NEXT && n->mods[i].value) {
-//         same.insert (n->mods[i].value);
-//       }
-//     }
-//     if (same.size () >= 2) {
-//       out << "    { rank = same";
-//       for (set < Node * >::iterator iter = same.begin (); iter != same.end ();
-//            ++iter) {
-//         out << "; " << "struct" << *iter;
-//       }
-//       out << " };" << endl;
-//     }
   }
 
   void prepare_live_set_helper (Node* n, set < Node* >&live_set, size_t v,

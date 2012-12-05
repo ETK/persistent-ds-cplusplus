@@ -45,27 +45,8 @@ public:
     size_t size;
   };
 
-  std::size_t version;
-
   DoublyLinkedList ();
 
-  std::pair < std::size_t, Node* >insert (std::size_t data,
-                                          std::size_t index);
-
-  /// removes the specified node from the next version
-  version_info_t remove (Node* to_remove);
-
-  std::pair < std::size_t, Node* >set_data (Node* node, size_t value);
-
-  const std::vector < version_info_t > &get_versions ();
-
-  Node* head () const;
-  Node* head_at (std::size_t v) const;
-
-  std::size_t size () const;
-  std::size_t size_at (std::size_t v) const;
-
-  std::size_t print_at_version (std::size_t v);
   void print_dot_graph (std::size_t v, std::ofstream& out);
 
   const std::size_t a_access (const std::size_t version,
@@ -79,9 +60,13 @@ public:
   void a_print_at (std::size_t version);
 
 private:
-  Node* modify_field (node_copying::Node* node,
-                      field_name_t field_name,
-                      node_copying::Node* value);
+  std::size_t version;
+
+  Node* head () const;
+  Node* head_at (std::size_t v) const;
+
+  version_info_t remove (Node* to_remove);
+  std::pair < std::size_t, Node* >set_data (Node* node, size_t value);
   Node* modify_field (node_copying::Node* node,
                       field_name_t field_name,
                       node_copying::Node* value,

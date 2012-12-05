@@ -9,10 +9,10 @@
 #include <sstream>
 #include <string>
 
-#include "partiallypersistent/DoublyLinkedList.h"
+#include "node_copying/DoublyLinkedList.h"
 
 using namespace std;
-using namespace partiallypersistent;
+using namespace node_copying;
 
 int main (int argc, char **argv) {
   
