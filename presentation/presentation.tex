@@ -102,13 +102,14 @@
 \begin{figure}
 \center
 \only<1>{\vphantom{\includegraphics[height=0.55\textheight]{figures/v1.pdf}}}
-\only<2>{\includegraphics[height=0.55\textheight]{figures/v1.pdf}}
-\only<3>{\includegraphics[height=0.55\textheight]{figures/v2.pdf}}
-\only<4>{\includegraphics[height=0.55\textheight]{figures/v3.pdf}}
-\only<5>{\includegraphics[height=0.55\textheight]{figures/v4.pdf}}
-\only<6>{\includegraphics[height=0.55\textheight]{figures/v5.pdf}}
-\only<7>{\includegraphics[height=0.55\textheight]{figures/v6.pdf}}
-\only<8>{\includegraphics[height=0.55\textheight]{figures/v7.pdf}}
+\only<2>{\includegraphics[height=0.55\textheight]{figures/node-copying-example.pdf}}
+\only<3>{\includegraphics[height=0.55\textheight]{figures/v1.pdf}}
+\only<4>{\includegraphics[height=0.55\textheight]{figures/v2.pdf}}
+\only<5>{\includegraphics[height=0.55\textheight]{figures/v3.pdf}}
+\only<6>{\includegraphics[height=0.55\textheight]{figures/v4.pdf}}
+\only<7>{\includegraphics[height=0.55\textheight]{figures/v5.pdf}}
+\only<8>{\includegraphics[height=0.55\textheight]{figures/v6.pdf}}
+\only<9>{\includegraphics[height=0.55\textheight]{figures/v7.pdf}}
 \end{figure}
 \end{frame}
 
@@ -134,9 +135,65 @@
 \begin{frame}
 \frametitle{Empirical Analysis}
 \begin{itemize}
+  \item Two usage scenarios:
+  \begin{itemize}
+
+    \item Sequential: $\frac{1}{4}c$ of each operation in following
+    order:\newline\hphantom{Sequential: } \textsc{insert}, \textsc{modify},
+    \textsc{remove}, \textsc{access}
+
+    \item Random: $c$ operations, $p=\frac{1}{4}$ for each type
+  \end{itemize}
+
+\end{itemize}
+\end{frame}
+
+\subsection{Implementation overview}
+
+\begin{frame}
+\frametitle{Implementation overview}
+\begin{itemize}
+  \item Three implementations:
+
+  \begin{itemize}
+    \item Node Copying
+    \item Rollback -- Blackbox variant
+    \item Rollback -- Eliminate-Reorder variant
+  \end{itemize}
+\end{itemize}
+\includegraphics[width=\textwidth]{figures/classAbstractDoublyLinkedList__inherit__graph.pdf}
+\end{frame}
+
+\subsection{Experiments}
+
+
+\begin{frame}
+\frametitle{Experiments}
+\begin{itemize}
+
+  \item Duration, count measured separately for each operation type
+
+  \item 10 different operation counts, exponentially spaced in the range between
+  1000 and 2000000 (both inclusive)
+  
+  \begin{itemize}
+    \item Only the first 7 counts in Sequential usage scenario
+  \end{itemize}
+
+  \item 10 runs with each count, graphs show average durations and 95\%
+  confidence intervals
+
+\end{itemize}
+\end{frame}
+
+\subsection{Results}
+\begin{frame}
+\frametitle{Results}
+\begin{itemize}
   \item 
 \end{itemize}
 \end{frame}
+
 
 \section*{Summary}
 
@@ -164,7 +221,7 @@
 \end{itemize}
 \end{frame}
 
-\begin{frame}
+\begin{frame}<beamer:0>
 \frametitle{References}
 \bibliographystyle{alpha}
 \bibliography{References}
