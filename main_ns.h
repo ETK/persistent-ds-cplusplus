@@ -137,7 +137,7 @@ namespace main_ns
     sql.precision (15);
     sql.setf (ios::fixed);
     sql <<
-        "insert into space (usage_scenario, implementation, count, max_no_snapshots, max_snapshot_dist, version, space) values ('"
+        "insert into space (usage_scenario, implementation, count, max_no_snapshots, max_snapshot_dist, version, space) values ('" << usage_scenario << "', '"
         << mode_to_string (mode) << "', " << count << ", " << max_no_snapshots << ", " << max_snapshot_dist << ", " << "'" << git_hash << "', " << space << ")";
     rc = sqlite3_exec (db, sql.str ().c_str (), callback, 0, &zErrMsg);
     if (rc != SQLITE_OK) {

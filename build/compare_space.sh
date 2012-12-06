@@ -1,5 +1,6 @@
 #!/bin/bash
 
+date +%s%N > begin_space
 for c in 1000 2327  5415  12599 29317 68219 158740 369375  859506  2000000
 do
   echo "Count: ${c}"
@@ -13,4 +14,4 @@ do
     done
   done
 done
-
+date +%s%N > end_space
