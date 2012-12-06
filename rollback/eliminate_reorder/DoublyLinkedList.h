@@ -37,8 +37,7 @@ namespace rollback
       DoublyLinkedList (size_t max_no_snapshots, size_t max_snapshot_dist) : AbstractRollbackDoublyLinkedList (max_no_snapshots, max_snapshot_dist) {}
       virtual ~DoublyLinkedList() {}
     private:
-//      virtual void rollforward();
-      virtual void ensure_version (std::size_t v);
+      void ensure_version (std::size_t v);
     };
   }
 }

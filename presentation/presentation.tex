@@ -171,17 +171,22 @@
 \frametitle{Experiments}
 \begin{itemize}
 
-  \item Duration, count measured separately for each operation type
+  \item Duration \& count measured separately for each operation type
 
   \item 10 different operation counts, exponentially spaced in the range between
   1000 and 2000000 (both inclusive)
-  
+
   \begin{itemize}
     \item Only the first 7 counts in Sequential usage scenario
   \end{itemize}
 
   \item 10 runs with each count, graphs show average durations and 95\%
   confidence intervals
+  \begin{itemize}
+    \item Note: Same seed passed to \texttt{srand()} with every experiment
+  \end{itemize}
+
+  \item Memory usage estimates conducted with duration measurements turned off
 
 \end{itemize}
 \end{frame}

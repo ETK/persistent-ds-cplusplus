@@ -9,7 +9,6 @@
 #include "rollback/AbstractRollbackDoublyLinkedList.h"
 #include "rollback/blackbox/DoublyLinkedList.h"
 #include "rollback/eliminate_reorder/DoublyLinkedList.h"
-#include "rollback/reorder/DoublyLinkedList.h"
 #include "node_copying/DoublyLinkedList.h"
 
 using namespace std;
@@ -35,14 +34,15 @@ hdl (int sig, siginfo_t* siginfo, void* context)
 int
 main (int argc, char** argv)
 {
-#ifndef MEASURE_SPACE
+// #ifndef MEASURE_SPACE
   main_ns::start_time = main_ns::nano_time ();
-#endif
+// #endif
 
   using namespace main_ns;
 
   main_ns::mode_t mode = main_ns::eliminate_reorder;
   bool only_measure_time_to_head = false;
+  unsigned int seed = start_time;
 
   double p_remove = 0.25;
   double p_modify = 0.25;
@@ -85,26 +85,34 @@ main (int argc, char** argv)
           ss << "No argument given to " << arg;
           throw ss.str ();
         }
-      } else if ("-r" == arg || "--rollback-blackbox" == arg) {
+      } else if ("-b" == arg || "--rollback-blackbox" == arg) {
         mode = main_ns::blackbox;
-      } else if ("-l" == arg || "--rollback-eliminate-reorder" == arg) {
+      } else if ("-e" == arg || "--rollback-eliminate-reorder" == arg) {
         mode = main_ns::eliminate_reorder;
-      } else if ("-o" == arg || "--rollback-reorder" == arg) {
-        mode = main_ns::reorder;
-      } else if ("-p" == arg || "--node-copying" == arg) {
+      } else if ("-n" == arg || "--node-copying" == arg) {
         mode = main_ns::node_copying;
       } else if ("-s" == arg || "--store-results" == arg) {
         store_results = true;
-      } else if ("--randomize-operations" == arg) {
+      } else if ("-r" == arg || "--randomize-operations" == arg) {
         randomize_operations = true;
       } else if ("-h" == arg || "--head-only" == arg) {
         only_measure_time_to_head = true;
+      } else if ("--seed" == arg) {
+        if (++i < argc) {
+          seed = atoi (argv[i]);
+        } else {
+          stringstream ss;
+          ss << "No argument given to " << arg;
+          throw ss.str ();
+        }
+      } else {
+        cerr << "Argument \"" << arg << "\" not understood." << endl;
+        exit (1);
       }
     }
 
     cout.precision (15);
 
-#ifndef MEASURE_SPACE
     sqlite3* db;
     char* zErrMsg;
     int rc;
@@ -115,23 +123,21 @@ main (int argc, char** argv)
       sqlite3_close (db);
       return 1;
     }
-//     rc =
-//       sqlite3_exec (db,
-//                     "drop table if exists results", callback, 0, &zErrMsg);
-//     if (rc != SQLITE_OK) {
-//       cerr << "SQL error: " << zErrMsg << endl;
-//       sqlite3_free (zErrMsg);
-//     }
+#ifndef MEASURE_SPACE
     rc = sqlite3_exec (db,
                        "create table if not exists results (id integer primary key autoincrement not null, start_time integer not null, version text not null, implementation text not null, count integer not null, max_no_snapshots integer, max_snapshot_dist integer, begin_time integer not null, end_time integer not null, operation text not null, duration integer not null)",
                        callback, 0, &zErrMsg);
+#else
+    rc = sqlite3_exec (db,
+                       "create table if not exists space (id integer primary key autoincrement not null, usage_scenario text not null, version text not null, implementation text not null, count integer not null, max_no_snapshots integer, max_snapshot_dist integer, space integer)",
+                       callback, 0, &zErrMsg);
+#endif
     if (rc != SQLITE_OK) {
       cerr << "SQL error: " << zErrMsg << endl;
       sqlite3_free (zErrMsg);
     }
-#endif
 
-    srand (0);
+    srand (seed);
     AbstractDoublyLinkedList* list = 0x0;
     switch (mode) {
     case main_ns::node_copying:
@@ -141,10 +147,6 @@ main (int argc, char** argv)
       list =
         new rollback::blackbox::DoublyLinkedList (max_no_snapshots,
             max_snapshot_dist);
-      break;
-    case main_ns::reorder:
-      list = new rollback::reorder::DoublyLinkedList (max_no_snapshots,
-          max_snapshot_dist);
       break;
     case main_ns::eliminate_reorder:
       list =
@@ -243,17 +245,15 @@ main (int argc, char** argv)
     }
 
 #ifdef MEASURE_SPACE
-    cout << main_ns::count << ";" << mode_to_string (mode) << ";" <<
-         (randomize_operations ? "randomized" : "sequential") << ";";
+    size_t space = 0;
     switch (mode) {
     case main_ns::node_copying :
-      cout << ( (node_copying::DoublyLinkedList*) list)->space + sizeof (*list) + sizeof (node_copying::DoublyLinkedList::version_info_t) * list->a_num_versions();
+      space += ( (node_copying::DoublyLinkedList*) list)->space + sizeof (*list) + sizeof (node_copying::DoublyLinkedList::version_info_t) * list->a_num_versions();
       break;
     case main_ns::eliminate_reorder:
-    case main_ns::reorder:
     case main_ns::blackbox: {
       rollback::AbstractRollbackDoublyLinkedList* rlist = ( (rollback::AbstractRollbackDoublyLinkedList*) list);
-      size_t space = sizeof (*rlist);
+      space += sizeof (*rlist);
       const std::vector < std::pair < std::size_t,
             ephemeral::DoublyLinkedList* >> & snapshots = rlist->get_snapshots();
       for (std::vector < std::pair < std::size_t,
@@ -263,12 +263,12 @@ main (int argc, char** argv)
         space += snaphot.second->size * sizeof (ephemeral::Node);
         space += sizeof (*snaphot.second);
       }
-      space += rlist->num_records() * sizeof (rollback::record_t);
-      cout << space;
+      space += (rlist->a_num_versions() - 1) * sizeof (rollback::record_t);
       break;
     }
     }
-    cout << "" << endl;
+    string usage_scenario = randomize_operations ? "random" : "sequential";
+    log_space_to_db (usage_scenario, mode, main_ns::count, max_no_snapshots, max_snapshot_dist, space);
 #endif
 
 #ifndef MEASURE_SPACE
@@ -293,6 +293,7 @@ main (int argc, char** argv)
 }
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; ;
+
 
 
 

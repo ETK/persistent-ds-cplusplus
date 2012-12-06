@@ -6,7 +6,7 @@
 
 #include <sqlite3.h>
 
-//#define MEASURE_SPACE
+#define MEASURE_SPACE
 
 namespace main_ns
 {
@@ -15,7 +15,6 @@ namespace main_ns
   enum mode_t {
     blackbox,
     eliminate_reorder,
-    reorder,
     node_copying
   };
 
@@ -42,8 +41,6 @@ namespace main_ns
       return "blackbox";
     case eliminate_reorder:
       return "eliminate_reorder";
-    case reorder:
-      return "reorder";
     case node_copying:
       return "node_copying";
     default:
@@ -51,7 +48,15 @@ namespace main_ns
     }
   }
 
-#ifndef MEASURE_SPACE
+  double
+  nano_time ()
+  {
+    timespec ts;
+    clock_gettime (CLOCK_REALTIME, &ts);
+
+    return ts.tv_sec * 1e9 + ts.tv_nsec;
+  }
+
   std::string exec (string cmd)
   {
     FILE* pipe = popen (cmd.c_str (), "r");
@@ -76,15 +81,7 @@ namespace main_ns
     return 0;
   }
 
-  double
-  nano_time ()
-  {
-    timespec ts;
-    clock_gettime (CLOCK_REALTIME, &ts);
-
-    return ts.tv_sec * 1e9 + ts.tv_nsec;
-  }
-
+#ifndef MEASURE_SPACE
   void
   log_operation_to_db (const mode_t mode, size_t count, const string operation,
                        size_t max_no_snapshots, size_t max_snapshot_dist,
@@ -112,6 +109,36 @@ namespace main_ns
             long)
         begin_operation << ", " << (long long) end_operation << ", '" << operation
         << "', " << (long long) (end_operation - begin_operation) << ")";
+    rc = sqlite3_exec (db, sql.str ().c_str (), callback, 0, &zErrMsg);
+    if (rc != SQLITE_OK) {
+      stringstream ss;
+      ss << "SQL error: " << zErrMsg << endl;
+      sqlite3_free (zErrMsg);
+      throw ss.str ();
+    }
+    sqlite3_close (db);
+  }
+#else
+  void
+  log_space_to_db (const string usage_scenario, const mode_t mode, const size_t count, const size_t max_no_snapshots, const size_t max_snapshot_dist, const long long space) {
+    sqlite3* db;
+    char* zErrMsg;
+    int rc;
+    rc = sqlite3_open ("sqlite.db", &db);
+    if (rc) {
+      stringstream ss;
+      ss << "Can't open database \"sqlite.db\": " << sqlite3_errmsg (db);
+      sqlite3_close (db);
+      throw ss.str ();
+    }
+    string git_hash = exec ("git rev-parse HEAD");
+    git_hash.erase (std::remove (git_hash.begin(), git_hash.end(), '\n'), git_hash.end());
+    stringstream sql;
+    sql.precision (15);
+    sql.setf (ios::fixed);
+    sql <<
+        "insert into space (usage_scenario, implementation, count, max_no_snapshots, max_snapshot_dist, version, space) values ('"
+        << mode_to_string (mode) << "', " << count << ", " << max_no_snapshots << ", " << max_snapshot_dist << ", " << "'" << git_hash << "', " << space << ")";
     rc = sqlite3_exec (db, sql.str ().c_str (), callback, 0, &zErrMsg);
     if (rc != SQLITE_OK) {
       stringstream ss;
