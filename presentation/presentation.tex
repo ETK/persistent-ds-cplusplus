@@ -177,13 +177,19 @@
   1000 and 2000000 (both inclusive)
 
   \begin{itemize}
+
     \item Only the first 7 counts in Sequential usage scenario
+
   \end{itemize}
 
   \item 10 runs with each count, graphs show average durations and 95\%
   confidence intervals
+
   \begin{itemize}
-    \item Note: Same seed passed to \texttt{srand()} with every experiment
+
+    \item Note: Same seed passed to \texttt{srand()} with every experiment to
+    produce comparable sequence orders in Random usage scenario
+
   \end{itemize}
 
   \item Memory usage estimates conducted with duration measurements turned off
@@ -192,13 +198,81 @@
 \end{frame}
 
 \subsection{Results}
+
 \begin{frame}
-\frametitle{Results}
+\frametitle{Results: \textsc{insert} operations}
 \begin{itemize}
-  \item 
+
+  \item Node Copying is slower at \textsc{insert} operations compared to either
+  Rollback implementation, regardless of usage scenario
+
+  \item Eliminate-Reorder is not faster than Blackbox at \textsc{insert}
+  operations
+
 \end{itemize}
 \end{frame}
 
+\begin{frame}
+\begin{figure}
+  \center
+  \includegraphics[height=0.65\textheight]{figures/graphs/insert-duration-per-op-vs-count.pdf}
+  \caption{Duration per \textsc{insert} operation in milliseconds}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Results: \textsc{access} operations}
+\begin{itemize}
+
+  \item Node Copying is \textit{considerably} faster at \textsc{access}
+  operations in the Random scenario, but in the Sequential scenario it is
+  overtaken by Eliminate-Reorder
+
+  \begin{itemize}
+    \item The cost in memory usage is great, we'll get to that soon
+  \end{itemize}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\begin{figure}
+  \center
+  \includegraphics[height=0.65\textheight]{figures/graphs/access-duration-per-op-vs-count.pdf}
+  \caption{Duration per \textsc{acccess} operation in milliseconds}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\begin{figure}
+  \center
+  \includegraphics[height=0.65\textheight]{figures/graphs/access-duration-per-op-vs-count-head-only.pdf}
+  \caption{Duration per \textsc{acccess} operation in milliseconds --- only head node}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Memory usage estimates}
+
+\begin{itemize}
+
+  \item In the Sequential usage scenario, Rollback uses significantly more
+  memory than Node Copying, and more so as \texttt{count} increases
+
+  \item In the Random scenario, the benefit of Node Copying is still
+  significant, but also considerably smaller.
+
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\begin{figure}
+  \center
+  \includegraphics[height=0.65\textheight]{figures/graphs/space-results-per-op.pdf}
+  \caption{Estimated memory usage per operation in bytes}
+\end{figure}
+\end{frame}
 
 \section*{Summary}
 
