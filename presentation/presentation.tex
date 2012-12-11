@@ -135,14 +135,22 @@
 \begin{frame}
 \frametitle{Empirical Analysis}
 \begin{itemize}
+  \item Four operation types:
+  \begin{itemize}
+
+    \item \textsc{insert}$(i, d)$, \textsc{modify}$(i, d)$, \textsc{remove}$(i)$
+    \& \textsc{access}$(v, i)$
+
+  \end{itemize}
   \item Two usage scenarios:
   \begin{itemize}
 
-    \item Sequential: $\frac{1}{4}c$ of each operation in following
-    order:\newline\hphantom{Sequential: } \textsc{insert}, \textsc{modify},
-    \textsc{remove}, \textsc{access}
+    \item Sequential: $\frac{1}{4}c$ of each operation in above order
 
     \item Random: $c$ operations, $p=\frac{1}{4}$ for each type
+    \begin{itemize}
+      \item ${}\implies p_{insert}=p_{remove}$, expected mean change in list size is 0
+    \end{itemize}
   \end{itemize}
 
 \end{itemize}
@@ -171,7 +179,10 @@
 \frametitle{Experiments}
 \begin{itemize}
 
-  \item Duration \& count measured separately for each operation type
+  \item Duration measured separately for each operation type
+  \begin{itemize}
+    \item Actual count also recorded in Random scenario
+  \end{itemize}
 
   \item 10 different operation counts, exponentially spaced in the range between
   1000 and 2000000 (both inclusive)
@@ -192,7 +203,8 @@
 
   \end{itemize}
 
-  \item Memory usage estimates conducted with duration measurements turned off
+  \item Memory usage estimates and duration measurements conducted independently
+  --- we'll get to that later
 
 \end{itemize}
 \end{frame}
@@ -201,77 +213,77 @@
 
 \begin{frame}
 \frametitle{Results: \textsc{insert} operations}
-\begin{itemize}
+\begin{columns}[t]
+  \begin{column}{0.55\textwidth}
 
-  \item Node Copying is slower at \textsc{insert} operations compared to either
-  Rollback implementation, regardless of usage scenario
+      \includegraphics[height=0.65\textheight]{figures/graphs/insert-duration-per-op-vs-count.pdf}
+      \newline Duration per \textsc{insert} operation in milliseconds\vphantom{ --- only head node}
+  \end{column}
 
-  \item Eliminate-Reorder is not faster than Blackbox at \textsc{insert}
-  operations
+  \begin{column}{0.50\textwidth}
+    \begin{itemize}
 
-\end{itemize}
-\end{frame}
+      \item Node Copying is slower at \textsc{insert} operations compared to either
+      Rollback implementation, regardless of usage scenario
 
-\begin{frame}
-\begin{figure}
-  \center
-  \includegraphics[height=0.65\textheight]{figures/graphs/insert-duration-per-op-vs-count.pdf}
-  \caption{Duration per \textsc{insert} operation in milliseconds}
-\end{figure}
+      \item Eliminate-Reorder is not faster than Blackbox at \textsc{insert}
+      operations
+
+    \end{itemize}
+  \end{column}
+\end{columns}
 \end{frame}
 
 \begin{frame}
 \frametitle{Results: \textsc{access} operations}
-\begin{itemize}
+\begin{columns}[t]
+  \begin{column}{0.55\textwidth}
 
-  \item Node Copying is \textit{considerably} faster at \textsc{access}
-  operations in the Random scenario, but in the Sequential scenario it is
-  overtaken by Eliminate-Reorder
+    \only<1>{\includegraphics[height=0.65\textheight]{figures/graphs/access-duration-per-op-vs-count.pdf}}
+    \only<2>{\includegraphics[height=0.65\textheight]{figures/graphs/access-duration-per-op-vs-count-head-only.pdf}}
+    \newline \only<1>{Duration per \textsc{acccess} operation in milliseconds\vphantom{ --- only head node}}
+    \only<2>{Duration per \textsc{acccess} operation in milliseconds --- only head node}
+  \end{column}
 
-  \begin{itemize}
-    \item The cost in memory usage is great, we'll get to that soon
-  \end{itemize}
+  \begin{column}{0.50\textwidth}
+    \begin{itemize}
 
-\end{itemize}
-\end{frame}
+      \item Node Copying is \textit{considerably} faster at \textsc{access}
+      operations in the Random scenario, but in the Sequential scenario it is
+      overtaken by Eliminate-Reorder
 
-\begin{frame}
-\begin{figure}
-  \center
-  \includegraphics[height=0.65\textheight]{figures/graphs/access-duration-per-op-vs-count.pdf}
-  \caption{Duration per \textsc{acccess} operation in milliseconds}
-\end{figure}
-\end{frame}
+      \begin{itemize}
+        \item The cost in memory usage is great, we'll get to that soon
+      \end{itemize}
 
-\begin{frame}
-\begin{figure}
-  \center
-  \includegraphics[height=0.65\textheight]{figures/graphs/access-duration-per-op-vs-count-head-only.pdf}
-  \caption{Duration per \textsc{acccess} operation in milliseconds --- only head node}
-\end{figure}
+    \end{itemize}
+  \end{column}
+\end{columns}
 \end{frame}
 
 \begin{frame}
 \frametitle{Memory usage estimates}
+\begin{columns}[t]
+  \begin{column}{0.55\textwidth}
 
-\begin{itemize}
+    \includegraphics[height=0.65\textheight]{figures/graphs/space-results-per-op.pdf}
+    \newline Estimated memory usage per operation in bytes
+  \end{column}
 
-  \item In the Sequential usage scenario, Rollback uses significantly more
-  memory than Node Copying, and more so as \texttt{count} increases
+  \begin{column}{0.50\textwidth}
 
-  \item In the Random scenario, the benefit of Node Copying is still
-  significant, but also considerably smaller.
+    \begin{itemize}
 
-\end{itemize}
+      \item In the Sequential usage scenario, Rollback uses significantly more
+      memory than Node Copying, and more so as \texttt{count} increases
 
-\end{frame}
+      \item In the Random scenario, the benefit of Node Copying is still
+      significant, but also considerably smaller.
 
-\begin{frame}
-\begin{figure}
-  \center
-  \includegraphics[height=0.65\textheight]{figures/graphs/space-results-per-op.pdf}
-  \caption{Estimated memory usage per operation in bytes}
-\end{figure}
+    \end{itemize}
+
+  \end{column}
+\end{columns}
 \end{frame}
 
 \section*{Summary}
@@ -288,17 +300,50 @@
 
 \end{itemize}
 
+\pause
+
 % The following outlook is optional.
 \vskip0pt plus.5fill
 \begin{itemize}
-  \item Future work
+  \item Future work:
   \begin{itemize}
+
     \item More advanced data structures
+
+    \begin{itemize}
+
+      \item BBSTs, RB trees, Binary heaps, 2-3-4 trees
+
+    \end{itemize}
+
+\pause
     \item More usage scenarios
-    \item Caching, I/O optimization, compression
+
+    \begin{itemize}
+
+      \item Front-to-back version access, algorithms (planar point location),
+      functional use of DS (e.g. iterative depth-first algorithms on large data
+      sets), intentionally worst-case scenarios, temporal databases, offline
+      interval queries
+
+    \end{itemize}
+
+\pause
+    \item Caching and other I/O optimizations (e.g. of Node Copying navigation),
+    compression of full copies
+
   \end{itemize}
 \end{itemize}
 \end{frame}
+
+\bgroup
+\setbeamercolor{background canvas}{bg=white}
+\begin{frame}[plain]{}
+\center
+\Huge
+Questions?
+\end{frame}
+\egroup
 
 \begin{frame}<beamer:0>
 \frametitle{References}
