@@ -241,8 +241,9 @@
 
     \only<1>{\includegraphics[height=0.65\textheight]{figures/graphs/access-duration-per-op-vs-count.pdf}}
     \only<2>{\includegraphics[height=0.65\textheight]{figures/graphs/access-duration-per-op-vs-count-head-only.pdf}}
-    \newline \only<1>{Duration per \textsc{acccess} operation in milliseconds\vphantom{ --- only head node}}
-    \only<2>{Duration per \textsc{acccess} operation in milliseconds --- only head node}
+    \newline Duration per \textsc{access} operation in milliseconds
+    \only<1>{\vphantom{ --- only head node}}
+    \only<2>{ --- only head node}
   \end{column}
 
   \begin{column}{0.50\textwidth}
@@ -344,6 +345,47 @@
 Questions?
 \end{frame}
 \egroup
+
+\appendix
+\section{Extra graphs}
+
+\begin{frame}
+\frametitle{Results: \textsc{insert} operations}
+\begin{columns}[t]
+  \begin{column}{0.5\textwidth}
+
+      \includegraphics[height=0.55\textheight]{figures/graphs/100-seeds/insert-duration-per-op-vs-count.pdf}
+      \newline 100 seeds: Duration per \textsc{insert} operation in milliseconds\vphantom{ --- only head node}
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+
+      \includegraphics[height=0.55\textheight]{figures/graphs/insert-duration-per-op-vs-count.pdf}
+      \newline 10 same-seed runs: Duration per \textsc{insert} operation in milliseconds\vphantom{ --- only head node}
+  \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Results: \textsc{access} operations}
+\begin{columns}[t]
+  \begin{column}{0.5\textwidth}
+
+    \only<1>{\includegraphics[height=0.55\textheight]{figures/graphs/100-seeds/access-duration-per-op-vs-count.pdf}}
+    \only<2>{\includegraphics[height=0.55\textheight]{figures/graphs/100-seeds/access-duration-per-op-vs-count-head-only.pdf}}
+    \newline 100 seeds: \only<1>{Duration per \textsc{access} operation in milliseconds\vphantom{ --- only head node}}
+    \only<2>{Duration per \textsc{acccess} operation in milliseconds --- only head node}
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+
+    \only<1>{\includegraphics[height=0.55\textheight]{figures/graphs/access-duration-per-op-vs-count.pdf}}
+    \only<2>{\includegraphics[height=0.55\textheight]{figures/graphs/access-duration-per-op-vs-count-head-only.pdf}}
+    \newline 10 same-seed runs: \only<1>{Duration per \textsc{access} operation in milliseconds\vphantom{ --- only head node}}
+    \only<2>{Duration per \textsc{acccess} operation in milliseconds --- only head node}
+  \end{column}
+\end{columns}
+\end{frame}
 
 \begin{frame}<beamer:0>
 \frametitle{References}
