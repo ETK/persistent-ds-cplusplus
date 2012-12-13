@@ -4,13 +4,15 @@
 %% template based on a template by Till Tantau
 %% this template is still evolving - it might differ in future releases!
 
-\documentclass{beamer}
+\documentclass[compress]{beamer}
 
 \mode<presentation>
 {
 \usetheme{Warsaw}
 
 \setbeamercovered{transparent}
+\useoutertheme[subsection=false]{smoothbars}
+\useinnertheme{rectangles}
 }
 
 \usepackage[english]{babel}
@@ -102,15 +104,15 @@
 \pause
 \begin{figure}
 \center
-\only<1>{\vphantom{\includegraphics[height=0.55\textheight]{figures/v1.pdf}}}
-\only<2>{\includegraphics[height=0.55\textheight]{figures/node-copying-example.pdf}}
-\only<3>{\includegraphics[height=0.55\textheight]{figures/v1.pdf}}
-\only<4>{\includegraphics[height=0.55\textheight]{figures/v2.pdf}}
-\only<5>{\includegraphics[height=0.55\textheight]{figures/v3.pdf}}
-\only<6>{\includegraphics[height=0.55\textheight]{figures/v4.pdf}}
-\only<7>{\includegraphics[height=0.55\textheight]{figures/v5.pdf}}
-\only<8>{\includegraphics[height=0.55\textheight]{figures/v6.pdf}}
-\only<9>{\includegraphics[height=0.55\textheight]{figures/v7.pdf}}
+\only<1>{\phantom{\includegraphics[keepaspectratio=true,height=0.45\textheight,width=\textwidth]{figures/node-copying-example.pdf}}}
+\only<2>{\includegraphics[keepaspectratio=true,height=0.45\textheight,width=\textwidth]{figures/node-copying-example.pdf}}
+\only<3>{\includegraphics[keepaspectratio=true,height=0.45\textheight,width=\textwidth]{figures/v1.pdf}}
+\only<4>{\includegraphics[keepaspectratio=true,height=0.45\textheight,width=\textwidth]{figures/v2.pdf}}
+\only<5>{\includegraphics[keepaspectratio=true,height=0.45\textheight,width=\textwidth]{figures/v3.pdf}}
+\only<6>{\includegraphics[keepaspectratio=true,height=0.45\textheight,width=\textwidth]{figures/v4.pdf}}
+\only<7>{\includegraphics[keepaspectratio=true,height=0.45\textheight,width=\textwidth]{figures/v5.pdf}}
+\only<8>{\includegraphics[keepaspectratio=true,height=0.45\textheight,width=\textwidth]{figures/v6.pdf}}
+\only<9>{\includegraphics[keepaspectratio=true,height=0.45\textheight,width=\textwidth]{figures/v7.pdf}}
 \end{figure}
 \end{frame}
 
@@ -129,6 +131,51 @@
   \pause
   \item Rollback stores log for every operation, full copy of every $d$ versions
 \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Rollback illustration}
+{$e=$\footnotesize\verb|ephemeral_current : pair<int, ephemeral::DoublyLinkedList*>|}
+\only<01>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/00.pdf}}
+\only<02>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/01.pdf}}
+\only<03>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/02.pdf}}
+\only<04>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/03.pdf}}
+\only<05>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/04.pdf}}
+\only<06>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/05.pdf}}
+\only<07>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/06.pdf}}
+\only<08>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/07.pdf}}
+\only<09>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/08.pdf}}
+\only<10>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/09.pdf}}
+\only<11>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/10.pdf}}
+\only<12>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/16.pdf}}
+\only<13>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/24.pdf}}
+\only<14>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/36.pdf}}
+\only<15>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/37a17.pdf}}
+\only<16>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/38a30.pdf}}
+\only<17>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/39a11.pdf}}
+\only<18>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/40a35.pdf}}
+\only<19>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/41a26.pdf}}
+\only<20>{\includegraphics[keepaspectratio=true,height=0.7\textheight,width=\textwidth]%
+{figures/rollback/42a33.pdf}}
 \end{frame}
 
 \section{Empirical Analysis}
