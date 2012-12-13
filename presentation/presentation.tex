@@ -14,13 +14,14 @@
 }
 
 \usepackage[english]{babel}
-\usepackage[latin1]{inputenc}
+\usepackage[utf8]{inputenc}
 
 % font definitions, try \usepackage{ae} instead of the following
 % three lines if you don't like this look
 \usepackage{mathptmx}
 \usepackage[scaled=.90]{helvet}
 \usepackage{courier}
+\usepackage{multicol}
 
 
 \usepackage[T1]{fontenc}
@@ -349,42 +350,48 @@ Questions?
 \appendix
 \section{Extra graphs}
 
+\setlength{\columnseprule}{0.4pt}
+
 \begin{frame}
 \frametitle{Results: \textsc{insert} operations}
-\begin{columns}[t]
-  \begin{column}{0.5\textwidth}
+\begin{multicols}{2}
+%   \begin{column}{0.5\textwidth}
 
       \includegraphics[height=0.55\textheight]{figures/graphs/100-seeds/insert-duration-per-op-vs-count.pdf}
       \newline 100 seeds: Duration per \textsc{insert} operation in milliseconds\vphantom{ --- only head node}
-  \end{column}
+      \newline \phantom{ --- only head node}
+%   \end{column}
 
-  \begin{column}{0.5\textwidth}
+%   \begin{column}{0.5\textwidth}
 
       \includegraphics[height=0.55\textheight]{figures/graphs/insert-duration-per-op-vs-count.pdf}
       \newline 10 same-seed runs: Duration per \textsc{insert} operation in milliseconds\vphantom{ --- only head node}
-  \end{column}
-\end{columns}
+      \newline \phantom{ --- only head node}
+%   \end{column}
+\end{multicols}
 \end{frame}
 
 \begin{frame}
 \frametitle{Results: \textsc{access} operations}
-\begin{columns}[t]
-  \begin{column}{0.5\textwidth}
+\begin{multicols}{2}
+%   \begin{column}{0.5\textwidth}
 
     \only<1>{\includegraphics[height=0.55\textheight]{figures/graphs/100-seeds/access-duration-per-op-vs-count.pdf}}
     \only<2>{\includegraphics[height=0.55\textheight]{figures/graphs/100-seeds/access-duration-per-op-vs-count-head-only.pdf}}
-    \newline 100 seeds: \only<1>{Duration per \textsc{access} operation in milliseconds\vphantom{ --- only head node}}
-    \only<2>{Duration per \textsc{acccess} operation in milliseconds --- only head node}
-  \end{column}
+    \newline 100 seeds:  Duration per \textsc{acccess} operation in milliseconds%
+    \only<1>{\phantom{ --- only head node}}
+    \only<2>{ --- only head node}
+%   \end{column}
 
-  \begin{column}{0.5\textwidth}
+%   \begin{column}{0.5\textwidth}
 
     \only<1>{\includegraphics[height=0.55\textheight]{figures/graphs/access-duration-per-op-vs-count.pdf}}
     \only<2>{\includegraphics[height=0.55\textheight]{figures/graphs/access-duration-per-op-vs-count-head-only.pdf}}
-    \newline 10 same-seed runs: \only<1>{Duration per \textsc{access} operation in milliseconds\vphantom{ --- only head node}}
-    \only<2>{Duration per \textsc{acccess} operation in milliseconds --- only head node}
-  \end{column}
-\end{columns}
+    \newline 10 same-seed runs: Duration per \textsc{acccess} operation in milliseconds%
+    \only<1>{\phantom{ --- only head node}}
+    \only<2>{ --- only head node}
+%   \end{column}
+\end{multicols}
 \end{frame}
 
 \begin{frame}<beamer:0>
